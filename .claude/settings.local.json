@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git -C \"C:\\\\Users\\\\mycin\\\\proj\\\\ac-trading\" log --oneline)",
+      "Bash(git -C \"C:\\\\Users\\\\mycin\\\\proj\\\\ac-trading\" show --stat b22068f)",
+      "Bash(claude mcp list:*)",
+      "Bash(claude mcp add:*)",
+      "mcp__figma-desktop__get_metadata",
+      "Bash(tr:*)",
+      "Read(//c/**)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: 프로젝트 초기 설정 파일 추가\n\n- .gitignore 구조 정리 \\(apps/api, apps/web, apps/mobile\\)\n- CLAUDE.md 프로젝트 가이드 추가\n- .claude/ 설정 폴더 추가\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+    ]
+  }
+}
