@@ -1,0 +1,35 @@
+name: "🏗️ Setup"
+description: "환경 설정 및 인프라"
+labels: ["setup"]
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: 타입
+      options:
+        - 프로젝트 초기 세팅
+        - DB 설정
+        - 배포 환경
+        - CI/CD
+        - 기타
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: 설명
+      placeholder: 어떤 설정인지
+    validations:
+      required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: 작업 내용
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ] 
+    validations:
+      required: true
