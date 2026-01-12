@@ -2,49 +2,44 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useEffect, Suspense } from "react";
+import { useEffect, Suspense } from "react";
 import { HomeOutlineIcon } from "@/components/icons";
-import { getCognitoLoginUrl, processAuthCookies } from "@/lib/auth";
+import { useAuth } from "@/context/AuthContext";
 
-// 로그인 폼 컴포넌트 (searchParams 사용)
+// Cognito OAuth URL 생성
+function getCognitoLoginUrl(provider: "Google" | "Kakao") {
+  const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
+  const clientId = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID;
+  // 백엔드로 콜백 (토큰 교환은 백엔드에서 처리)
+  const redirectUri = process.env.NEXT_PUBLIC_COGNITO_REDIRECT_URI || `${process.env.NEXT_PUBLIC_API_URL}/api/auth/callback`;
+
+  const params = new URLSearchParams({
+    client_id: clientId!,
+    response_type: "code",
+    scope: "openid email profile",
+    redirect_uri: redirectUri,
+    identity_provider: provider,
+  });
+
+  return `https://${cognitoDomain}/oauth2/authorize?${params.toString()}`;
+}
+
+// 로그인 폼 컴포넌트 (소셜 로그인만)
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [userId, setUserId] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const { isAuthenticated, isLoading } = useAuth();
 
-  // OAuth 콜백 후 토큰 처리 및 에러 메시지 표시
+  // 이미 로그인된 경우 홈으로 리다이렉트
   useEffect(() => {
-    // 임시 쿠키에서 토큰 처리
-    const authResult = processAuthCookies();
-    if (authResult) {
+    if (!isLoading && isAuthenticated) {
       router.push("/");
-      return;
     }
+  }, [isAuthenticated, isLoading, router]);
 
-    // URL에서 에러 파라미터 확인
-    const errorParam = searchParams.get("error");
-    if (errorParam) {
-      switch (errorParam) {
-        case "no_code":
-          setError("인증 코드를 받지 못했습니다.");
-          break;
-        case "callback_failed":
-          setError("로그인 처리 중 오류가 발생했습니다.");
-          break;
-        default:
-          setError(decodeURIComponent(errorParam));
-      }
-    }
-  }, [searchParams, router]);
-
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    // TODO: Cognito 사용자 풀 직접 로그인 (이메일/비밀번호)
-    // 현재는 OAuth 로그인만 지원
-    setError("소셜 로그인을 이용해주세요.");
-  };
+  // URL 에러 파라미터 확인
+  const error = searchParams.get("error");
+  const errorMessage = error ? getErrorMessage(error) : null;
 
   // 구글 로그인
   const handleGoogleLogin = () => {
@@ -56,51 +51,25 @@ function LoginForm() {
     window.location.href = getCognitoLoginUrl("Kakao");
   };
 
+  if (isLoading) {
+    return (
+      <div className="w-full max-w-sm flex justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+      </div>
+    );
+  }
+
   return (
     <>
       {/* 에러 메시지 */}
-      {error && (
+      {errorMessage && (
         <div className="w-full max-w-sm mb-4 p-3 bg-red-500/20 border border-red-400 rounded-lg text-white text-sm text-center">
-          {error}
+          {errorMessage}
         </div>
       )}
 
-      {/* 로그인 폼 */}
-      <form onSubmit={handleLogin} className="w-full max-w-sm space-y-4">
-        <div>
-          <input
-            type="text"
-            placeholder="아이디를 입력해주세요."
-            value={userId}
-            onChange={(e) => setUserId(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg border-2 border-white/50 bg-transparent text-white placeholder-white/70 focus:outline-none focus:border-white"
-          />
-        </div>
-        <div>
-          <input
-            type="password"
-            placeholder="비밀번호를 입력해주세요."
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg border-2 border-white/50 bg-transparent text-white placeholder-white/70 focus:outline-none focus:border-white"
-          />
-        </div>
-
-        {/* 로그인 버튼 */}
-        <button
-          type="submit"
-          className="w-full py-3 rounded-lg bg-white text-primary font-semibold hover:bg-gray-100 transition-colors"
-        >
-          로그인
-        </button>
-
-        {/* 소셜 로그인 구분선 */}
-        <div className="flex items-center gap-3 my-4">
-          <div className="flex-1 h-px bg-white/30" />
-          <span className="text-white/60 text-sm">또는</span>
-          <div className="flex-1 h-px bg-white/30" />
-        </div>
-
+      {/* 소셜 로그인 버튼들 */}
+      <div className="w-full max-w-sm space-y-4">
         {/* 구글 로그인 버튼 */}
         <button
           type="button"
@@ -140,19 +109,41 @@ function LoginForm() {
           <span>카카오로 로그인</span>
         </button>
 
-        {/* 회원가입 버튼 */}
+        {/* 구분선 */}
+        <div className="flex items-center gap-3 my-6">
+          <div className="flex-1 h-px bg-white/30" />
+          <span className="text-white/60 text-xs">간편하게 시작하세요</span>
+          <div className="flex-1 h-px bg-white/30" />
+        </div>
+
+        {/* 비회원 둘러보기 */}
         <Link
-          href="/signup"
-          className="w-full py-3 rounded-lg border-2 border-white text-white font-semibold hover:bg-white/10 transition-colors flex items-center justify-center"
+          href="/"
+          className="w-full py-3 rounded-lg border-2 border-white/50 text-white font-semibold hover:bg-white/10 transition-colors flex items-center justify-center"
         >
-          회원가입
+          둘러보기
         </Link>
-      </form>
+      </div>
     </>
   );
 }
 
-// 로그인 페이지 - Figma 디자인 기반
+// 에러 메시지 변환
+function getErrorMessage(error: string): string {
+  switch (error) {
+    case "no_code":
+      return "인증 코드를 받지 못했습니다.";
+    case "callback_failed":
+    case "auth_failed":
+      return "로그인 처리 중 오류가 발생했습니다.";
+    case "token_exchange_failed":
+      return "토큰 교환에 실패했습니다.";
+    default:
+      return decodeURIComponent(error);
+  }
+}
+
+// 로그인 페이지
 export default function LoginPage() {
   return (
     <div className="min-h-screen bg-primary flex flex-col">
@@ -171,7 +162,7 @@ export default function LoginPage() {
           <h1 className="text-4xl font-bold text-white" style={{ fontFamily: "cursive" }}>
             당근이지
           </h1>
-          <p className="text-white/80 mt-2 text-sm">이 것 좀 빌 려 줄 래 ?</p>
+          <p className="text-white/80 mt-2 text-sm">동물의 숲 아이템 거래</p>
         </div>
 
         {/* Suspense로 감싸서 useSearchParams 사용 */}
