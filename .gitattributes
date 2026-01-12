@@ -1,0 +1,13 @@
+# 모든 텍스트 파일 자동 줄바꿈 처리
+* text=auto eol=lf
+
+# Windows 배치 파일은 CRLF 유지
+*.bat text eol=crlf
+
+# 바이너리 파일
+*.jar binary
+*.png binary
+*.jpg binary
+*.ico binary
+*.woff binary
+*.woff2 binary
