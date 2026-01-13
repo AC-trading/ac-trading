@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: acnh-trading
+
+  datasource:
+    url: jdbc:postgresql://ep-rough-wildflower-a1vl69i0-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+    username: neondb_owner
+    password: npg_ck8szrxEySw3
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 2
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    open-in-view: false
+
+server:
+  port: 8080
+
+# JWT 설정 추가
+jwt:
+  secret: acnh-trading-secret-key-minimum-256-bits-for-hs256-algorithm-12345
+  access-token-expiry: 3600000
+  refresh-token-expiry: 604800000
