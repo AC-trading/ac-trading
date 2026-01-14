@@ -157,12 +157,16 @@ export default function LoginPage() {
       {/* 로고 영역 */}
       <div className="flex-1 flex flex-col items-center justify-center px-8">
         <div className="mb-8 text-center">
-          {/* 당근 아이콘 */}
-          <div className="text-6xl mb-2">🥕</div>
+          {/* 너굴 아이콘 */}
+          <img
+            src="/images/defaults/raccoon.png"
+            alt="AC Trading"
+            className="w-24 h-24 mx-auto mb-2 rounded-full"
+          />
           <h1 className="text-4xl font-bold text-white" style={{ fontFamily: "cursive" }}>
-            당근이지
+            AC Trading
           </h1>
-          <p className="text-white/80 mt-2 text-sm">동물의 숲 아이템 거래</p>
+          <p className="text-white/80 mt-2 text-sm">모여봐요 동물의 숲 아이템 거래</p>
         </div>
 
         {/* Suspense로 감싸서 useSearchParams 사용 */}

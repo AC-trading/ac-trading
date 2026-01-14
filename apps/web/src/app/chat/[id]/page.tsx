@@ -26,7 +26,7 @@ const mockProduct = {
   id: 1,
   title: "산악자전거 장기대여 가능합니다~!",
   price: 5000,
-  status: "빌려주는 중!",
+  status: "구해요",
   image: "/images/bike.jpg",
 };
 

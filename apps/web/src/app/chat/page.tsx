@@ -104,10 +104,18 @@ function ChatItem({ chat }: { chat: (typeof mockChats)[0] }) {
         <p className="text-sm text-gray-600 truncate mt-0.5">{chat.lastMessage}</p>
       </div>
 
-      {/* 상품 이미지 */}
-      <div className="w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center text-gray-400">
-        📦
-      </div>
+      {/*
+        상품 카테고리 아이콘
+        - 거래하는 아이템 카테고리에 따라 아이콘이 변경됨
+        - 아이콘 위치: /public/icons/
+        - 카테고리별 아이콘: DIY.png, bell.png, clothes.png, fossil.png,
+          island.png, mile ticket.png, radish.png 등
+      */}
+      <img
+        src="/icons/DIY.png"
+        alt="상품 카테고리"
+        className="w-12 h-12 rounded-lg flex-shrink-0 object-cover bg-gray-100"
+      />
 
       {/* 안읽은 메시지 표시 */}
       {chat.unread > 0 && (
