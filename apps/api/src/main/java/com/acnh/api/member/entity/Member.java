@@ -98,15 +98,23 @@ public class Member extends BaseEntity {
     /**
      * 프로필 수정 가능 여부 확인
      * - 마지막 수정(updatedAt) 후 24시간 경과 필요
+     * - updatedAt이 null인 경우 (신규 유저) 수정 가능
      */
     public boolean canUpdateProfile() {
+        if (getUpdatedAt() == null) {
+            return true;
+        }
         return getUpdatedAt().plusHours(24).isBefore(LocalDateTime.now());
     }
 
     /**
      * 다음 프로필 수정 가능 시간 조회
+     * - updatedAt이 null인 경우 null 반환
      */
     public LocalDateTime getNextProfileUpdateAvailableAt() {
+        if (getUpdatedAt() == null) {
+            return null;
+        }
         return getUpdatedAt().plusHours(24);
     }
 

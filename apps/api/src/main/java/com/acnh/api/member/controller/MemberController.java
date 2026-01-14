@@ -60,6 +60,12 @@ public class MemberController {
         try {
             MemberProfileResponse response = memberService.updateProfile(visitorId, request);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            // 회원을 찾을 수 없는 경우
+            return ResponseEntity.status(404).body(Map.of(
+                    "error", "MEMBER_NOT_FOUND",
+                    "message", e.getMessage()
+            ));
         } catch (IllegalStateException e) {
             // 24시간 제한 에러
             return ResponseEntity.badRequest().body(Map.of(
@@ -76,7 +82,7 @@ public class MemberController {
      * - 반구, 꿈번지 선택
      */
     @PostMapping("/me/profile-setup")
-    public ResponseEntity<MemberProfileResponse> setupProfile(
+    public ResponseEntity<?> setupProfile(
             @AuthenticationPrincipal String visitorId,
             @Valid @RequestBody ProfileSetupRequest request) {
         log.info("프로필 초기 설정 요청 - visitorId: {}", visitorId);
@@ -85,8 +91,22 @@ public class MemberController {
             return ResponseEntity.status(401).build();
         }
 
-        MemberProfileResponse response = memberService.setupProfile(visitorId, request);
-        return ResponseEntity.ok(response);
+        try {
+            MemberProfileResponse response = memberService.setupProfile(visitorId, request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            // 회원을 찾을 수 없는 경우
+            return ResponseEntity.status(404).body(Map.of(
+                    "error", "MEMBER_NOT_FOUND",
+                    "message", e.getMessage()
+            ));
+        } catch (IllegalStateException e) {
+            // 이미 프로필이 설정된 경우
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "PROFILE_ALREADY_SET",
+                    "message", e.getMessage()
+            ));
+        }
     }
 
     /**
