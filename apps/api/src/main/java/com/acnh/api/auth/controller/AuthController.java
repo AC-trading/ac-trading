@@ -90,13 +90,21 @@ public class AuthController {
         // provider별 redirect URI 생성
         String redirectUri = getRedirectUri(normalizedProvider);
 
-        // Cognito OAuth authorize URL 생성
+        // Before: state 파라미터 없음
+        // After: CSRF 방어를 위한 state 파라미터 추가
+        // 랜덤 state 생성 및 쿠키에 저장
+        String state = UUID.randomUUID().toString();
+        ResponseCookie stateCookie = cookieUtil.createOAuthStateCookie(state);
+        cookieUtil.addCookie(response, stateCookie);
+
+        // Cognito OAuth authorize URL 생성 (state 파라미터 포함)
         String authorizeUrl = String.format(
-                "https://%s/oauth2/authorize?client_id=%s&response_type=code&scope=openid+email+profile&redirect_uri=%s&identity_provider=%s",
+                "https://%s/oauth2/authorize?client_id=%s&response_type=code&scope=openid+email+profile&redirect_uri=%s&identity_provider=%s&state=%s",
                 cognitoDomain,
                 cognitoClientId,
                 URLEncoder.encode(redirectUri, StandardCharsets.UTF_8),
-                identityProvider
+                identityProvider,
+                URLEncoder.encode(state, StandardCharsets.UTF_8)
         );
 
         log.info("소셜 로그인 시작 - provider: {}, redirectUri: {}", normalizedProvider, redirectUri);
@@ -113,11 +121,19 @@ public class AuthController {
     public void handleOAuthCallback(
             @PathVariable String provider,
             @RequestParam(value = "code", required = false) String code,
+            @RequestParam(value = "state", required = false) String state,
             @RequestParam(value = "error", required = false) String error,
             @RequestParam(value = "error_description", required = false) String errorDescription,
+            HttpServletRequest request,
             HttpServletResponse response) throws IOException {
 
         String normalizedProvider = provider.toLowerCase();
+
+        // Before: state 검증 없음
+        // After: CSRF 방어를 위한 state 파라미터 검증 추가
+        // state 쿠키 삭제 (사용 후 즉시 삭제)
+        ResponseCookie deleteStateCookie = cookieUtil.deleteOAuthStateCookie();
+        cookieUtil.addCookie(response, deleteStateCookie);
 
         // 지원하지 않는 provider 체크
         if (!SUPPORTED_PROVIDERS.contains(normalizedProvider)) {
@@ -131,6 +147,14 @@ public class AuthController {
             log.warn("OAuth 에러 발생: {} - {}", error, errorDescription);
             String errorUrl = frontendUrl + "/login?error=" + URLEncoder.encode(error, StandardCharsets.UTF_8);
             response.sendRedirect(errorUrl);
+            return;
+        }
+
+        // state 검증 (CSRF 방어)
+        String storedState = cookieUtil.getOAuthStateFromCookie(request).orElse(null);
+        if (state == null || storedState == null || !state.equals(storedState)) {
+            log.warn("OAuth state 불일치 - CSRF 공격 의심. received: {}, stored: {}", state, storedState);
+            response.sendRedirect(frontendUrl + "/login?error=invalid_state");
             return;
         }
 
