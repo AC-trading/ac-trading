@@ -28,3 +28,18 @@ jwt:
   secret: ${JWT_SECRET}
   access-token-expiry: 3600000
   refresh-token-expiry: 604800000
+
+# Cognito 설정
+cognito:
+  domain: ${COGNITO_DOMAIN:ac-trading.auth.ap-northeast-2.amazoncognito.com}
+  client-id: ${COGNITO_CLIENT_ID}
+  client-secret: ${COGNITO_CLIENT_SECRET}
+  redirect-uri: ${COGNITO_REDIRECT_URI:http://localhost:8080/api/auth/callback}
+
+# 프론트엔드 URL (OAuth 콜백 후 리다이렉트)
+frontend:
+  url: ${FRONTEND_URL:http://localhost:3000}
+
+# 쿠키 보안 설정
+cookie:
+  secure: ${COOKIE_SECURE:false}
