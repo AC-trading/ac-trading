@@ -322,6 +322,9 @@ public class PostService {
      * PostType 유효성 검증 (필수)
      */
     private void validatePostTypeRequired(String postType) {
+        if (postType == null || postType.isBlank()) {
+            throw new IllegalArgumentException("게시글 유형은 필수입니다");
+        }
         try {
             PostType.valueOf(postType.toUpperCase());
         } catch (IllegalArgumentException e) {
@@ -347,6 +350,9 @@ public class PostService {
      * PostStatus 유효성 검증 (필수)
      */
     private String validateStatusRequired(String status) {
+        if (status == null || status.isBlank()) {
+            throw new IllegalArgumentException("상태는 필수입니다");
+        }
         try {
             return PostStatus.valueOf(status.toUpperCase()).name();
         } catch (IllegalArgumentException e) {
@@ -358,6 +364,9 @@ public class PostService {
      * CurrencyType 유효성 검증 (필수, 게시글 작성/수정 시)
      */
     private void validateCurrencyType(String currencyType) {
+        if (currencyType == null || currencyType.isBlank()) {
+            throw new IllegalArgumentException("화폐 유형은 필수입니다");
+        }
         try {
             CurrencyType.valueOf(currencyType.toUpperCase());
         } catch (IllegalArgumentException e) {

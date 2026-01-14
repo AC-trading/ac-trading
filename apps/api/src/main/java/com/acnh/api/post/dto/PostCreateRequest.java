@@ -2,6 +2,7 @@ package com.acnh.api.post.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,7 +15,8 @@ import lombok.NoArgsConstructor;
 public class PostCreateRequest {
 
     @NotBlank(message = "게시글 유형은 필수입니다")
-    private String postType;  // SELL, BUY
+    @Pattern(regexp = "^(SELL|BUY)$", message = "게시글 유형은 SELL 또는 BUY만 가능합니다")
+    private String postType;
 
     @NotNull(message = "카테고리는 필수입니다")
     private Long categoryId;
