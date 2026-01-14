@@ -189,9 +189,11 @@ public class AuthController {
             ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(refreshToken, maxAgeSeconds);
             cookieUtil.addCookie(response, refreshCookie);
 
-            // 6. 프론트엔드 콜백 페이지로 리다이렉트 (Access Token은 URL 파라미터로)
-            String redirectUrl = frontendUrl + "/auth/callback" +
-                    "?accessToken=" + URLEncoder.encode(accessToken, StandardCharsets.UTF_8) +
+            // Before: 토큰을 쿼리 파라미터(?)로 전달 - 서버 로그/Referer에 노출 위험
+            // After: Fragment(#)로 전달 - 서버로 전송되지 않아 보안 강화
+            // 6. 프론트엔드 콜백 페이지로 리다이렉트 (토큰은 URL Fragment로)
+            String redirectUrl = frontendUrl + "/auth/callback#" +
+                    "accessToken=" + URLEncoder.encode(accessToken, StandardCharsets.UTF_8) +
                     "&idToken=" + URLEncoder.encode(cognitoTokens.getIdToken(), StandardCharsets.UTF_8);
 
             log.info("OAuth 로그인 성공 - userId: {}, provider: {}", member.getUuid(), userInfo.getProvider());
