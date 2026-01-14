@@ -22,7 +22,10 @@ import java.util.Optional;
 public class CookieUtil {
 
     public static final String REFRESH_TOKEN_COOKIE_NAME = "refresh_token";
+    public static final String OAUTH_STATE_COOKIE_NAME = "oauth_state";
     private static final String COOKIE_PATH = "/api/auth";
+    // Before: state 쿠키 없음
+    // After: OAuth CSRF 방어를 위한 state 쿠키 추가 (5분 TTL)
 
     @Value("${cookie.secure:false}")
     private boolean secureCookie;
@@ -77,5 +80,49 @@ public class CookieUtil {
      */
     public void addCookie(HttpServletResponse response, ResponseCookie cookie) {
         response.addHeader("Set-Cookie", cookie.toString());
+    }
+
+    /**
+     * OAuth State 쿠키 생성 (CSRF 방어용)
+     * - HttpOnly: true (JS 접근 차단)
+     * - SameSite: Lax (OAuth 리다이렉트 허용)
+     * - maxAge: 5분 (OAuth 플로우 완료 시간)
+     */
+    public ResponseCookie createOAuthStateCookie(String state) {
+        return ResponseCookie.from(OAUTH_STATE_COOKIE_NAME, state)
+                .httpOnly(true)
+                .secure(secureCookie)
+                .sameSite("Lax")
+                .path(COOKIE_PATH)
+                .maxAge(300)  // 5분
+                .build();
+    }
+
+    /**
+     * OAuth State 쿠키 삭제
+     */
+    public ResponseCookie deleteOAuthStateCookie() {
+        return ResponseCookie.from(OAUTH_STATE_COOKIE_NAME, "")
+                .httpOnly(true)
+                .secure(secureCookie)
+                .sameSite("Lax")
+                .path(COOKIE_PATH)
+                .maxAge(0)
+                .build();
+    }
+
+    /**
+     * 요청에서 OAuth State 쿠키 추출
+     */
+    public Optional<String> getOAuthStateFromCookie(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies == null) {
+            return Optional.empty();
+        }
+
+        return Arrays.stream(cookies)
+                .filter(cookie -> OAUTH_STATE_COOKIE_NAME.equals(cookie.getName()))
+                .map(Cookie::getValue)
+                .findFirst();
     }
 }
