@@ -34,7 +34,7 @@ public class PostController {
      * - 페이징: page, size
      */
     @GetMapping
-    public ResponseEntity<PostListResponse> getFeed(
+    public ResponseEntity<?> getFeed(
             @AuthenticationPrincipal String visitorId,
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String postType,
@@ -48,10 +48,16 @@ public class PostController {
         log.info("피드 조회 요청 - categoryId: {}, postType: {}, status: {}, currencyType: {}, minPrice: {}, maxPrice: {}, page: {}, size: {}",
                 categoryId, postType, status, currencyType, minPrice, maxPrice, page, size);
 
-        Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
-        PostListResponse response = postService.getFeed(categoryId, postType, status, currencyType, minPrice, maxPrice, visitorId, pageable);
-
-        return ResponseEntity.ok(response);
+        try {
+            Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
+            PostListResponse response = postService.getFeed(categoryId, postType, status, currencyType, minPrice, maxPrice, visitorId, pageable);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "INVALID_REQUEST",
+                    "message", e.getMessage()
+            ));
+        }
     }
 
     /**

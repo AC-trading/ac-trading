@@ -102,6 +102,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
             "ORDER BY COALESCE(p.bumped_at, p.created_at) DESC",
+            countQuery = "SELECT COUNT(*) FROM posts p WHERE p.deleted_at IS NULL " +
+            "AND LOWER(REPLACE(p.item_name, ' ', '')) LIKE LOWER(CONCAT('%', REPLACE(:keyword, ' ', ''), '%')) " +
+            "AND (:categoryId IS NULL OR p.category_id = :categoryId) " +
+            "AND (:postType IS NULL OR p.post_type = :postType) " +
+            "AND (:status IS NULL OR p.status = :status) " +
+            "AND (:currencyType IS NULL OR p.currency_type = :currencyType) " +
+            "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
+            "AND (:maxPrice IS NULL OR p.price <= :maxPrice)",
             nativeQuery = true)
     Page<Post> searchByKeyword(
             @Param("keyword") String keyword,
