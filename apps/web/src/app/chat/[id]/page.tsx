@@ -167,6 +167,8 @@ export default function ChatRoomPage() {
               {/* + 버튼 (하단탭 토글) */}
               <button
                 onClick={() => setIsBottomTabOpen(!isBottomTabOpen)}
+                aria-label={isBottomTabOpen ? "메뉴 닫기" : "메뉴 열기"}
+                aria-expanded={isBottomTabOpen}
                 className={`p-2 rounded-full transition-all duration-300 ${
                   isBottomTabOpen
                     ? "bg-white/30 rotate-45"
@@ -198,6 +200,7 @@ export default function ChatRoomPage() {
               <button
                 onClick={handleSend}
                 disabled={!inputMessage.trim()}
+                aria-label="메시지 전송"
                 className="p-2 bg-[#5BBFB3] rounded-full text-white hover:bg-[#4AA89C] disabled:opacity-50"
               >
                 <svg

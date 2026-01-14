@@ -105,15 +105,15 @@ function ChatItem({ chat }: { chat: (typeof mockChats)[0] }) {
       </div>
 
       {/*
-        상품 카테고리 아이콘
-        - 거래하는 아이템 카테고리에 따라 아이콘이 변경됨
+        TODO: 상품 카테고리별 아이콘 동적 변경
+        - chat.product?.image 또는 카테고리 기반 아이콘으로 변경 필요
         - 아이콘 위치: /public/icons/
         - 카테고리별 아이콘: DIY.png, bell.png, clothes.png, fossil.png,
           island.png, mile ticket.png, radish.png 등
       */}
       <img
-        src="/icons/DIY.png"
-        alt="상품 카테고리"
+        src={chat.product?.image || "/icons/DIY.png"}
+        alt={chat.product?.image ? "상품 이미지" : "상품 카테고리"}
         className="w-12 h-12 rounded-lg flex-shrink-0 object-cover bg-gray-100"
       />
 
