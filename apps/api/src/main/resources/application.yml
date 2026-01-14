@@ -23,8 +23,8 @@ spring:
 server:
   port: 8080
 
-# JWT 설정 추가
+# JWT 설정 (시크릿은 환경변수로 주입)
 jwt:
-  secret: acnh-trading-secret-key-minimum-256-bits-for-hs256-algorithm-12345
+  secret: ${JWT_SECRET}
   access-token-expiry: 3600000
   refresh-token-expiry: 604800000
