@@ -203,7 +203,9 @@ public class AuthController {
                             .build();
 
                     Member savedMember = memberRepository.save(newMember);
-                    log.info("새 사용자 생성 - uuid: {}, email: {}", savedMember.getUuid(), savedMember.getEmail());
+                    // Before: log.info("새 사용자 생성 - uuid: {}, email: {}", savedMember.getUuid(), savedMember.getEmail());
+                    // After: PII(이메일) 로깅 제거 - uuid만 로깅하여 개인정보 보호
+                    log.info("새 사용자 생성 - uuid: {}", savedMember.getUuid());
                     return savedMember;
                 });
     }
@@ -284,13 +286,29 @@ public class AuthController {
         // 사용자 정보 추출
         String userId = jwtTokenProvider.getUserId(refreshToken);
 
+        // Before: email이 null이어도 토큰 생성 진행
+        // After: 삭제된 사용자(email null)인 경우 401 반환하여 보안 강화
         // DB에서 사용자 조회하여 이메일 가져오기
-        String email = memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(userId))
-                .map(Member::getEmail)
+        Member member = memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(userId))
                 .orElse(null);
 
+        // 사용자가 존재하지 않거나 삭제된 경우 401 반환
+        if (member == null || member.getEmail() == null) {
+            log.warn("토큰 갱신 실패 - 사용자를 찾을 수 없음: {}", userId);
+            ResponseCookie deleteCookie = cookieUtil.deleteRefreshTokenCookie();
+            cookieUtil.addCookie(response, deleteCookie);
+
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(ErrorResponse.of(
+                            HttpStatus.UNAUTHORIZED.value(),
+                            "Unauthorized",
+                            "사용자를 찾을 수 없습니다."
+                    ));
+        }
+
         // 새로운 Access Token 생성
-        String newAccessToken = jwtTokenProvider.createAccessToken(userId, email);
+        String newAccessToken = jwtTokenProvider.createAccessToken(userId, member.getEmail());
 
         // 새로운 Refresh Token 생성 (Sliding Session)
         String newRefreshToken = jwtTokenProvider.createRefreshToken(userId);
@@ -413,7 +431,9 @@ public class AuthController {
                             .build();
 
                     Member savedMember = memberRepository.save(newMember);
-                    log.info("새 사용자 생성 (앱) - uuid: {}, email: {}", savedMember.getUuid(), savedMember.getEmail());
+                    // Before: log.info("새 사용자 생성 (앱) - uuid: {}, email: {}", savedMember.getUuid(), savedMember.getEmail());
+                    // After: PII(이메일) 로깅 제거 - uuid만 로깅하여 개인정보 보호
+                    log.info("새 사용자 생성 (앱) - uuid: {}", savedMember.getUuid());
                     return savedMember;
                 });
     }
