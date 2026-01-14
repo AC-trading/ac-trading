@@ -29,7 +29,8 @@ public class PostController {
     /**
      * 게시글 목록 조회 (피드)
      * GET /api/posts
-     * - 필터: categoryId, postType, status, minPrice, maxPrice
+     * - 필터: categoryId, postType, status, currencyType, minPrice, maxPrice
+     * - 가격 필터 사용 시 currencyType 필수 (벨 500과 마일 500은 다름)
      * - 페이징: page, size
      */
     @GetMapping
@@ -38,16 +39,17 @@ public class PostController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String postType,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String currencyType,
             @RequestParam(required = false) Integer minPrice,
             @RequestParam(required = false) Integer maxPrice,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        log.info("피드 조회 요청 - categoryId: {}, postType: {}, status: {}, minPrice: {}, maxPrice: {}, page: {}, size: {}",
-                categoryId, postType, status, minPrice, maxPrice, page, size);
+        log.info("피드 조회 요청 - categoryId: {}, postType: {}, status: {}, currencyType: {}, minPrice: {}, maxPrice: {}, page: {}, size: {}",
+                categoryId, postType, status, currencyType, minPrice, maxPrice, page, size);
 
         Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
-        PostListResponse response = postService.getFeed(categoryId, postType, status, minPrice, maxPrice, visitorId, pageable);
+        PostListResponse response = postService.getFeed(categoryId, postType, status, currencyType, minPrice, maxPrice, visitorId, pageable);
 
         return ResponseEntity.ok(response);
     }
@@ -56,7 +58,8 @@ public class PostController {
      * 게시글 검색
      * GET /api/posts/search
      * - 필수: keyword
-     * - 필터: categoryId, postType, status, minPrice, maxPrice
+     * - 필터: categoryId, postType, status, currencyType, minPrice, maxPrice
+     * - 가격 필터 사용 시 currencyType 필수 (벨 500과 마일 500은 다름)
      * - 페이징: page, size
      */
     @GetMapping("/search")
@@ -66,17 +69,18 @@ public class PostController {
             @RequestParam(required = false) Long categoryId,
             @RequestParam(required = false) String postType,
             @RequestParam(required = false) String status,
+            @RequestParam(required = false) String currencyType,
             @RequestParam(required = false) Integer minPrice,
             @RequestParam(required = false) Integer maxPrice,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        log.info("검색 요청 - keyword: {}, categoryId: {}, postType: {}, status: {}, minPrice: {}, maxPrice: {}, page: {}, size: {}",
-                keyword, categoryId, postType, status, minPrice, maxPrice, page, size);
+        log.info("검색 요청 - keyword: {}, categoryId: {}, postType: {}, status: {}, currencyType: {}, minPrice: {}, maxPrice: {}, page: {}, size: {}",
+                keyword, categoryId, postType, status, currencyType, minPrice, maxPrice, page, size);
 
         try {
             Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
-            PostListResponse response = postService.searchPosts(keyword, categoryId, postType, status, minPrice, maxPrice, visitorId, pageable);
+            PostListResponse response = postService.searchPosts(keyword, categoryId, postType, status, currencyType, minPrice, maxPrice, visitorId, pageable);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of(

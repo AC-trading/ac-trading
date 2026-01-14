@@ -41,16 +41,18 @@ public class PostService {
     /**
      * 게시글 목록 조회 (피드)
      * - bumped_at 우선 정렬
-     * - 필터: 카테고리, 게시글유형, 상태, 가격범위
+     * - 필터: 카테고리, 게시글유형, 상태, 화폐유형, 가격범위
+     * - 가격 필터는 화폐유형(currencyType)과 함께 사용해야 함 (벨 500과 마일 500은 다름)
      */
     public PostListResponse getFeed(Long categoryId, String postType, String status,
-                                    Integer minPrice, Integer maxPrice,
+                                    String currencyType, Integer minPrice, Integer maxPrice,
                                     String visitorId, Pageable pageable) {
         // 필터 값 유효성 검증
         String validPostType = validatePostType(postType);
         String validStatus = validateStatus(status);
+        String validCurrencyType = validateCurrencyTypeOptional(currencyType);
 
-        Page<Post> posts = postRepository.findFeed(categoryId, validPostType, validStatus, minPrice, maxPrice, pageable);
+        Page<Post> posts = postRepository.findFeed(categoryId, validPostType, validStatus, validCurrencyType, minPrice, maxPrice, pageable);
 
         Long currentUserId = getCurrentUserId(visitorId);
         Page<PostResponse> responsePage = posts.map(post -> toPostResponse(post, currentUserId));
@@ -61,10 +63,11 @@ public class PostService {
     /**
      * 게시글 검색
      * - 아이템명 LIKE 검색
-     * - 필터: 카테고리, 게시글유형, 상태, 가격범위
+     * - 필터: 카테고리, 게시글유형, 상태, 화폐유형, 가격범위
+     * - 가격 필터는 화폐유형(currencyType)과 함께 사용해야 함 (벨 500과 마일 500은 다름)
      */
     public PostListResponse searchPosts(String keyword, Long categoryId, String postType,
-                                        String status, Integer minPrice, Integer maxPrice,
+                                        String status, String currencyType, Integer minPrice, Integer maxPrice,
                                         String visitorId, Pageable pageable) {
         if (keyword == null || keyword.isBlank()) {
             throw new IllegalArgumentException("검색어를 입력해주세요");
@@ -72,8 +75,9 @@ public class PostService {
 
         String validPostType = validatePostType(postType);
         String validStatus = validateStatus(status);
+        String validCurrencyType = validateCurrencyTypeOptional(currencyType);
 
-        Page<Post> posts = postRepository.searchByKeyword(keyword, categoryId, validPostType, validStatus, minPrice, maxPrice, pageable);
+        Page<Post> posts = postRepository.searchByKeyword(keyword, categoryId, validPostType, validStatus, validCurrencyType, minPrice, maxPrice, pageable);
 
         Long currentUserId = getCurrentUserId(visitorId);
         Page<PostResponse> responsePage = posts.map(post -> toPostResponse(post, currentUserId));
@@ -351,11 +355,25 @@ public class PostService {
     }
 
     /**
-     * CurrencyType 유효성 검증
+     * CurrencyType 유효성 검증 (필수, 게시글 작성/수정 시)
      */
     private void validateCurrencyType(String currencyType) {
         try {
             CurrencyType.valueOf(currencyType.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("유효하지 않은 화폐 유형입니다: " + currencyType);
+        }
+    }
+
+    /**
+     * CurrencyType 유효성 검증 (선택, 필터용 - null 허용)
+     */
+    private String validateCurrencyTypeOptional(String currencyType) {
+        if (currencyType == null || currencyType.isBlank()) {
+            return null;
+        }
+        try {
+            return CurrencyType.valueOf(currencyType.toUpperCase()).name();
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("유효하지 않은 화폐 유형입니다: " + currencyType);
         }

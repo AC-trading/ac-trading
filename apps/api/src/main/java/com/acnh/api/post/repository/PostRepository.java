@@ -67,12 +67,14 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     /**
      * 피드 조회 - bumped_at 우선 정렬 (끌올 우선, 없으면 created_at)
-     * - 필터: 카테고리, 게시글유형, 상태, 가격범위
+     * - 필터: 카테고리, 게시글유형, 상태, 화폐유형, 가격범위
+     * - 가격 필터는 화폐유형(currencyType)과 함께 사용해야 함 (벨 500과 마일 500은 다름)
      */
     @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL " +
             "AND (:categoryId IS NULL OR p.categoryId = :categoryId) " +
             "AND (:postType IS NULL OR p.postType = :postType) " +
             "AND (:status IS NULL OR p.status = :status) " +
+            "AND (:currencyType IS NULL OR p.currencyType = :currencyType) " +
             "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
             "ORDER BY COALESCE(p.bumpedAt, p.createdAt) DESC")
@@ -80,20 +82,23 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("categoryId") Long categoryId,
             @Param("postType") String postType,
             @Param("status") String status,
+            @Param("currencyType") String currencyType,
             @Param("minPrice") Integer minPrice,
             @Param("maxPrice") Integer maxPrice,
             Pageable pageable);
 
     /**
      * 아이템명 검색 (LIKE 검색, 띄어쓰기 무시)
-     * - 필터: 카테고리, 게시글유형, 상태, 가격범위
+     * - 필터: 카테고리, 게시글유형, 상태, 화폐유형, 가격범위
      * - 검색어와 아이템명 모두 공백 제거 후 비교
+     * - 가격 필터는 화폐유형(currencyType)과 함께 사용해야 함 (벨 500과 마일 500은 다름)
      */
     @Query(value = "SELECT * FROM posts p WHERE p.deleted_at IS NULL " +
             "AND LOWER(REPLACE(p.item_name, ' ', '')) LIKE LOWER(CONCAT('%', REPLACE(:keyword, ' ', ''), '%')) " +
             "AND (:categoryId IS NULL OR p.category_id = :categoryId) " +
             "AND (:postType IS NULL OR p.post_type = :postType) " +
             "AND (:status IS NULL OR p.status = :status) " +
+            "AND (:currencyType IS NULL OR p.currency_type = :currencyType) " +
             "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
             "ORDER BY COALESCE(p.bumped_at, p.created_at) DESC",
@@ -103,6 +108,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             @Param("categoryId") Long categoryId,
             @Param("postType") String postType,
             @Param("status") String status,
+            @Param("currencyType") String currencyType,
             @Param("minPrice") Integer minPrice,
             @Param("maxPrice") Integer maxPrice,
             Pageable pageable);
