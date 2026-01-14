@@ -9,13 +9,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // 당근마켓 스타일 오렌지 컬러
+        // AC-Trading 메인 컬러 (동물의 숲 테마)
         primary: {
-          DEFAULT: "#FF9F1C",
-          light: "#FFB84D",
-          dark: "#E88A00",
+          DEFAULT: "#7ECEC5",
+          light: "#BAE8E7",
+          dark: "#5BBFB3",
         },
-        carrot: "#FF9F1C",
+        acnh: "#7ECEC5",
         background: "var(--background)",
         foreground: "var(--foreground)",
       },

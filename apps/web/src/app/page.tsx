@@ -70,11 +70,19 @@ function PostItem({ post }: { post: (typeof mockPosts)[0] }) {
       href={`/post/${post.id}`}
       className="flex gap-4 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors"
     >
-      {/* 상품 이미지 */}
-      <div className="w-28 h-28 bg-gray-200 rounded-xl overflow-hidden flex-shrink-0">
-        <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-gray-400">
-          📦
-        </div>
+      {/*
+        상품 카테고리 아이콘
+        - 거래하는 아이템 카테고리에 따라 아이콘이 변경됨
+        - 아이콘 위치: /public/icons/
+        - 카테고리별 아이콘: DIY.png, bell.png, clothes.png, fossil.png,
+          island.png, mile ticket.png, radish.png 등
+      */}
+      <div className="w-28 h-28 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
+        <img
+          src="/icons/DIY.png"
+          alt="상품 카테고리"
+          className="w-full h-full object-cover"
+        />
       </div>
 
       {/* 상품 정보 */}
