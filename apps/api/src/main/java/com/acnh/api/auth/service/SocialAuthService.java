@@ -2,15 +2,11 @@ package com.acnh.api.auth.service;
 
 import com.acnh.api.auth.dto.SocialUserInfo;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 
 /**
  * 소셜 로그인 토큰 검증 서비스
@@ -22,7 +18,6 @@ import java.util.Base64;
 public class SocialAuthService {
 
     private final RestTemplate restTemplate;
-    private final ObjectMapper objectMapper;
 
     private static final String GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
     private static final String KAKAO_USERINFO_URL = "https://kapi.kakao.com/v2/user/me";
@@ -40,16 +35,13 @@ public class SocialAuthService {
 
     /**
      * Google 토큰 검증 및 사용자 정보 조회
-     * - ID Token이 있으면 파싱, 없으면 userinfo API 호출
+     * - Before: ID Token이 있으면 서명 검증 없이 Base64 디코딩만 수행 (보안 취약)
+     * - After: 항상 Google userinfo API를 호출하여 토큰 검증 (Google이 검증 수행)
+     * - TODO: MVP 이후 Google JWKS를 이용한 ID Token 서명 검증 구현 시 성능 개선 가능
      */
     private SocialUserInfo verifyGoogleToken(String accessToken, String idToken) {
         try {
-            // ID Token이 있으면 파싱해서 사용 (더 빠름)
-            if (idToken != null && !idToken.isBlank()) {
-                return parseGoogleIdToken(idToken);
-            }
-
-            // Access Token으로 userinfo API 호출
+            // Access Token으로 userinfo API 호출 (Google이 토큰 검증)
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(accessToken);
 
@@ -72,7 +64,9 @@ public class SocialAuthService {
             String name = body.has("name") ? body.get("name").asText() : null;
             String picture = body.has("picture") ? body.get("picture").asText() : null;
 
-            log.info("Google 사용자 정보 조회 성공 - sub: {}, email: {}", sub, email);
+            // Before: log.info("Google 사용자 정보 조회 성공 - sub: {}, email: {}", sub, email);
+            // After: PII(이메일) 로깅 제거
+            log.info("Google 사용자 정보 조회 성공 - sub: {}", sub);
 
             return SocialUserInfo.builder()
                     .provider("google")
@@ -85,44 +79,6 @@ public class SocialAuthService {
         } catch (Exception e) {
             log.error("Google 토큰 검증 실패: {}", e.getMessage());
             throw new RuntimeException("Google 토큰 검증에 실패했습니다.", e);
-        }
-    }
-
-    /**
-     * Google ID Token 파싱
-     */
-    private SocialUserInfo parseGoogleIdToken(String idToken) {
-        try {
-            String[] parts = idToken.split("\\.");
-            if (parts.length != 3) {
-                throw new IllegalArgumentException("유효하지 않은 ID Token 형식입니다.");
-            }
-
-            String payload = new String(
-                    Base64.getUrlDecoder().decode(parts[1]),
-                    StandardCharsets.UTF_8
-            );
-
-            JsonNode claims = objectMapper.readTree(payload);
-
-            String sub = claims.has("sub") ? claims.get("sub").asText() : null;
-            String email = claims.has("email") ? claims.get("email").asText() : null;
-            String name = claims.has("name") ? claims.get("name").asText() : null;
-            String picture = claims.has("picture") ? claims.get("picture").asText() : null;
-
-            log.info("Google ID Token 파싱 성공 - sub: {}, email: {}", sub, email);
-
-            return SocialUserInfo.builder()
-                    .provider("google")
-                    .providerId(sub)
-                    .email(email)
-                    .name(name)
-                    .picture(picture)
-                    .build();
-
-        } catch (Exception e) {
-            log.error("Google ID Token 파싱 실패: {}", e.getMessage());
-            throw new RuntimeException("Google ID Token 파싱에 실패했습니다.", e);
         }
     }
 
@@ -167,7 +123,9 @@ public class SocialAuthService {
                 }
             }
 
-            log.info("Kakao 사용자 정보 조회 성공 - id: {}, email: {}", id, email);
+            // Before: log.info("Kakao 사용자 정보 조회 성공 - id: {}, email: {}", id, email);
+            // After: PII(이메일) 로깅 제거
+            log.info("Kakao 사용자 정보 조회 성공 - id: {}", id);
 
             return SocialUserInfo.builder()
                     .provider("kakao")
