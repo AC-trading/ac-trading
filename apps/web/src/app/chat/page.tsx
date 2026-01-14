@@ -88,9 +88,11 @@ function ChatItem({ chat }: { chat: (typeof mockChats)[0] }) {
       className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
     >
       {/* 프로필 이미지 */}
-      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-2xl flex-shrink-0">
-        {chat.user.avatar}
-      </div>
+      <img
+        src="/images/defaults/raccoon.png"
+        alt="프로필"
+        className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 object-cover"
+      />
 
       {/* 채팅 정보 */}
       <div className="flex-1 min-w-0">
