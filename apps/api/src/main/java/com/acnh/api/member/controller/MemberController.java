@@ -1,21 +1,22 @@
 package com.acnh.api.member.controller;
 
-import com.acnh.api.member.dto.MemberResponse;
-import com.acnh.api.member.entity.Member;
-import com.acnh.api.member.repository.MemberRepository;
+import com.acnh.api.member.dto.ProfileSetupRequest;
+import com.acnh.api.member.dto.ProfileUpdateRequest;
+import com.acnh.api.member.dto.MemberProfileResponse;
+import com.acnh.api.member.service.MemberService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.UUID;
 
 /**
  * 회원 관련 API 컨트롤러
- * - /api/users/me: 현재 로그인한 사용자 정보 조회
+ * - 프로필 조회/수정/설정, 회원 탈퇴
  */
 @Slf4j
 @RestController
@@ -23,31 +24,122 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MemberController {
 
-    private final MemberRepository memberRepository;
+    private final MemberService memberService;
 
     /**
-     * 현재 로그인한 사용자 정보 조회
-     * - JWT에서 추출한 userId로 회원 정보 조회
+     * 내 프로필 조회
+     * GET /api/users/me
      */
     @GetMapping("/me")
-    public ResponseEntity<MemberResponse> getCurrentUser(@AuthenticationPrincipal String userId) {
-        log.info("사용자 정보 조회 요청 - userId: {}", userId);
+    public ResponseEntity<MemberProfileResponse> getMyProfile(@AuthenticationPrincipal String visitorId) {
+        log.info("내 프로필 조회 요청 - visitorId: {}", visitorId);
 
-        if (userId == null) {
-            log.warn("인증되지 않은 요청입니다.");
+        if (visitorId == null) {
             return ResponseEntity.status(401).build();
         }
 
-        return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(userId))
-                .map(member -> {
-                    // Before: log.info("사용자 정보 조회 성공 - email: {}", member.getEmail());
-                    // After: PII(이메일) 로깅 제거 - userId만 로깅하여 개인정보 보호
-                    log.info("사용자 정보 조회 성공 - userId: {}", userId);
-                    return ResponseEntity.ok(MemberResponse.from(member));
-                })
-                .orElseGet(() -> {
-                    log.warn("사용자를 찾을 수 없습니다 - userId: {}", userId);
-                    return ResponseEntity.notFound().build();
-                });
+        MemberProfileResponse response = memberService.getMyProfile(visitorId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 프로필 수정
+     * POST /api/users/me/update
+     * - 24시간에 한 번만 수정 가능
+     */
+    @PostMapping("/me/update")
+    public ResponseEntity<?> updateProfile(
+            @AuthenticationPrincipal String visitorId,
+            @Valid @RequestBody ProfileUpdateRequest request) {
+        log.info("프로필 수정 요청 - visitorId: {}", visitorId);
+
+        if (visitorId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        try {
+            MemberProfileResponse response = memberService.updateProfile(visitorId, request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            // 회원을 찾을 수 없는 경우
+            return ResponseEntity.status(404).body(Map.of(
+                    "error", "MEMBER_NOT_FOUND",
+                    "message", e.getMessage()
+            ));
+        } catch (IllegalStateException e) {
+            // 24시간 제한 에러
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "PROFILE_UPDATE_LIMIT",
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 신규 유저 프로필 초기 설정
+     * POST /api/users/me/profile-setup
+     * - 닉네임, 섬 이름 필수
+     * - 반구, 꿈번지 선택
+     */
+    @PostMapping("/me/profile-setup")
+    public ResponseEntity<?> setupProfile(
+            @AuthenticationPrincipal String visitorId,
+            @Valid @RequestBody ProfileSetupRequest request) {
+        log.info("프로필 초기 설정 요청 - visitorId: {}", visitorId);
+
+        if (visitorId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        try {
+            MemberProfileResponse response = memberService.setupProfile(visitorId, request);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            // 회원을 찾을 수 없는 경우
+            return ResponseEntity.status(404).body(Map.of(
+                    "error", "MEMBER_NOT_FOUND",
+                    "message", e.getMessage()
+            ));
+        } catch (IllegalStateException e) {
+            // 이미 프로필이 설정된 경우
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "PROFILE_ALREADY_SET",
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 회원 탈퇴 (soft delete)
+     * POST /api/users/me/delete
+     */
+    @PostMapping("/me/delete")
+    public ResponseEntity<Map<String, String>> deleteAccount(@AuthenticationPrincipal String visitorId) {
+        log.info("회원 탈퇴 요청 - visitorId: {}", visitorId);
+
+        if (visitorId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        memberService.deleteAccount(visitorId);
+        return ResponseEntity.ok(Map.of("message", "회원 탈퇴가 완료되었습니다"));
+    }
+
+    /**
+     * 특정 유저 프로필 조회
+     * GET /api/users/{memberId}
+     */
+    @GetMapping("/{targetMemberId}")
+    public ResponseEntity<MemberProfileResponse> getMemberProfile(
+            @AuthenticationPrincipal String visitorId,
+            @PathVariable UUID targetMemberId) {
+        log.info("유저 프로필 조회 요청 - visitorId: {}, targetMemberId: {}", visitorId, targetMemberId);
+
+        if (visitorId == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        MemberProfileResponse response = memberService.getMemberProfile(targetMemberId);
+        return ResponseEntity.ok(response);
     }
 }
