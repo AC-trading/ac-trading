@@ -3,9 +3,9 @@ spring:
     name: acnh-trading
 
   datasource:
-    url: jdbc:postgresql://ep-rough-wildflower-a1vl69i0-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
-    username: neondb_owner
-    password: npg_ck8szrxEySw3
+    url: ${DATABASE_URL:jdbc:postgresql://ep-rough-wildflower-a1vl69i0-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require}
+    username: ${DATABASE_USERNAME:neondb_owner}
+    password: ${DATABASE_PASSWORD:npg_ck8szrxEySw3}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5

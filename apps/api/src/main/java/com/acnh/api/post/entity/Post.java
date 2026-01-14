@@ -78,12 +78,22 @@ public class Post extends BaseEntity {
     public void update(String postType, Long categoryId, String itemName,
                        String currencyType, Integer price, Boolean priceNegotiable,
                        String description) {
+        if (itemName == null || itemName.isBlank()) {
+            throw new IllegalArgumentException("아이템명은 필수입니다");
+        }
+        if (categoryId == null) {
+            throw new IllegalArgumentException("카테고리는 필수입니다");
+        }
+        if (description == null || description.isBlank()) {
+            throw new IllegalArgumentException("설명은 필수입니다");
+        }
+
         this.postType = postType;
         this.categoryId = categoryId;
         this.itemName = itemName;
         this.currencyType = currencyType;
         this.price = price;
-        this.priceNegotiable = priceNegotiable;
+        this.priceNegotiable = priceNegotiable != null ? priceNegotiable : false;
         this.description = description;
     }
 
