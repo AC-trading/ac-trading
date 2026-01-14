@@ -14,6 +14,7 @@ import com.acnh.api.member.entity.Member;
 import com.acnh.api.member.repository.MemberRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -372,8 +373,10 @@ public class AuthController {
      * - 앱에서 Kakao/Google SDK로 받은 토큰을 검증하고 JWT 발급
      */
     @PostMapping("/social")
+    // Before: @RequestBody만 사용 - @NotBlank 검증 미동작
+    // After: @Valid 추가하여 DTO 검증 활성화
     public ResponseEntity<?> socialLogin(
-            @RequestBody SocialLoginRequest request,
+            @Valid @RequestBody SocialLoginRequest request,
             HttpServletResponse response) {
 
         String provider = request.getProvider().toLowerCase();
