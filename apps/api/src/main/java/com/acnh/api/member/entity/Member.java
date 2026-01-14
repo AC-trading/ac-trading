@@ -7,6 +7,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -82,6 +83,31 @@ public class Member extends BaseEntity {
         this.islandName = islandName;
         this.dreamAddress = dreamAddress;
         this.hemisphere = hemisphere;
+    }
+
+    /**
+     * 초기 프로필 설정 (신규 유저)
+     */
+    public void setupProfile(String nickname, String islandName, String dreamAddress, String hemisphere) {
+        this.nickname = nickname;
+        this.islandName = islandName;
+        this.dreamAddress = dreamAddress;
+        this.hemisphere = hemisphere != null ? hemisphere : "NORTH";
+    }
+
+    /**
+     * 프로필 수정 가능 여부 확인
+     * - 마지막 수정(updatedAt) 후 24시간 경과 필요
+     */
+    public boolean canUpdateProfile() {
+        return getUpdatedAt().plusHours(24).isBefore(LocalDateTime.now());
+    }
+
+    /**
+     * 다음 프로필 수정 가능 시간 조회
+     */
+    public LocalDateTime getNextProfileUpdateAvailableAt() {
+        return getUpdatedAt().plusHours(24);
     }
 
     /**

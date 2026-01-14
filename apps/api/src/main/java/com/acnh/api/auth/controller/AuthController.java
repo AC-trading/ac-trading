@@ -196,7 +196,7 @@ public class AuthController {
                     "accessToken=" + URLEncoder.encode(accessToken, StandardCharsets.UTF_8) +
                     "&idToken=" + URLEncoder.encode(cognitoTokens.getIdToken(), StandardCharsets.UTF_8);
 
-            log.info("OAuth 로그인 성공 - userId: {}, provider: {}", member.getUuid(), userInfo.getProvider());
+            log.info("OAuth 로그인 성공 - memberId: {}, provider: {}", member.getUuid(), userInfo.getProvider());
             response.sendRedirect(redirectUrl);
 
         } catch (Exception e) {
@@ -208,14 +208,14 @@ public class AuthController {
     }
 
     /**
-     * 사용자 조회 또는 생성
-     * - cognitoSub로 기존 사용자 조회
+     * 회원 조회 또는 생성
+     * - cognitoSub로 기존 회원 조회
      * - 없으면 새로 생성
      */
     private Member findOrCreateMember(CognitoUserInfo userInfo) {
         return memberRepository.findByCognitoSubAndDeletedAtIsNull(userInfo.getSub())
                 .orElseGet(() -> {
-                    // 새 사용자 생성
+                    // 새 회원 생성
                     Member newMember = Member.builder()
                             .uuid(UUID.randomUUID())
                             .cognitoSub(userInfo.getSub())
@@ -230,9 +230,9 @@ public class AuthController {
                             .build();
 
                     Member savedMember = memberRepository.save(newMember);
-                    // Before: log.info("새 사용자 생성 - uuid: {}, email: {}", savedMember.getUuid(), savedMember.getEmail());
+                    // Before: log.info("새 회원 생성 - uuid: {}, email: {}", savedMember.getUuid(), savedMember.getEmail());
                     // After: PII(이메일) 로깅 제거 - uuid만 로깅하여 개인정보 보호
-                    log.info("새 사용자 생성 - uuid: {}", savedMember.getUuid());
+                    log.info("새 회원 생성 - uuid: {}", savedMember.getUuid());
                     return savedMember;
                 });
     }
@@ -315,11 +315,11 @@ public class AuthController {
 
         // Before: email이 null이어도 토큰 생성 진행
         // After: 삭제된 사용자(email null)인 경우 401 반환하여 보안 강화
-        // DB에서 사용자 조회하여 이메일 가져오기
+        // DB에서 회원 조회하여 이메일 가져오기
         Member member = memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(userId))
                 .orElse(null);
 
-        // 사용자가 존재하지 않거나 삭제된 경우 401 반환
+        // 회원이 존재하지 않거나 삭제된 경우 401 반환
         if (member == null || member.getEmail() == null) {
             log.warn("토큰 갱신 실패 - 사용자를 찾을 수 없음: {}", userId);
             ResponseCookie deleteCookie = cookieUtil.deleteRefreshTokenCookie();
@@ -403,7 +403,7 @@ public class AuthController {
                     request.getIdToken()
             );
 
-            // 2. DB에서 사용자 조회 또는 생성
+            // 2. DB에서 회원 조회 또는 생성
             Member member = findOrCreateMemberFromSocial(userInfo);
 
             // 3. JWT 토큰 발급
@@ -418,7 +418,7 @@ public class AuthController {
             ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(refreshToken, maxAgeSeconds);
             cookieUtil.addCookie(response, refreshCookie);
 
-            log.info("소셜 로그인 성공 (앱) - userId: {}, provider: {}", member.getUuid(), provider);
+            log.info("소셜 로그인 성공 (앱) - memberId: {}, provider: {}", member.getUuid(), provider);
 
             // 5. Access Token 응답
             return ResponseEntity.ok(TokenResponse.of(
@@ -439,7 +439,7 @@ public class AuthController {
     }
 
     /**
-     * 소셜 로그인 사용자 조회 또는 생성 (네이티브 앱용)
+     * 소셜 로그인 회원 조회 또는 생성 (네이티브 앱용)
      */
     private Member findOrCreateMemberFromSocial(SocialUserInfo userInfo) {
         String cognitoSubFormat = userInfo.toCognitoSubFormat();
@@ -460,9 +460,9 @@ public class AuthController {
                             .build();
 
                     Member savedMember = memberRepository.save(newMember);
-                    // Before: log.info("새 사용자 생성 (앱) - uuid: {}, email: {}", savedMember.getUuid(), savedMember.getEmail());
+                    // Before: log.info("새 회원 생성 (앱) - uuid: {}, email: {}", savedMember.getUuid(), savedMember.getEmail());
                     // After: PII(이메일) 로깅 제거 - uuid만 로깅하여 개인정보 보호
-                    log.info("새 사용자 생성 (앱) - uuid: {}", savedMember.getUuid());
+                    log.info("새 회원 생성 (앱) - uuid: {}", savedMember.getUuid());
                     return savedMember;
                 });
     }

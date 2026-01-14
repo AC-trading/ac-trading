@@ -17,14 +17,14 @@ import java.time.LocalDateTime;
 @Table(name = "user_fcm_tokens")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class UserFcmToken extends BaseEntity {
+public class MemberFcmToken extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(name = "user_id", nullable = false)
-    private Long userId;
+    private Long memberId;
 
     @Column(name = "fcm_token", nullable = false, length = 500)
     private String fcmToken;
@@ -42,9 +42,9 @@ public class UserFcmToken extends BaseEntity {
     private LocalDateTime lastUsedAt;
 
     @Builder
-    public UserFcmToken(Long userId, String fcmToken, String deviceType,
-                        String deviceId, Boolean isActive) {
-        this.userId = userId;
+    public MemberFcmToken(Long memberId, String fcmToken, String deviceType,
+                          String deviceId, Boolean isActive) {
+        this.memberId = memberId;
         this.fcmToken = fcmToken;
         this.deviceType = deviceType;
         this.deviceId = deviceId;
