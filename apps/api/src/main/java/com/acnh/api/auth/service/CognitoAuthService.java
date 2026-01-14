@@ -42,11 +42,21 @@ public class CognitoAuthService {
     private String redirectUri;
 
     /**
-     * Authorization Code를 Cognito 토큰으로 교환
+     * Authorization Code를 Cognito 토큰으로 교환 (기본 redirect URI 사용)
      * - code: Cognito에서 받은 authorization code
      * - 반환: access_token, id_token, refresh_token 포함
      */
     public CognitoTokenResponse exchangeCodeForTokens(String code) {
+        return exchangeCodeForTokens(code, redirectUri);
+    }
+
+    /**
+     * Authorization Code를 Cognito 토큰으로 교환 (커스텀 redirect URI)
+     * - code: Cognito에서 받은 authorization code
+     * - customRedirectUri: 토큰 교환에 사용할 redirect URI
+     * - 반환: access_token, id_token, refresh_token 포함
+     */
+    public CognitoTokenResponse exchangeCodeForTokens(String code, String customRedirectUri) {
         String tokenEndpoint = String.format("https://%s/oauth2/token", cognitoDomain);
 
         // Basic Auth 헤더 생성 (client_id:client_secret)
@@ -62,7 +72,7 @@ public class CognitoAuthService {
         MultiValueMap<String, String> body = new LinkedMultiValueMap<>();
         body.add("grant_type", "authorization_code");
         body.add("code", code);
-        body.add("redirect_uri", redirectUri);
+        body.add("redirect_uri", customRedirectUri);
 
         HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(body, headers);
 

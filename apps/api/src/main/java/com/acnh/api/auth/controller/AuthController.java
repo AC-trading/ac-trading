@@ -3,9 +3,12 @@ package com.acnh.api.auth.controller;
 import com.acnh.api.auth.dto.CognitoTokenResponse;
 import com.acnh.api.auth.dto.CognitoUserInfo;
 import com.acnh.api.auth.dto.ErrorResponse;
+import com.acnh.api.auth.dto.SocialLoginRequest;
+import com.acnh.api.auth.dto.SocialUserInfo;
 import com.acnh.api.auth.dto.TokenResponse;
 import com.acnh.api.auth.jwt.JwtTokenProvider;
 import com.acnh.api.auth.service.CognitoAuthService;
+import com.acnh.api.auth.service.SocialAuthService;
 import com.acnh.api.auth.util.CookieUtil;
 import com.acnh.api.member.entity.Member;
 import com.acnh.api.member.repository.MemberRepository;
@@ -22,13 +25,15 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Set;
 import java.util.UUID;
 
 /**
  * 인증 관련 API 컨트롤러
- * - /api/auth/callback: OAuth 콜백 (Cognito -> 토큰 교환 -> DB 동기화 -> 프론트 리다이렉트)
- * - /api/auth/refresh: Refresh Token으로 Access Token 갱신
- * - /api/auth/logout: 로그아웃 (쿠키 삭제)
+ * - GET  /api/auth/login/{provider}: 소셜 로그인 시작 (Google/Kakao)
+ * - GET  /api/auth/callback/{provider}: 소셜 로그인 콜백 처리
+ * - POST /api/auth/refresh: Access Token 갱신
+ * - POST /api/auth/logout: 로그아웃 및 토큰 무효화
  */
 @Slf4j
 @RestController
@@ -36,26 +41,90 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AuthController {
 
+    private static final Set<String> SUPPORTED_PROVIDERS = Set.of("google", "kakao");
+
     private final JwtTokenProvider jwtTokenProvider;
     private final CookieUtil cookieUtil;
     private final CognitoAuthService cognitoAuthService;
+    private final SocialAuthService socialAuthService;
     private final MemberRepository memberRepository;
 
     @Value("${frontend.url}")
     private String frontendUrl;
 
+    @Value("${cognito.domain}")
+    private String cognitoDomain;
+
+    @Value("${cognito.client-id}")
+    private String cognitoClientId;
+
+    @Value("${cognito.redirect-uri-base:#{null}}")
+    private String redirectUriBase;
+
+    @Value("${cognito.redirect-uri}")
+    private String defaultRedirectUri;
+
     /**
-     * OAuth 콜백 핸들러
+     * 소셜 로그인 시작
+     * - Cognito Hosted UI로 리다이렉트
+     * - provider: google 또는 kakao
+     */
+    @GetMapping("/login/{provider}")
+    public void startSocialLogin(
+            @PathVariable String provider,
+            HttpServletResponse response) throws IOException {
+
+        String normalizedProvider = provider.toLowerCase();
+
+        // 지원하지 않는 provider 체크
+        if (!SUPPORTED_PROVIDERS.contains(normalizedProvider)) {
+            log.warn("지원하지 않는 OAuth provider: {}", provider);
+            response.sendRedirect(frontendUrl + "/login?error=unsupported_provider");
+            return;
+        }
+
+        // Cognito identity_provider 이름 매핑 (첫 글자 대문자)
+        String identityProvider = normalizedProvider.substring(0, 1).toUpperCase()
+                + normalizedProvider.substring(1);
+
+        // provider별 redirect URI 생성
+        String redirectUri = getRedirectUri(normalizedProvider);
+
+        // Cognito OAuth authorize URL 생성
+        String authorizeUrl = String.format(
+                "https://%s/oauth2/authorize?client_id=%s&response_type=code&scope=openid+email+profile&redirect_uri=%s&identity_provider=%s",
+                cognitoDomain,
+                cognitoClientId,
+                URLEncoder.encode(redirectUri, StandardCharsets.UTF_8),
+                identityProvider
+        );
+
+        log.info("소셜 로그인 시작 - provider: {}, redirectUri: {}", normalizedProvider, redirectUri);
+        response.sendRedirect(authorizeUrl);
+    }
+
+    /**
+     * OAuth 콜백 핸들러 (provider별)
      * - Cognito에서 authorization code를 받아 토큰으로 교환
      * - DB에 사용자 생성/조회
      * - JWT 발급 후 프론트엔드로 리다이렉트
      */
-    @GetMapping("/callback")
+    @GetMapping("/callback/{provider}")
     public void handleOAuthCallback(
+            @PathVariable String provider,
             @RequestParam(value = "code", required = false) String code,
             @RequestParam(value = "error", required = false) String error,
             @RequestParam(value = "error_description", required = false) String errorDescription,
             HttpServletResponse response) throws IOException {
+
+        String normalizedProvider = provider.toLowerCase();
+
+        // 지원하지 않는 provider 체크
+        if (!SUPPORTED_PROVIDERS.contains(normalizedProvider)) {
+            log.warn("지원하지 않는 OAuth provider: {}", provider);
+            response.sendRedirect(frontendUrl + "/login?error=unsupported_provider");
+            return;
+        }
 
         // 에러 응답 처리 (사용자가 로그인 취소한 경우 등)
         if (error != null) {
@@ -73,8 +142,9 @@ public class AuthController {
         }
 
         try {
-            // 1. Cognito에서 토큰 교환
-            CognitoTokenResponse cognitoTokens = cognitoAuthService.exchangeCodeForTokens(code);
+            // 1. Cognito에서 토큰 교환 (provider별 redirect URI 사용)
+            String callbackRedirectUri = getRedirectUri(normalizedProvider);
+            CognitoTokenResponse cognitoTokens = cognitoAuthService.exchangeCodeForTokens(code, callbackRedirectUri);
 
             // 2. ID Token에서 사용자 정보 파싱
             CognitoUserInfo userInfo = cognitoAuthService.parseIdToken(cognitoTokens.getIdToken());
@@ -143,6 +213,18 @@ public class AuthController {
      */
     private String generateDefaultNickname() {
         return "섬주민" + System.currentTimeMillis() % 10000;
+    }
+
+    /**
+     * Provider별 Redirect URI 생성
+     * - redirectUriBase가 설정되어 있으면: {base}/api/auth/callback/{provider}
+     * - 없으면 defaultRedirectUri 사용 (기존 호환성)
+     */
+    private String getRedirectUri(String provider) {
+        if (redirectUriBase != null && !redirectUriBase.isBlank()) {
+            return redirectUriBase + "/api/auth/callback/" + provider;
+        }
+        return defaultRedirectUri;
     }
 
     /**
@@ -241,6 +323,99 @@ public class AuthController {
         log.info("로그아웃 처리 완료");
 
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * 네이티브 앱 소셜 로그인
+     * - 앱에서 Kakao/Google SDK로 받은 토큰을 검증하고 JWT 발급
+     */
+    @PostMapping("/social")
+    public ResponseEntity<?> socialLogin(
+            @RequestBody SocialLoginRequest request,
+            HttpServletResponse response) {
+
+        String provider = request.getProvider().toLowerCase();
+
+        // 지원하지 않는 provider 체크
+        if (!SUPPORTED_PROVIDERS.contains(provider)) {
+            log.warn("지원하지 않는 OAuth provider: {}", provider);
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(ErrorResponse.of(
+                            HttpStatus.BAD_REQUEST.value(),
+                            "Bad Request",
+                            "지원하지 않는 provider입니다: " + provider
+                    ));
+        }
+
+        try {
+            // 1. 소셜 토큰 검증 및 사용자 정보 조회
+            SocialUserInfo userInfo = socialAuthService.verifyTokenAndGetUserInfo(
+                    provider,
+                    request.getAccessToken(),
+                    request.getIdToken()
+            );
+
+            // 2. DB에서 사용자 조회 또는 생성
+            Member member = findOrCreateMemberFromSocial(userInfo);
+
+            // 3. JWT 토큰 발급
+            String accessToken = jwtTokenProvider.createAccessToken(
+                    member.getUuid().toString(),
+                    member.getEmail()
+            );
+            String refreshToken = jwtTokenProvider.createRefreshToken(member.getUuid().toString());
+
+            // 4. Refresh Token을 HttpOnly 쿠키로 설정
+            long maxAgeSeconds = jwtTokenProvider.getRefreshTokenValidity() / 1000;
+            ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(refreshToken, maxAgeSeconds);
+            cookieUtil.addCookie(response, refreshCookie);
+
+            log.info("소셜 로그인 성공 (앱) - userId: {}, provider: {}", member.getUuid(), provider);
+
+            // 5. Access Token 응답
+            return ResponseEntity.ok(TokenResponse.of(
+                    accessToken,
+                    jwtTokenProvider.getAccessTokenValidity()
+            ));
+
+        } catch (Exception e) {
+            log.error("소셜 로그인 실패: {}", e.getMessage(), e);
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(ErrorResponse.of(
+                            HttpStatus.UNAUTHORIZED.value(),
+                            "Unauthorized",
+                            "소셜 로그인에 실패했습니다: " + e.getMessage()
+                    ));
+        }
+    }
+
+    /**
+     * 소셜 로그인 사용자 조회 또는 생성 (네이티브 앱용)
+     */
+    private Member findOrCreateMemberFromSocial(SocialUserInfo userInfo) {
+        String cognitoSubFormat = userInfo.toCognitoSubFormat();
+
+        return memberRepository.findByCognitoSubAndDeletedAtIsNull(cognitoSubFormat)
+                .orElseGet(() -> {
+                    Member newMember = Member.builder()
+                            .uuid(UUID.randomUUID())
+                            .cognitoSub(cognitoSubFormat)
+                            .email(userInfo.getEmail())
+                            .provider(userInfo.getProvider())
+                            .providerId(userInfo.getProviderId())
+                            .nickname(generateDefaultNickname())
+                            .islandName("무인도")
+                            .hemisphere("NORTH")
+                            .mannerScore(100)
+                            .totalTradeCount(0)
+                            .build();
+
+                    Member savedMember = memberRepository.save(newMember);
+                    log.info("새 사용자 생성 (앱) - uuid: {}, email: {}", savedMember.getUuid(), savedMember.getEmail());
+                    return savedMember;
+                });
     }
 
     /**
