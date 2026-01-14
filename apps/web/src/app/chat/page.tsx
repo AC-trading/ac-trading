@@ -88,9 +88,11 @@ function ChatItem({ chat }: { chat: (typeof mockChats)[0] }) {
       className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
     >
       {/* 프로필 이미지 */}
-      <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-2xl flex-shrink-0">
-        {chat.user.avatar}
-      </div>
+      <img
+        src="/images/defaults/raccoon.png"
+        alt="프로필"
+        className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 object-cover"
+      />
 
       {/* 채팅 정보 */}
       <div className="flex-1 min-w-0">
@@ -102,10 +104,18 @@ function ChatItem({ chat }: { chat: (typeof mockChats)[0] }) {
         <p className="text-sm text-gray-600 truncate mt-0.5">{chat.lastMessage}</p>
       </div>
 
-      {/* 상품 이미지 */}
-      <div className="w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center text-gray-400">
-        📦
-      </div>
+      {/*
+        TODO: 상품 카테고리별 아이콘 동적 변경
+        - chat.product?.image 또는 카테고리 기반 아이콘으로 변경 필요
+        - 아이콘 위치: /public/icons/
+        - 카테고리별 아이콘: DIY.png, bell.png, clothes.png, fossil.png,
+          island.png, mile ticket.png, radish.png 등
+      */}
+      <img
+        src={chat.product?.image || "/icons/DIY.png"}
+        alt={chat.product?.image ? "상품 이미지" : "상품 카테고리"}
+        className="w-12 h-12 rounded-lg flex-shrink-0 object-cover bg-gray-100"
+      />
 
       {/* 안읽은 메시지 표시 */}
       {chat.unread > 0 && (

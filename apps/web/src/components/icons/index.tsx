@@ -5,18 +5,18 @@ export const HomeIcon = ({ active = false }: { active?: boolean }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M3 9.5L12 3L21 9.5V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9.5Z"
-      stroke={active ? "#FF9F1C" : "#9CA3AF"}
+      stroke={active ? "#7ECEC5" : "#9CA3AF"}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      fill={active ? "#FF9F1C" : "none"}
+      fill={active ? "#7ECEC5" : "none"}
     />
   </svg>
 );
 
 export const ArticleIcon = ({ active = false }: { active?: boolean }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="3" y="3" width="18" height="18" rx="2" stroke={active ? "#FF9F1C" : "#9CA3AF"} strokeWidth="2" fill={active ? "#FF9F1C" : "none"} />
+    <rect x="3" y="3" width="18" height="18" rx="2" stroke={active ? "#7ECEC5" : "#9CA3AF"} strokeWidth="2" fill={active ? "#7ECEC5" : "none"} />
     <line x1="7" y1="8" x2="17" y2="8" stroke={active ? "white" : "#9CA3AF"} strokeWidth="2" />
     <line x1="7" y1="12" x2="17" y2="12" stroke={active ? "white" : "#9CA3AF"} strokeWidth="2" />
     <line x1="7" y1="16" x2="13" y2="16" stroke={active ? "white" : "#9CA3AF"} strokeWidth="2" />
@@ -27,9 +27,9 @@ export const LocationIcon = ({ active = false }: { active?: boolean }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z"
-      stroke={active ? "#FF9F1C" : "#9CA3AF"}
+      stroke={active ? "#7ECEC5" : "#9CA3AF"}
       strokeWidth="2"
-      fill={active ? "#FF9F1C" : "none"}
+      fill={active ? "#7ECEC5" : "none"}
     />
     <circle cx="12" cy="9" r="2.5" stroke={active ? "white" : "#9CA3AF"} strokeWidth="2" fill="none" />
   </svg>
@@ -39,21 +39,21 @@ export const ChatIcon = ({ active = false }: { active?: boolean }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     <path
       d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z"
-      stroke={active ? "#FF9F1C" : "#9CA3AF"}
+      stroke={active ? "#7ECEC5" : "#9CA3AF"}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      fill={active ? "#FF9F1C" : "none"}
+      fill={active ? "#7ECEC5" : "none"}
     />
   </svg>
 );
 
 export const UserIcon = ({ active = false }: { active?: boolean }) => (
   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="12" cy="8" r="4" stroke={active ? "#FF9F1C" : "#9CA3AF"} strokeWidth="2" fill={active ? "#FF9F1C" : "none"} />
+    <circle cx="12" cy="8" r="4" stroke={active ? "#7ECEC5" : "#9CA3AF"} strokeWidth="2" fill={active ? "#7ECEC5" : "none"} />
     <path
       d="M4 20C4 17.2386 7.58172 15 12 15C16.4183 15 20 17.2386 20 20"
-      stroke={active ? "#FF9F1C" : "#9CA3AF"}
+      stroke={active ? "#7ECEC5" : "#9CA3AF"}
       strokeWidth="2"
       strokeLinecap="round"
     />
