@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "ko-KR"
+
+reviews:
+  # 리뷰 언어 설정
+  language: "ko-KR"
+  
+  # 리뷰 프로필 (chill: 부드러운 톤, assertive: 직접적인 톤)
+  profile: "chill"
+  
+  # 높은 수준의 요약 포함
+  high_level_summary: true
+  
+  # 시 형식 요약 비활성화
+  poem: false
+  
+  # 리뷰 상태 표시
+  review_status: true
+  
+  # 변경사항 요약 삽입 위치
+  collapse_walkthrough: false
+  
+  # 자동 리뷰 활성화
+  auto_review:
+    enabled: true
+    drafts: false
+
+chat:
+  # 채팅 응답도 한국어로
+  language: "ko-KR"
