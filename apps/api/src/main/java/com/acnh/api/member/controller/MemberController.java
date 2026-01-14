@@ -40,7 +40,9 @@ public class MemberController {
 
         return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(userId))
                 .map(member -> {
-                    log.info("사용자 정보 조회 성공 - email: {}", member.getEmail());
+                    // Before: log.info("사용자 정보 조회 성공 - email: {}", member.getEmail());
+                    // After: PII(이메일) 로깅 제거 - userId만 로깅하여 개인정보 보호
+                    log.info("사용자 정보 조회 성공 - userId: {}", userId);
                     return ResponseEntity.ok(MemberResponse.from(member));
                 })
                 .orElseGet(() -> {

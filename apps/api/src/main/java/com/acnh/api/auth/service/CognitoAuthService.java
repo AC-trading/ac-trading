@@ -145,7 +145,9 @@ public class CognitoAuthService {
                 }
             }
 
-            log.info("ID Token 파싱 완료 - sub: {}, email: {}, provider: {}", sub, email, provider);
+            // Before: log.info("ID Token 파싱 완료 - sub: {}, email: {}, provider: {}", sub, email, provider);
+            // After: PII(이메일) 로깅 제거 - sub와 provider만 로깅하여 개인정보 보호
+            log.info("ID Token 파싱 완료 - sub: {}, provider: {}", sub, provider);
 
             return new CognitoUserInfo(sub, email, emailVerified, provider, providerId, name, picture);
         } catch (Exception e) {
