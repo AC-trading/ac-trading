@@ -76,10 +76,16 @@ public class MemberService {
     /**
      * 신규 유저 프로필 초기 설정
      * - 24시간 제한 없음
+     * - 이미 프로필 설정된 경우 거부 (기본 닉네임 "섬주민"으로 판단)
      */
     @Transactional
     public MemberProfileResponse setupProfile(String visitorId, ProfileSetupRequest request) {
         Member member = findMemberByUuid(visitorId);
+
+        // 이미 프로필이 설정된 경우 (기본 닉네임이 아닌 경우) 거부
+        if (!member.getNickname().startsWith("섬주민")) {
+            throw new IllegalStateException("이미 프로필이 설정되어 있습니다. 프로필 수정 API를 사용해주세요.");
+        }
 
         member.setupProfile(
                 request.getNickname(),
