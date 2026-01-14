@@ -59,7 +59,7 @@ export default function ProfilePage() {
         className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
       >
         {/* 프로필 이미지 */}
-        <div className="w-14 h-14 rounded-full bg-orange-100 flex items-center justify-center text-2xl">
+        <div className="w-14 h-14 rounded-full bg-[#BAE8E7] flex items-center justify-center text-2xl">
           👤
         </div>
         <div className="flex-1">
@@ -72,7 +72,7 @@ export default function ProfilePage() {
       </Link>
 
       {/* 당근페이 배너 */}
-      <div className="mx-4 my-2 p-4 bg-orange-50 rounded-xl flex items-center justify-between">
+      <div className="mx-4 my-2 p-4 bg-[#BAE8E7] rounded-xl flex items-center justify-between">
         <span className="text-primary font-semibold">당근페이</span>
         <span className="text-gray-600 text-sm">중고거래는 이제 당근페이로 해보세요!</span>
       </div>
@@ -83,7 +83,7 @@ export default function ProfilePage() {
           href="/profile/sales"
           className="flex flex-col items-center gap-2"
         >
-          <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-[#BAE8E7] flex items-center justify-center">
             <ShoppingBagIcon className="text-primary" />
           </div>
           <span className="text-sm text-gray-700">판매내역</span>
@@ -92,7 +92,7 @@ export default function ProfilePage() {
           href="/profile/purchases"
           className="flex flex-col items-center gap-2"
         >
-          <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-[#BAE8E7] flex items-center justify-center">
             <ShoppingBagIcon className="text-primary" />
           </div>
           <span className="text-sm text-gray-700">구매내역</span>
@@ -101,7 +101,7 @@ export default function ProfilePage() {
           href="/profile/favorites"
           className="flex flex-col items-center gap-2"
         >
-          <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+          <div className="w-12 h-12 rounded-full bg-[#BAE8E7] flex items-center justify-center">
             <HeartIcon filled className="text-primary" />
           </div>
           <span className="text-sm text-gray-700">관심목록</span>
