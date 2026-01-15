@@ -1,91 +1,19 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { MobileLayout, Header } from "@/components/common";
 import { RefreshIcon, BellIcon } from "@/components/icons";
-
-// 더미 채팅 목록 데이터
-const mockChats = [
-  {
-    id: 1,
-    user: { name: "요우", location: "군자동", avatar: "🧑" },
-    lastMessage: "감사합니다!! 조심히가세요!",
-    time: "1주 전",
-    product: { image: "/images/product1.jpg" },
-    unread: 0,
-  },
-  {
-    id: 2,
-    user: { name: "요이키", location: "문정동", avatar: "👩" },
-    lastMessage: "확인했습니다 감사합니다 :)",
-    time: "1주 전",
-    product: { image: "/images/product2.jpg" },
-    unread: 0,
-  },
-  {
-    id: 3,
-    user: { name: "chan", location: "구의동", avatar: "🧔" },
-    lastMessage: "넵 수고하세용",
-    time: "2주 전",
-    product: { image: "/images/product3.jpg" },
-    unread: 0,
-  },
-  {
-    id: 4,
-    user: { name: "오지", location: "보문동2가", avatar: "👦" },
-    lastMessage: "안녕하세요 답장이 너무 늦었네여 죄송...",
-    time: "1달 전",
-    product: { image: "/images/product4.jpg" },
-    unread: 0,
-  },
-  {
-    id: 5,
-    user: { name: "누룽지", location: "면목동", avatar: "👧" },
-    lastMessage: "이랍다님이 이모티콘을 보냈어요.",
-    time: "1달 전",
-    product: { image: "/images/product5.jpg" },
-    unread: 0,
-  },
-  {
-    id: 6,
-    user: { name: "kenny", location: "자양제4동", avatar: "🧑‍🦱" },
-    lastMessage: "네.",
-    time: "3달 전",
-    product: { image: "/images/product6.jpg" },
-    unread: 0,
-  },
-  {
-    id: 7,
-    user: { name: "자리보금", location: "옥수동", avatar: "👨" },
-    lastMessage: "자리보금님이 이모티콘을 보냈어요.",
-    time: "3달 전",
-    product: { image: "/images/product7.jpg" },
-    unread: 0,
-  },
-  {
-    id: 8,
-    user: { name: "리빙스턴", location: "면목동", avatar: "🧓" },
-    lastMessage: "리빙스턴님이 이모티콘을 보냈어요.",
-    time: "6달 전",
-    product: { image: "/images/product8.jpg" },
-    unread: 0,
-  },
-  {
-    id: 9,
-    user: { name: "까룽이", location: "중곡동", avatar: "👶" },
-    lastMessage: "옷 예쁘네요!",
-    time: "7달 전",
-    product: { image: "/images/product9.jpg" },
-    unread: 0,
-  },
-];
+import { useAuth } from "@/context/AuthContext";
+import { getChatRooms, formatChatTime, ChatRoom } from "@/lib/chatApi";
 
 // 채팅 아이템 컴포넌트
-function ChatItem({ chat }: { chat: (typeof mockChats)[0] }) {
+function ChatItem({ chat }: { chat: ChatRoom }) {
   return (
     <Link
       href={`/chat/${chat.id}`}
-      className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100"
+      className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 relative"
     >
       {/* 프로필 이미지 */}
       <img
@@ -97,40 +25,111 @@ function ChatItem({ chat }: { chat: (typeof mockChats)[0] }) {
       {/* 채팅 정보 */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-gray-900">{chat.user.name}</span>
-          <span className="text-xs text-gray-400">{chat.user.location}</span>
-          <span className="text-xs text-gray-400">· {chat.time}</span>
+          <span className="font-medium text-gray-900">{chat.otherUserNickname}</span>
+          {chat.otherUserIslandName && (
+            <span className="text-xs text-gray-400">{chat.otherUserIslandName}</span>
+          )}
+          <span className="text-xs text-gray-400">· {formatChatTime(chat.lastMessageAt)}</span>
         </div>
-        <p className="text-sm text-gray-600 truncate mt-0.5">{chat.lastMessage}</p>
+        <p className="text-sm text-gray-600 truncate mt-0.5">
+          {chat.lastMessage || "채팅을 시작해보세요!"}
+        </p>
       </div>
 
-      {/*
-        TODO: 상품 카테고리별 아이콘 동적 변경
-        - chat.product?.image 또는 카테고리 기반 아이콘으로 변경 필요
-        - 아이콘 위치: /public/icons/
-        - 카테고리별 아이콘: DIY.png, bell.png, clothes.png, fossil.png,
-          island.png, mile ticket.png, radish.png 등
-      */}
-      <img
-        src={chat.product?.image || "/icons/DIY.png"}
-        alt={chat.product?.image ? "상품 이미지" : "상품 카테고리"}
-        className="w-12 h-12 rounded-lg flex-shrink-0 object-cover bg-gray-100"
-      />
+      {/* 상품 정보 표시 */}
+      <div className="flex flex-col items-end gap-1">
+        <span className="text-xs text-gray-500 max-w-[80px] truncate">
+          {chat.postItemName}
+        </span>
+        {chat.postStatus && (
+          <span className={`text-xs px-1.5 py-0.5 rounded ${
+            chat.postStatus === 'AVAILABLE' ? 'bg-green-100 text-green-700' :
+            chat.postStatus === 'RESERVED' ? 'bg-yellow-100 text-yellow-700' :
+            'bg-gray-100 text-gray-700'
+          }`}>
+            {chat.postStatus === 'AVAILABLE' ? '판매중' :
+             chat.postStatus === 'RESERVED' ? '예약중' : '완료'}
+          </span>
+        )}
+      </div>
 
       {/* 안읽은 메시지 표시 */}
-      {chat.unread > 0 && (
-        <div className="absolute right-16 top-1/2 -translate-y-1/2">
-          <span className="w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
-            {chat.unread}
-          </span>
-        </div>
+      {chat.unreadCount > 0 && (
+        <span className="absolute right-4 top-4 w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">
+          {chat.unreadCount > 99 ? '99+' : chat.unreadCount}
+        </span>
       )}
     </Link>
   );
 }
 
-// 채팅 목록 페이지 - Figma 디자인 기반
+// 로딩 스켈레톤
+function ChatSkeleton() {
+  return (
+    <div className="flex items-center gap-3 p-4 border-b border-gray-100 animate-pulse">
+      <div className="w-12 h-12 rounded-full bg-gray-200" />
+      <div className="flex-1">
+        <div className="h-4 bg-gray-200 rounded w-24 mb-2" />
+        <div className="h-3 bg-gray-200 rounded w-40" />
+      </div>
+      <div className="w-12 h-12 rounded-lg bg-gray-200" />
+    </div>
+  );
+}
+
+// 채팅 목록 페이지
 export default function ChatListPage() {
+  const router = useRouter();
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const [chatRooms, setChatRooms] = useState<ChatRoom[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 채팅방 목록 조회
+  const fetchChatRooms = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await getChatRooms();
+      setChatRooms(response.chatRooms);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "채팅 목록을 불러오는데 실패했습니다");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 인증 확인 후 채팅방 목록 조회
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    fetchChatRooms();
+  }, [isAuthenticated, authLoading, router]);
+
+  // 새로고침
+  const handleRefresh = () => {
+    fetchChatRooms();
+  };
+
+  // 로딩 중
+  if (authLoading || isLoading) {
+    return (
+      <MobileLayout>
+        <Header title="채팅" />
+        <div>
+          {[...Array(5)].map((_, i) => (
+            <ChatSkeleton key={i} />
+          ))}
+        </div>
+      </MobileLayout>
+    );
+  }
+
   return (
     <MobileLayout>
       {/* 헤더 */}
@@ -138,7 +137,10 @@ export default function ChatListPage() {
         title="채팅"
         rightElement={
           <div className="flex items-center gap-2">
-            <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+            <button
+              onClick={handleRefresh}
+              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+            >
               <RefreshIcon className="w-5 h-5 text-gray-800" />
             </button>
             <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
@@ -148,15 +150,28 @@ export default function ChatListPage() {
         }
       />
 
+      {/* 에러 표시 */}
+      {error && (
+        <div className="p-4 bg-red-50 text-red-600 text-sm">
+          {error}
+          <button
+            onClick={handleRefresh}
+            className="ml-2 underline"
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
+
       {/* 채팅 목록 */}
       <div>
-        {mockChats.map((chat) => (
+        {chatRooms.map((chat) => (
           <ChatItem key={chat.id} chat={chat} />
         ))}
       </div>
 
       {/* 채팅 없을 때 빈 상태 */}
-      {mockChats.length === 0 && (
+      {!error && chatRooms.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
           <span className="text-6xl mb-4">💬</span>
           <p>아직 채팅이 없어요</p>
