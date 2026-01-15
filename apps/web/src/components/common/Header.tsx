@@ -65,9 +65,9 @@ export default function Header({
             </button>
           )}
           {showBell && (
-            <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+            <Link href="/alarm" className="p-1 hover:bg-gray-100 rounded-full transition-colors">
               <BellIcon className="text-gray-800" />
-            </button>
+            </Link>
           )}
 
           {/* 인증 상태 표시 */}
