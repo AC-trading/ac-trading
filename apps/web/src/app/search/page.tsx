@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { MobileLayout } from "@/components/common";
@@ -47,7 +47,13 @@ const mockSearchResults = [
 ];
 
 // 카테고리 목록
-const categories = ["전체", "가구", "가전", "의류", "뷰티", "DIY", "화석", "기타"];
+const categories = ["가구", "가전", "의류", "뷰티", "DIY 레시피", "화석", "악세사리", "기타"];
+
+// 화폐 유형 목록
+const currencyTypes = ["벨", "마일"];
+
+// 거래 유형 목록
+const tradeTypes = ["팔아요", "구해요"];
 
 // 가격 프리셋
 const pricePresets = [
@@ -78,9 +84,9 @@ function formatPrice(price: number): string {
 
 // 필터 상태 타입
 interface FilterState {
-  category: string;
-  currencyType: string;
-  tradeType: string;
+  category: string[];
+  currencyType: string[];
+  tradeType: string[];
   priceMin: string;
   priceMax: string;
 }
@@ -128,6 +134,120 @@ function SearchResultItem({ post }: { post: (typeof mockSearchResults)[0] }) {
   );
 }
 
+// 체크박스 필터 바텀시트 컴포넌트 (카테고리, 화폐, 거래유형용)
+function CheckboxFilterModal({
+  isOpen,
+  onClose,
+  title,
+  options,
+  selected,
+  onApply,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  title: string;
+  options: string[];
+  selected: string[];
+  onApply: (selected: string[]) => void;
+}) {
+  const [tempSelected, setTempSelected] = useState<string[]>(selected);
+
+  // 모달이 열릴 때 현재 선택값으로 초기화
+  useEffect(() => {
+    if (isOpen) {
+      setTempSelected(selected);
+    }
+  }, [isOpen, selected]);
+
+  const handleToggle = (option: string) => {
+    if (tempSelected.includes(option)) {
+      setTempSelected(tempSelected.filter((item) => item !== option));
+    } else {
+      setTempSelected([...tempSelected, option]);
+    }
+  };
+
+  const handleReset = () => {
+    setTempSelected([]);
+  };
+
+  const handleApply = () => {
+    onApply(tempSelected);
+    onClose();
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <>
+      {/* 배경 오버레이 */}
+      <div
+        className="fixed inset-0 bg-black/40 z-50"
+        onClick={onClose}
+      />
+
+      {/* 바텀시트 */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-w-[390px] mx-auto animate-slide-up">
+        {/* 핸들 */}
+        <div className="flex justify-center pt-3 pb-2">
+          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+        </div>
+
+        <div className="px-5 pb-8">
+          {/* 제목 */}
+          <h2 className="text-xl font-bold text-gray-900 mb-4">{title}</h2>
+
+          {/* 구분선 */}
+          <div className="border-t border-gray-200 mb-4" />
+
+          {/* 옵션 목록 */}
+          <div className="space-y-1 max-h-80 overflow-y-auto">
+            {options.map((option) => (
+              <button
+                key={option}
+                onClick={() => handleToggle(option)}
+                className="w-full flex items-center gap-3 py-3 hover:bg-gray-50 transition-colors"
+              >
+                {/* 체크박스 */}
+                <div
+                  className={`w-6 h-6 rounded border-2 flex items-center justify-center transition-colors ${
+                    tempSelected.includes(option)
+                      ? "bg-primary border-primary"
+                      : "border-gray-300"
+                  }`}
+                >
+                  {tempSelected.includes(option) && (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  )}
+                </div>
+                <span className="text-gray-800">{option}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* 버튼 */}
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={handleReset}
+              className="flex-1 py-3 border border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+            >
+              초기화
+            </button>
+            <button
+              onClick={handleApply}
+              className="flex-[2] py-3 bg-gray-900 rounded-lg text-white font-medium hover:bg-gray-800 transition-colors"
+            >
+              적용하기
+            </button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 // 가격 필터 바텀시트 컴포넌트
 function PriceFilterModal({
   isOpen,
@@ -144,6 +264,14 @@ function PriceFilterModal({
 }) {
   const [minValue, setMinValue] = useState(priceMin);
   const [maxValue, setMaxValue] = useState(priceMax);
+
+  // 모달이 열릴 때 현재 값으로 초기화
+  useEffect(() => {
+    if (isOpen) {
+      setMinValue(priceMin);
+      setMaxValue(priceMax);
+    }
+  }, [isOpen, priceMin, priceMax]);
 
   const handlePresetClick = (min: number, max: number) => {
     setMinValue(min.toString());
@@ -227,7 +355,7 @@ function PriceFilterModal({
             </button>
             <button
               onClick={handleApply}
-              className="flex-[2] py-3 bg-primary rounded-lg text-white font-medium hover:bg-primary-dark transition-colors"
+              className="flex-[2] py-3 bg-gray-900 rounded-lg text-white font-medium hover:bg-gray-800 transition-colors"
             >
               적용하기
             </button>
@@ -245,80 +373,94 @@ export default function SearchPage() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<typeof mockSearchResults>([]);
 
-  // 필터 상태
+  // 필터 상태 (배열로 다중 선택 지원)
   const [filters, setFilters] = useState<FilterState>({
-    category: "전체",
-    currencyType: "전체",
-    tradeType: "전체",
+    category: [],
+    currencyType: [],
+    tradeType: [],
     priceMin: "",
     priceMax: "",
   });
 
-  // 가격 필터 모달 상태
+  // 모달 상태
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isPriceModalOpen, setIsPriceModalOpen] = useState(false);
-
-  // 검색 실행
-  const handleSearch = (query: string) => {
-    if (!query.trim()) return;
-
-    setIsSearching(true);
-    // TODO: 실제 API 호출
-    // 임시로 더미 데이터 필터링
-    let results = mockSearchResults.filter((item) =>
-      item.title.toLowerCase().includes(query.toLowerCase())
-    );
-
-    // 필터 적용
-    results = applyFilters(results);
-    setSearchResults(results);
-  };
+  const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
+  const [isTradeTypeModalOpen, setIsTradeTypeModalOpen] = useState(false);
 
   // 필터 적용 함수
-  const applyFilters = (results: typeof mockSearchResults) => {
+  const applyFilters = (results: typeof mockSearchResults, currentFilters: FilterState) => {
     return results.filter((item) => {
       // 카테고리 필터
-      if (filters.category !== "전체" && item.category !== filters.category) {
+      if (currentFilters.category.length > 0 && !currentFilters.category.includes(item.category)) {
         return false;
       }
       // 화폐 유형 필터
-      if (filters.currencyType !== "전체" && item.currencyType !== filters.currencyType) {
+      if (currentFilters.currencyType.length > 0 && !currentFilters.currencyType.includes(item.currencyType)) {
         return false;
       }
       // 거래 유형 필터
-      if (filters.tradeType !== "전체" && item.tradeType !== filters.tradeType) {
+      if (currentFilters.tradeType.length > 0 && !currentFilters.tradeType.includes(item.tradeType)) {
         return false;
       }
       // 가격 필터
-      if (filters.priceMin && item.price < parseInt(filters.priceMin)) {
+      if (currentFilters.priceMin && item.price < parseInt(currentFilters.priceMin)) {
         return false;
       }
-      if (filters.priceMax && item.price > parseInt(filters.priceMax)) {
+      if (currentFilters.priceMax && item.price > parseInt(currentFilters.priceMax)) {
         return false;
       }
       return true;
     });
   };
 
-  // 필터 변경 시 재검색
-  const handleFilterChange = (key: keyof FilterState, value: string) => {
-    const newFilters = { ...filters, [key]: value };
-    setFilters(newFilters);
+  // 검색 실행
+  const handleSearch = (query: string) => {
+    if (!query.trim()) return;
 
+    setIsSearching(true);
+    let results = mockSearchResults.filter((item) =>
+      item.title.toLowerCase().includes(query.toLowerCase())
+    );
+    results = applyFilters(results, filters);
+    setSearchResults(results);
+  };
+
+  // 카테고리 필터 적용
+  const handleCategoryApply = (selected: string[]) => {
+    const newFilters = { ...filters, category: selected };
+    setFilters(newFilters);
     if (isSearching && searchQuery) {
       let results = mockSearchResults.filter((item) =>
         item.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
+      results = applyFilters(results, newFilters);
+      setSearchResults(results);
+    }
+  };
 
-      // 새 필터로 적용
-      results = results.filter((item) => {
-        if (newFilters.category !== "전체" && item.category !== newFilters.category) return false;
-        if (newFilters.currencyType !== "전체" && item.currencyType !== newFilters.currencyType) return false;
-        if (newFilters.tradeType !== "전체" && item.tradeType !== newFilters.tradeType) return false;
-        if (newFilters.priceMin && item.price < parseInt(newFilters.priceMin)) return false;
-        if (newFilters.priceMax && item.price > parseInt(newFilters.priceMax)) return false;
-        return true;
-      });
+  // 화폐 필터 적용
+  const handleCurrencyApply = (selected: string[]) => {
+    const newFilters = { ...filters, currencyType: selected };
+    setFilters(newFilters);
+    if (isSearching && searchQuery) {
+      let results = mockSearchResults.filter((item) =>
+        item.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      results = applyFilters(results, newFilters);
+      setSearchResults(results);
+    }
+  };
 
+  // 거래유형 필터 적용
+  const handleTradeTypeApply = (selected: string[]) => {
+    const newFilters = { ...filters, tradeType: selected };
+    setFilters(newFilters);
+    if (isSearching && searchQuery) {
+      let results = mockSearchResults.filter((item) =>
+        item.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      results = applyFilters(results, newFilters);
       setSearchResults(results);
     }
   };
@@ -327,21 +469,11 @@ export default function SearchPage() {
   const handlePriceApply = (min: string, max: string) => {
     const newFilters = { ...filters, priceMin: min, priceMax: max };
     setFilters(newFilters);
-
     if (isSearching && searchQuery) {
       let results = mockSearchResults.filter((item) =>
         item.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
-
-      results = results.filter((item) => {
-        if (newFilters.category !== "전체" && item.category !== newFilters.category) return false;
-        if (newFilters.currencyType !== "전체" && item.currencyType !== newFilters.currencyType) return false;
-        if (newFilters.tradeType !== "전체" && item.tradeType !== newFilters.tradeType) return false;
-        if (min && item.price < parseInt(min)) return false;
-        if (max && item.price > parseInt(max)) return false;
-        return true;
-      });
-
+      results = applyFilters(results, newFilters);
       setSearchResults(results);
     }
   };
@@ -366,8 +498,26 @@ export default function SearchPage() {
     setSearchResults([]);
   };
 
-  // 가격 필터 라벨
-  const getPriceFilterLabel = () => {
+  // 필터 라벨 함수들
+  const getCategoryLabel = () => {
+    if (filters.category.length === 0) return "카테고리";
+    if (filters.category.length === 1) return filters.category[0];
+    return `카테고리 ${filters.category.length}`;
+  };
+
+  const getCurrencyLabel = () => {
+    if (filters.currencyType.length === 0) return "화폐";
+    if (filters.currencyType.length === 1) return filters.currencyType[0];
+    return `화폐 ${filters.currencyType.length}`;
+  };
+
+  const getTradeTypeLabel = () => {
+    if (filters.tradeType.length === 0) return "거래유형";
+    if (filters.tradeType.length === 1) return filters.tradeType[0];
+    return `거래유형 ${filters.tradeType.length}`;
+  };
+
+  const getPriceLabel = () => {
     if (filters.priceMin && filters.priceMax) {
       return `${parseInt(filters.priceMin).toLocaleString()}원 - ${parseInt(filters.priceMax).toLocaleString()}원`;
     }
@@ -489,21 +639,19 @@ export default function SearchPage() {
           {/* 필터 탭 */}
           <div className="flex gap-2 px-4 py-3 overflow-x-auto border-b border-gray-100 bg-white">
             {/* 카테고리 필터 */}
-            <select
-              value={filters.category}
-              onChange={(e) => handleFilterChange("category", e.target.value)}
-              className={`px-3 py-1.5 rounded-full text-sm border transition-colors appearance-none cursor-pointer ${
-                filters.category !== "전체"
+            <button
+              onClick={() => setIsCategoryModalOpen(true)}
+              className={`px-3 py-1.5 rounded-full text-sm border transition-colors flex items-center gap-1 whitespace-nowrap ${
+                filters.category.length > 0
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-gray-300 text-gray-700"
               }`}
             >
-              {categories.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat === "전체" ? "카테고리" : cat}
-                </option>
-              ))}
-            </select>
+              {getCategoryLabel()}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
 
             {/* 가격 필터 */}
             <button
@@ -514,41 +662,41 @@ export default function SearchPage() {
                   : "border-gray-300 text-gray-700"
               }`}
             >
-              {getPriceFilterLabel()}
+              {getPriceLabel()}
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M6 9l6 6 6-6" />
               </svg>
             </button>
 
-            {/* 화폐 유형 필터 (벨/마일) */}
-            <select
-              value={filters.currencyType}
-              onChange={(e) => handleFilterChange("currencyType", e.target.value)}
-              className={`px-3 py-1.5 rounded-full text-sm border transition-colors appearance-none cursor-pointer ${
-                filters.currencyType !== "전체"
+            {/* 화폐 유형 필터 */}
+            <button
+              onClick={() => setIsCurrencyModalOpen(true)}
+              className={`px-3 py-1.5 rounded-full text-sm border transition-colors flex items-center gap-1 whitespace-nowrap ${
+                filters.currencyType.length > 0
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-gray-300 text-gray-700"
               }`}
             >
-              <option value="전체">화폐</option>
-              <option value="벨">벨</option>
-              <option value="마일">마일</option>
-            </select>
+              {getCurrencyLabel()}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
 
-            {/* 거래 유형 필터 (구해요/팔아요) */}
-            <select
-              value={filters.tradeType}
-              onChange={(e) => handleFilterChange("tradeType", e.target.value)}
-              className={`px-3 py-1.5 rounded-full text-sm border transition-colors appearance-none cursor-pointer ${
-                filters.tradeType !== "전체"
+            {/* 거래 유형 필터 */}
+            <button
+              onClick={() => setIsTradeTypeModalOpen(true)}
+              className={`px-3 py-1.5 rounded-full text-sm border transition-colors flex items-center gap-1 whitespace-nowrap ${
+                filters.tradeType.length > 0
                   ? "border-primary bg-primary/10 text-primary"
                   : "border-gray-300 text-gray-700"
               }`}
             >
-              <option value="전체">거래유형</option>
-              <option value="구해요">구해요</option>
-              <option value="팔아요">팔아요</option>
-            </select>
+              {getTradeTypeLabel()}
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 9l6 6 6-6" />
+              </svg>
+            </button>
           </div>
 
           {/* 결과 목록 */}
@@ -568,6 +716,16 @@ export default function SearchPage() {
         </div>
       )}
 
+      {/* 카테고리 필터 모달 */}
+      <CheckboxFilterModal
+        isOpen={isCategoryModalOpen}
+        onClose={() => setIsCategoryModalOpen(false)}
+        title="카테고리"
+        options={categories}
+        selected={filters.category}
+        onApply={handleCategoryApply}
+      />
+
       {/* 가격 필터 모달 */}
       <PriceFilterModal
         isOpen={isPriceModalOpen}
@@ -575,6 +733,26 @@ export default function SearchPage() {
         priceMin={filters.priceMin}
         priceMax={filters.priceMax}
         onApply={handlePriceApply}
+      />
+
+      {/* 화폐 필터 모달 */}
+      <CheckboxFilterModal
+        isOpen={isCurrencyModalOpen}
+        onClose={() => setIsCurrencyModalOpen(false)}
+        title="화폐"
+        options={currencyTypes}
+        selected={filters.currencyType}
+        onApply={handleCurrencyApply}
+      />
+
+      {/* 거래유형 필터 모달 */}
+      <CheckboxFilterModal
+        isOpen={isTradeTypeModalOpen}
+        onClose={() => setIsTradeTypeModalOpen(false)}
+        title="거래유형"
+        options={tradeTypes}
+        selected={filters.tradeType}
+        onApply={handleTradeTypeApply}
       />
     </MobileLayout>
   );
