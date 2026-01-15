@@ -48,10 +48,13 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // 인증 없이 접근 가능한 경로
                 .requestMatchers(
-                    "/api/auth/**",     // 인증 관련 API
-                    "/health",          // 헬스체크
-                    "/",                // 루트
-                    "/error"            // 에러 페이지
+                    "/api/auth/**",       // 인증 관련 API
+                    "/api/categories",    // 카테고리 목록 조회
+                    "/api/posts",         // 게시글 목록 조회 (피드)
+                    "/api/posts/search",  // 게시글 검색
+                    "/health",            // 헬스체크
+                    "/",                  // 루트
+                    "/error"              // 에러 페이지
                 ).permitAll()
 
                 // 그 외 모든 요청은 인증 필요
