@@ -36,10 +36,21 @@ export default function NewPostPage() {
   };
 
   const handleSubmit = () => {
-    // TODO: 실제 상품 등록 API 호출
+    // TODO: 실제 상품 등록 API 호출 후 반환된 ID 사용
+    // 임시로 랜덤 ID 생성
+    const newPostId = Date.now();
     console.log("등록할 데이터:", { ...formData, images });
-    alert("상품이 등록되었습니다!");
-    router.push("/");
+
+    // 작성한 데이터를 쿼리 파라미터로 전달하여 상품 상세 페이지로 이동
+    const queryParams = new URLSearchParams({
+      title: formData.title,
+      content: formData.content,
+      price: formData.price,
+      location: formData.location,
+      images: images.join(","),
+    });
+
+    router.push(`/post/${newPostId}?${queryParams.toString()}`);
   };
 
   return (
