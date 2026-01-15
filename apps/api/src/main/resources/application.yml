@@ -3,9 +3,9 @@ spring:
     name: acnh-trading
 
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://ep-rough-wildflower-a1vl69i0-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require}
-    username: ${DATABASE_USERNAME:neondb_owner}
-    password: ${DATABASE_PASSWORD:npg_ck8szrxEySw3}
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 5
@@ -17,28 +17,28 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-    show-sql: true
+    show-sql: ${JPA_SHOW_SQL:true}
     open-in-view: false
 
 server:
-  port: 8080
+  port: ${PORT:8080}
 
-# JWT 설정 (시크릿은 환경변수로 주입)
+# JWT 설정
 jwt:
   secret: ${JWT_SECRET}
-  access-token-expiry: 3600000
-  refresh-token-expiry: 604800000
+  access-token-expiry: ${JWT_ACCESS_EXPIRY:3600000}
+  refresh-token-expiry: ${JWT_REFRESH_EXPIRY:604800000}
 
 # Cognito 설정
 cognito:
-  domain: ${COGNITO_DOMAIN:ac-trading.auth.ap-northeast-2.amazoncognito.com}
+  domain: ${COGNITO_DOMAIN}
   client-id: ${COGNITO_CLIENT_ID}
   client-secret: ${COGNITO_CLIENT_SECRET}
-  redirect-uri: ${COGNITO_REDIRECT_URI:http://localhost:8080/api/auth/callback}
+  redirect-uri: ${COGNITO_REDIRECT_URI}
 
 # 프론트엔드 URL (OAuth 콜백 후 리다이렉트)
 frontend:
-  url: ${FRONTEND_URL:http://localhost:3000}
+  url: ${FRONTEND_URL}
 
 # 쿠키 보안 설정
 cookie:
