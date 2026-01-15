@@ -7,6 +7,8 @@ export interface ChatRoom {
   id: number;
   postId: number;
   postItemName: string;
+  postImageUrl: string | null;
+  postPrice: number | null;
   postStatus: string | null;
   otherUserId: number;
   otherUserNickname: string;
