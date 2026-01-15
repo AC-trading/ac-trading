@@ -107,8 +107,15 @@ export const ChevronRightIcon = ({ className = "" }: { className?: string }) => 
 );
 
 // 찜 아이콘 - 커스텀 나뭇잎 (leaf_logo.svg 기반)
+// viewBox를 나뭇잎 실제 영역(150~870)에 맞춰 크게 보이도록 조정
 export const HeartIcon = ({ filled = false, className = "" }: { filled?: boolean; className?: string }) => (
-  <svg width="20" height="20" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg" className={className}>
+  <svg
+    width="20"
+    height="20"
+    viewBox="150 120 720 720"
+    xmlns="http://www.w3.org/2000/svg"
+    className={className}
+  >
     <path
       d="M 834 201 L 766 157 L 740 142 L 712 243 L 694 299 L 691 304 L 687 304 L 670 294 L 633 276 L 595 261 L 541 245 L 493 237 L 446 236 L 416 241 L 398 247 L 383 254 L 358 271 L 336 292 L 325 306 L 312 326 L 298 354 L 290 374 L 275 423 L 253 537 L 236 599 L 226 627 L 210 664 L 192 700 L 172 734 L 169 742 L 181 748 L 216 761 L 284 782 L 346 797 L 395 806 L 440 812 L 491 816 L 566 815 L 599 812 L 622 808 L 623 806 L 605 797 L 587 784 L 569 766 L 557 749 L 547 728 L 543 713 L 541 699 L 542 669 L 547 649 L 557 629 L 568 614 L 586 597 L 601 587 L 621 578 L 648 573 L 666 573 L 685 576 L 697 580 L 723 594 L 745 615 L 760 638 L 767 656 L 771 673 L 772 703 L 765 734 L 756 753 L 749 763 L 757 758 L 781 735 L 801 710 L 819 681 L 830 658 L 844 619 L 850 593 L 854 564 L 855 529 L 852 504 L 843 469 L 834 447 L 818 418 L 803 397 L 787 378 L 763 355 L 727 328 L 723 324 L 723 320 L 832 205 Z"
       fill={filled ? "#7ECEC5" : "none"}
