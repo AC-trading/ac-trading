@@ -104,7 +104,7 @@ function PostItem({ post }: { post: (typeof mockPosts)[0] }) {
             )}
             {post.likes > 0 && (
               <span className="flex items-center gap-1">
-                <HeartIcon />
+                <HeartIcon className="w-4 h-4" />
                 <span className="text-xs">{post.likes}</span>
               </span>
             )}
