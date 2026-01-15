@@ -47,7 +47,7 @@ const mockSearchResults = [
 ];
 
 // 카테고리 목록
-const categories = ["가구", "가전", "의류", "뷰티", "DIY 레시피", "화석", "악세사리", "기타"];
+const categories = ["가구", "바닥/벽지", "옷", "재료", "DIY 레시피", "알바", "주민 사진/ 분양", "기타"];
 
 // 화폐 유형 목록
 const currencyTypes = ["벨", "마일"];
