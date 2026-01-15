@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { MobileLayout, Header } from "@/components/common";
 import { RefreshIcon } from "@/components/icons";
@@ -123,8 +124,11 @@ function AlarmItem({ alarm }: { alarm: (typeof mockAlarms)[0] }) {
 
 // 알림 목록 페이지 - 채팅 목록과 동일한 디자인 (프로필 제외)
 export default function AlarmListPage() {
+  // 알림 목록 상태 (추후 API 연동 시 useEffect에서 fetch)
+  const [alarms] = useState(mockAlarms);
+
   // 읽지 않은 알림 개수
-  const unreadCount = mockAlarms.filter((alarm) => !alarm.read).length;
+  const unreadCount = alarms.filter((alarm) => !alarm.read).length;
 
   return (
     <MobileLayout>
@@ -149,13 +153,13 @@ export default function AlarmListPage() {
 
       {/* 알림 목록 */}
       <div>
-        {mockAlarms.map((alarm) => (
+        {alarms.map((alarm) => (
           <AlarmItem key={alarm.id} alarm={alarm} />
         ))}
       </div>
 
       {/* 알림 없을 때 빈 상태 */}
-      {mockAlarms.length === 0 && (
+      {alarms.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
           <span className="text-6xl mb-4">🔔</span>
           <p>아직 알림이 없어요</p>

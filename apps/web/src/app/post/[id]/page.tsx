@@ -1,25 +1,50 @@
 "use client";
 
-import { useParams, useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import { MobileLayout } from "@/components/common";
 import { HeartIcon, HomeOutlineIcon } from "@/components/icons";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+
+// 게시글 데이터 타입
+interface PostData {
+  title: string;
+  content: string;
+  price: string;
+  currencyType?: string;
+  images: string[];
+}
 
 // 상품 상세 페이지 - Figma 디자인 기반
 export default function PostDetailPage() {
   const params = useParams();
-  const searchParams = useSearchParams();
-  const postId = params.id;
-
-  // URL 쿼리로 전달된 데이터 (상품 등록 시 전달)
-  const title = searchParams.get("title") || "상품명";
-  const content = searchParams.get("content") || "상품 설명이 없습니다.";
-  const price = searchParams.get("price") || "0";
-  const location = searchParams.get("location") || "위치 정보 없음";
-  const images = searchParams.get("images")?.split(",") || [];
+  // params.id가 string[] 일 수 있으므로 안전하게 처리
+  const postId = Array.isArray(params.id) ? params.id[0] : params.id;
 
   const [isLiked, setIsLiked] = useState(false);
+  const [postData, setPostData] = useState<PostData>({
+    title: "상품명",
+    content: "상품 설명이 없습니다.",
+    price: "0",
+    images: [],
+  });
+
+  // sessionStorage에서 데이터 로드 (상품 등록 후 이동 시)
+  useEffect(() => {
+    if (postId) {
+      const savedData = sessionStorage.getItem(`post_${postId}`);
+      if (savedData) {
+        const parsed = JSON.parse(savedData);
+        setPostData(parsed);
+        // 사용 후 삭제 (일회성)
+        sessionStorage.removeItem(`post_${postId}`);
+      }
+      // TODO: API에서 실제 게시글 데이터 로드
+    }
+  }, [postId]);
+
+  const { title, content, price, images } = postData;
+  const location = "위치 정보 없음"; // TODO: API에서 로드
 
   // 가격 포맷팅
   const formatPrice = (priceStr: string) => {

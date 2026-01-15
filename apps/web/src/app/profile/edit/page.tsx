@@ -29,7 +29,6 @@ export default function ProfileEditPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // TODO: API 호출로 프로필 업데이트
-    console.log("프로필 수정:", formData);
     router.push("/profile");
   };
 
@@ -69,7 +68,7 @@ export default function ProfileEditPage() {
             />
             {formData.islandName && (
               <p className={`text-sm mt-1 ${isIslandNameValid ? "text-green-200" : "text-red-200"}`}>
-                * {isIslandNameValid ? "사용 가능한 아이디 입니다." : "2자 이상 입력해주세요."}
+                * {isIslandNameValid ? "사용 가능한 섬 이름입니다." : "2자 이상 입력해주세요."}
               </p>
             )}
           </div>
