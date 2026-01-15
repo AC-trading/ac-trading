@@ -74,8 +74,8 @@ const popularKeywords = [
   "가구",
 ];
 
-// 최근 검색어
-const recentKeywords = ["자전거", "에어팟", "닌텐도"];
+// 최근 검색어 초기값
+const initialRecentKeywords = ["자전거", "에어팟", "닌텐도"];
 
 // 가격 포맷팅 함수
 function formatPrice(price: number): string {
@@ -264,26 +264,40 @@ function PriceFilterModal({
 }) {
   const [minValue, setMinValue] = useState(priceMin);
   const [maxValue, setMaxValue] = useState(priceMax);
+  const [priceError, setPriceError] = useState("");
 
   // 모달이 열릴 때 현재 값으로 초기화
   useEffect(() => {
     if (isOpen) {
       setMinValue(priceMin);
       setMaxValue(priceMax);
+      setPriceError("");
     }
   }, [isOpen, priceMin, priceMax]);
 
   const handlePresetClick = (min: number, max: number) => {
     setMinValue(min.toString());
     setMaxValue(max.toString());
+    setPriceError("");
   };
 
   const handleReset = () => {
     setMinValue("");
     setMaxValue("");
+    setPriceError("");
   };
 
   const handleApply = () => {
+    // 유효성 검사: 최소값이 최대값보다 크면 에러
+    const min = minValue ? parseInt(minValue, 10) : 0;
+    const max = maxValue ? parseInt(maxValue, 10) : Infinity;
+
+    if (minValue && maxValue && min > max) {
+      setPriceError("최소 가격이 최대 가격보다 클 수 없습니다");
+      return;
+    }
+
+    setPriceError("");
     onApply(minValue, maxValue);
     onClose();
   };
@@ -327,6 +341,11 @@ function PriceFilterModal({
               className="flex-1 min-w-0 px-3 py-3 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-primary text-sm"
             />
           </div>
+
+          {/* 유효성 검사 에러 메시지 */}
+          {priceError && (
+            <p className="text-red-500 text-sm mb-4">{priceError}</p>
+          )}
 
           {/* 가격 프리셋 */}
           <div className="flex flex-wrap gap-2 mb-6">
@@ -372,6 +391,7 @@ export default function SearchPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [searchResults, setSearchResults] = useState<typeof mockSearchResults>([]);
+  const [recentKeywords, setRecentKeywords] = useState<string[]>(initialRecentKeywords);
 
   // 필터 상태 (배열로 다중 선택 지원)
   const [filters, setFilters] = useState<FilterState>({
@@ -478,8 +498,8 @@ export default function SearchPage() {
     }
   };
 
-  // 검색어 입력 핸들러
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  // 검색어 입력 핸들러 (onKeyDown 사용 - onKeyPress deprecated)
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       handleSearch(searchQuery);
     }
@@ -489,6 +509,17 @@ export default function SearchPage() {
   const handleKeywordClick = (keyword: string) => {
     setSearchQuery(keyword);
     handleSearch(keyword);
+  };
+
+  // 최근 검색어 개별 삭제
+  const handleRemoveKeyword = (e: React.MouseEvent, keyword: string) => {
+    e.stopPropagation();
+    setRecentKeywords((prev) => prev.filter((k) => k !== keyword));
+  };
+
+  // 최근 검색어 전체 삭제
+  const handleClearAllKeywords = () => {
+    setRecentKeywords([]);
   };
 
   // 검색어 초기화
@@ -550,7 +581,7 @@ export default function SearchPage() {
               placeholder="검색어를 입력하세요"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              onKeyPress={handleKeyPress}
+              onKeyDown={handleKeyDown}
               className="flex-1 ml-2 bg-transparent text-gray-800 placeholder-gray-400 focus:outline-none"
               autoFocus
             />
@@ -585,23 +616,36 @@ export default function SearchPage() {
             <div className="mb-6">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="font-semibold text-gray-900">최근 검색어</h2>
-                <button className="text-sm text-gray-400 hover:text-gray-600">
+                <button
+                  onClick={handleClearAllKeywords}
+                  disabled={recentKeywords.length === 0}
+                  className="text-sm text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                   전체 삭제
                 </button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {recentKeywords.map((keyword, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleKeywordClick(keyword)}
-                    className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors flex items-center gap-1"
+                {recentKeywords.map((keyword) => (
+                  <div
+                    key={keyword}
+                    className="flex items-center bg-gray-100 rounded-full text-sm hover:bg-gray-200 transition-colors"
                   >
-                    {keyword}
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="text-gray-400">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </button>
+                    <button
+                      onClick={() => handleKeywordClick(keyword)}
+                      className="px-3 py-1.5 text-gray-700"
+                    >
+                      {keyword}
+                    </button>
+                    <button
+                      onClick={(e) => handleRemoveKeyword(e, keyword)}
+                      className="pr-2 py-1.5 text-gray-400 hover:text-gray-600"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>
