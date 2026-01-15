@@ -261,6 +261,9 @@ public class ChatService {
         // 게시글 정보
         Post post = postRepository.findByIdAndDeletedAtIsNull(chatRoom.getPostId()).orElse(null);
         String postItemName = post != null ? post.getItemName() : "삭제된 게시글";
+        // TODO: Post에 이미지 필드 추가 시 연동 필요
+        String postImageUrl = null;
+        Integer postPrice = post != null ? post.getPrice() : null;
         String postStatus = post != null ? post.getStatus() : null;
 
         // 상대방 정보
@@ -286,7 +289,7 @@ public class ChatService {
         int unreadCount = (int) chatMessageRepository
                 .countByChatRoomIdAndSenderIdNotAndIsReadFalseAndDeletedAtIsNull(chatRoom.getId(), currentUserId);
 
-        return ChatRoomResponse.from(chatRoom, currentUserId, postItemName, postStatus,
+        return ChatRoomResponse.from(chatRoom, currentUserId, postItemName, postImageUrl, postPrice, postStatus,
                 otherNickname, otherIslandName, lastMessage, lastMessageAt, unreadCount);
     }
 }
