@@ -21,6 +21,9 @@ const mockMessages = [
   },
 ];
 
+// 거래 상태 타입
+type TradeStatus = "available" | "reserved" | "completed" | "reviewed";
+
 // 더미 상품 데이터
 const mockProduct = {
   id: 1,
@@ -52,7 +55,7 @@ function MessageBubble({
           className={`max-w-[240px] px-4 py-2 rounded-2xl whitespace-pre-line shadow-sm ${
             isMe
               ? "bg-[#7ECEC5] text-white rounded-tr-sm"
-              : "bg-white text-gray-800 rounded-tl-sm"
+              : "bg-[#FFFFF0] text-gray-800 rounded-tl-sm"
           }`}
         >
           {message.content}
@@ -65,12 +68,43 @@ function MessageBubble({
   );
 }
 
+// 거래 상태 라벨 변환
+const getTradeStatusLabel = (status: TradeStatus) => {
+  switch (status) {
+    case "available":
+      return "거래 가능";
+    case "reserved":
+      return "예약 중";
+    case "completed":
+      return "거래 완료 !";
+    case "reviewed":
+      return "거래 완료 !";
+    default:
+      return "거래 가능";
+  }
+};
+
 // 채팅방 페이지 - 물결 배경 UI 적용
 export default function ChatRoomPage() {
   const router = useRouter();
   const [inputMessage, setInputMessage] = useState("");
   const [messages, setMessages] = useState(mockMessages);
   const [isBottomTabOpen, setIsBottomTabOpen] = useState(false);
+  // 거래 상태 관리 (available: 거래 가능, reserved: 예약 중, completed: 거래 완료, reviewed: 후기 완료)
+  const [tradeStatus, setTradeStatus] = useState<TradeStatus>("available");
+
+  // 거래 상태 변경 핸들러
+  const handleTradeStatusChange = (newStatus: TradeStatus) => {
+    setTradeStatus(newStatus);
+    // TODO: API 호출로 거래 상태 업데이트
+  };
+
+  // 후기 보내기 핸들러
+  const handleSendReview = () => {
+    // TODO: 후기 작성 모달 또는 페이지로 이동
+    alert("후기 보내기 기능은 준비 중입니다.");
+    setTradeStatus("reviewed");
+  };
 
   const handleSend = () => {
     if (!inputMessage.trim()) return;
@@ -99,7 +133,7 @@ export default function ChatRoomPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center">
-      <div className="w-full max-w-[390px] min-h-screen bg-[#FFFFF0] flex flex-col relative overflow-hidden">
+      <div className="w-full max-w-[390px] min-h-screen bg-[#FFFFFF] flex flex-col relative overflow-hidden">
         {/* 헤더 */}
         <header className="sticky top-0 z-40 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between h-14 px-4">
@@ -115,25 +149,83 @@ export default function ChatRoomPage() {
         </header>
 
         {/* 상품 정보 바 */}
-        <Link
-          href={`/post/${mockProduct.id}`}
-          className="relative z-10 flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white hover:bg-gray-50"
-        >
-          <div className="w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center">
-            🚲
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span className="text-xs px-2 py-0.5 bg-gray-800 text-white rounded">
-                {mockProduct.status}
-              </span>
-              <span className="text-sm text-gray-900 truncate">{mockProduct.title}</span>
+        <div className="relative z-10 flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white">
+          <Link
+            href={`/post/${mockProduct.id}`}
+            className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80"
+          >
+            <div className="w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center">
+              🚲
             </div>
-            <p className="text-sm font-semibold text-gray-900 mt-0.5">
-              {mockProduct.price.toLocaleString()}원
-            </p>
-          </div>
-        </Link>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                  tradeStatus === "available"
+                    ? "bg-[#5BBFB3] text-white"
+                    : tradeStatus === "reserved"
+                    ? "bg-yellow-500 text-white"
+                    : "bg-primary text-white"
+                }`}>
+                  {getTradeStatusLabel(tradeStatus)}
+                </span>
+                <span className="text-sm text-gray-900 truncate">{mockProduct.title}</span>
+              </div>
+              <p className="text-sm font-semibold text-gray-900 mt-0.5">
+                {mockProduct.price.toLocaleString()}원
+              </p>
+            </div>
+          </Link>
+
+          {/* 거래 상태별 버튼 */}
+          {tradeStatus === "available" && (
+            <div className="flex gap-1">
+              <button
+                onClick={() => handleTradeStatusChange("completed")}
+                className="px-2 py-1 text-xs bg-white border border-[#5BBFB3] text-[#5BBFB3] rounded-md hover:bg-[#5BBFB3]/10 transition-colors"
+              >
+                거래 완료
+              </button>
+              <button
+                onClick={() => handleTradeStatusChange("reserved")}
+                className="px-2 py-1 text-xs bg-white border border-[#5BBFB3] text-[#5BBFB3] rounded-md hover:bg-[#5BBFB3]/10 transition-colors"
+              >
+                예약 중
+              </button>
+            </div>
+          )}
+
+          {tradeStatus === "reserved" && (
+            <div className="flex gap-1">
+              <button
+                onClick={() => handleTradeStatusChange("completed")}
+                className="px-2 py-1 text-xs bg-white border border-[#5BBFB3] text-[#5BBFB3] rounded-md hover:bg-[#5BBFB3]/10 transition-colors"
+              >
+                거래 완료
+              </button>
+              <button
+                onClick={() => handleTradeStatusChange("available")}
+                className="px-2 py-1 text-xs bg-white border border-gray-400 text-gray-400 rounded-md hover:bg-gray-100 transition-colors"
+              >
+                예약 취소
+              </button>
+            </div>
+          )}
+
+          {tradeStatus === "completed" && (
+            <button
+              onClick={handleSendReview}
+              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+              </svg>
+              후기 보내기
+            </button>
+          )}
+
+          {/* reviewed 상태일 때는 버튼 없음 */}
+        </div>
 
         {/* 메시지 영역 */}
         <div className="flex-1 overflow-y-auto p-4 pb-4">
