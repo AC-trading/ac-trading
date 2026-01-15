@@ -34,10 +34,15 @@ export default function PostDetailPage() {
     if (postId) {
       const savedData = sessionStorage.getItem(`post_${postId}`);
       if (savedData) {
-        const parsed = JSON.parse(savedData);
-        setPostData(parsed);
-        // 사용 후 삭제 (일회성)
-        sessionStorage.removeItem(`post_${postId}`);
+        try {
+          const parsed = JSON.parse(savedData);
+          setPostData(parsed);
+        } catch {
+          // JSON 파싱 실패 시 손상된 데이터 제거
+        } finally {
+          // 사용 후 삭제 (일회성)
+          sessionStorage.removeItem(`post_${postId}`);
+        }
       }
       // TODO: API에서 실제 게시글 데이터 로드
     }
