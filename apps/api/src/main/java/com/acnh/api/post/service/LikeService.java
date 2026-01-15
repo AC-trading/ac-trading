@@ -14,10 +14,13 @@ import com.acnh.api.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -43,17 +46,22 @@ public class LikeService {
         // 찜 목록 조회
         Page<PostLike> likes = postLikeRepository.findByUserIdAndDeletedAtIsNull(member.getId(), pageable);
 
-        // PostLike -> PostResponse 변환
-        Page<PostResponse> responsePage = likes.map(like -> {
-            Post post = postRepository.findByIdAndDeletedAtIsNull(like.getPostId()).orElse(null);
-            if (post == null) {
-                return null;
-            }
-            return toPostResponse(post, member.getId());
-        });
+        // PostLike -> PostResponse 변환 (삭제된 게시글은 null 반환)
+        List<PostResponse> responses = likes.getContent().stream()
+                .map(like -> {
+                    Post post = postRepository.findByIdAndDeletedAtIsNull(like.getPostId()).orElse(null);
+                    if (post == null) {
+                        return null;
+                    }
+                    return toPostResponse(post, member.getId());
+                })
+                .filter(Objects::nonNull)
+                .toList();
 
-        // null 필터링된 결과로 PostListResponse 생성
-        return PostListResponse.from(responsePage);
+        // null 필터링된 결과로 새 Page 생성
+        Page<PostResponse> filteredPage = new PageImpl<>(responses, pageable, likes.getTotalElements());
+
+        return PostListResponse.from(filteredPage);
     }
 
     /**
