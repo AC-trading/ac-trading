@@ -55,7 +55,7 @@ function MessageBubble({
           className={`max-w-[240px] px-4 py-2 rounded-2xl whitespace-pre-line shadow-sm ${
             isMe
               ? "bg-[#7ECEC5] text-white rounded-tr-sm"
-              : "bg-white text-gray-800 rounded-tl-sm"
+              : "bg-[#FFFFF0] text-gray-800 rounded-tl-sm"
           }`}
         >
           {message.content}
@@ -133,7 +133,7 @@ export default function ChatRoomPage() {
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center">
-      <div className="w-full max-w-[390px] min-h-screen bg-[#FFFFF0] flex flex-col relative overflow-hidden">
+      <div className="w-full max-w-[390px] min-h-screen bg-[#FFFFFF] flex flex-col relative overflow-hidden">
         {/* 헤더 */}
         <header className="sticky top-0 z-40 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between h-14 px-4">
@@ -161,7 +161,7 @@ export default function ChatRoomPage() {
               <div className="flex items-center gap-2">
                 <span className={`text-xs px-2 py-0.5 rounded font-medium ${
                   tradeStatus === "available"
-                    ? "bg-gray-800 text-white"
+                    ? "bg-[#5BBFB3] text-white"
                     : tradeStatus === "reserved"
                     ? "bg-yellow-500 text-white"
                     : "bg-primary text-white"
@@ -181,13 +181,13 @@ export default function ChatRoomPage() {
             <div className="flex gap-1">
               <button
                 onClick={() => handleTradeStatusChange("completed")}
-                className="px-2 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
+                className="px-2 py-1 text-xs bg-white border border-[#5BBFB3] text-[#5BBFB3] rounded-md hover:bg-[#5BBFB3]/10 transition-colors"
               >
                 거래 완료
               </button>
               <button
                 onClick={() => handleTradeStatusChange("reserved")}
-                className="px-2 py-1 text-xs bg-yellow-500 text-white rounded-md hover:bg-yellow-600 transition-colors"
+                className="px-2 py-1 text-xs bg-white border border-[#5BBFB3] text-[#5BBFB3] rounded-md hover:bg-[#5BBFB3]/10 transition-colors"
               >
                 예약 중
               </button>
@@ -198,13 +198,13 @@ export default function ChatRoomPage() {
             <div className="flex gap-1">
               <button
                 onClick={() => handleTradeStatusChange("completed")}
-                className="px-2 py-1 text-xs bg-primary text-white rounded-md hover:bg-primary-dark transition-colors"
+                className="px-2 py-1 text-xs bg-white border border-[#5BBFB3] text-[#5BBFB3] rounded-md hover:bg-[#5BBFB3]/10 transition-colors"
               >
                 거래 완료
               </button>
               <button
                 onClick={() => handleTradeStatusChange("available")}
-                className="px-2 py-1 text-xs bg-gray-400 text-white rounded-md hover:bg-gray-500 transition-colors"
+                className="px-2 py-1 text-xs bg-white border border-gray-400 text-gray-400 rounded-md hover:bg-gray-100 transition-colors"
               >
                 예약 취소
               </button>
