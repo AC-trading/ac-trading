@@ -20,7 +20,8 @@
       "Bash(npm run build:*)",
       "Bash(claude mcp list-tools:*)",
       "Bash(claude mcp:*)",
-      "mcp__figma-desktop__get_design_context"
+      "mcp__figma-desktop__get_design_context",
+      "Bash(move \"c:\\\\Users\\\\mycin\\\\proj\\\\ac-trading\\\\apps\\\\web\\\\src\\\\components\\\\icons\\\\leaf_logo.svg\" \"c:\\\\Users\\\\mycin\\\\proj\\\\ac-trading\\\\apps\\\\web\\\\public\\\\icons\\\\leaf_logo.svg\")"
     ]
   }
 }
