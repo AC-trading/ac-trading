@@ -13,7 +13,14 @@
       "Bash(git gc:*)",
       "Bash(git fetch:*)",
       "Bash(git stash:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(git commit:*)",
+      "Bash(./gradlew compileJava:*)",
+      "Bash(git diff:*)",
+      "Bash(npm run build:*)",
+      "Bash(claude mcp list-tools:*)",
+      "Bash(claude mcp:*)",
+      "mcp__figma-desktop__get_design_context"
     ]
   }
 }
