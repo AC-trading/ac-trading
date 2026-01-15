@@ -1,0 +1,49 @@
+package com.acnh.api.config;
+
+import com.acnh.api.chat.handler.StompHandler;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
+import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+
+/**
+ * WebSocket + STOMP 설정
+ * - /ws 엔드포인트로 WebSocket 연결
+ * - /topic/* 구독, /app/* 메시지 전송
+ */
+@Configuration
+@EnableWebSocketMessageBroker
+@RequiredArgsConstructor
+public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    private final StompHandler stompHandler;
+
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        // 클라이언트가 구독할 prefix (서버 -> 클라이언트)
+        registry.enableSimpleBroker("/topic", "/queue");
+
+        // 클라이언트가 메시지 보낼 때 prefix (클라이언트 -> 서버)
+        registry.setApplicationDestinationPrefixes("/app");
+
+        // 특정 사용자에게 메시지 보낼 때 prefix
+        registry.setUserDestinationPrefix("/user");
+    }
+
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        // WebSocket 연결 엔드포인트
+        registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns("*")  // CORS 허용
+                .withSockJS();  // SockJS fallback (Vercel 등 WebSocket 미지원 환경 대응)
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        // STOMP 메시지 인터셉터 (JWT 인증)
+        registration.interceptors(stompHandler);
+    }
+}
