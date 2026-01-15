@@ -12,7 +12,7 @@ export default function NewPostPage() {
     title: "",
     content: "",
     price: "",
-    location: "번1동 동사무소",
+    currencyType: "벨" as "벨" | "마일",
   });
   const [images, setImages] = useState<string[]>([]);
 
@@ -36,10 +36,17 @@ export default function NewPostPage() {
   };
 
   const handleSubmit = () => {
-    // TODO: 실제 상품 등록 API 호출
-    console.log("등록할 데이터:", { ...formData, images });
-    alert("상품이 등록되었습니다!");
-    router.push("/");
+    // TODO: 실제 상품 등록 API 호출 후 반환된 ID 사용
+    // 임시로 랜덤 ID 생성
+    const newPostId = Date.now();
+
+    // sessionStorage에 데이터 저장 (URL 길이 제한 회피)
+    sessionStorage.setItem(
+      `post_${newPostId}`,
+      JSON.stringify({ ...formData, images })
+    );
+
+    router.push(`/post/${newPostId}`);
   };
 
   return (
@@ -96,8 +103,30 @@ export default function NewPostPage() {
             />
           </div>
 
+          {/* 화폐 유형 선택 */}
+          <div>
+            <label className="block text-primary font-semibold mb-2">화폐</label>
+            <div className="flex gap-2">
+              {(["벨", "마일"] as const).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, currencyType: type }))}
+                  className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                    formData.currencyType === type
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-gray-300 text-gray-700 hover:border-gray-400"
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {/* 가격 */}
           <div>
+            <label className="block text-primary font-semibold mb-2">가격</label>
             <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
               <input
                 type="text"
@@ -107,7 +136,9 @@ export default function NewPostPage() {
                 className="flex-1 px-4 py-3 focus:outline-none"
                 placeholder="가격을 입력해주세요.."
               />
-              <span className="px-4 text-primary font-bold text-xl">₩</span>
+              <span className="px-4 text-primary font-medium">
+                {formData.currencyType === "벨" ? "덩" : "마일"}
+              </span>
             </div>
           </div>
 
@@ -142,27 +173,6 @@ export default function NewPostPage() {
             </div>
           </div>
 
-          {/* 현재 위치 */}
-          <div>
-            <label className="flex items-center gap-1 text-primary font-semibold mb-2">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M12 2C8.13 2 5 5.13 5 9C5 14.25 12 22 12 22C12 22 19 14.25 19 9C19 5.13 15.87 2 12 2Z" />
-                <circle cx="12" cy="9" r="2.5" />
-              </svg>
-              현재 위치
-            </label>
-            <input
-              type="text"
-              name="location"
-              value={formData.location}
-              onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-              readOnly
-            />
-            <button className="mt-2 px-4 py-2 bg-primary text-white text-sm rounded-lg hover:bg-primary-dark transition-colors">
-              위치 수정
-            </button>
-          </div>
         </div>
 
         {/* 작성하기 버튼 */}

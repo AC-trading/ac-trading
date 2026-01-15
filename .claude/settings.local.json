@@ -21,8 +21,14 @@
       "Bash(claude mcp list-tools:*)",
       "Bash(claude mcp:*)",
       "mcp__figma-desktop__get_design_context",
+<<<<<<< HEAD
       "Bash(move \"c:\\\\Users\\\\mycin\\\\proj\\\\ac-trading\\\\apps\\\\web\\\\src\\\\components\\\\icons\\\\leaf_logo.svg\" \"c:\\\\Users\\\\mycin\\\\proj\\\\ac-trading\\\\apps\\\\web\\\\public\\\\icons\\\\leaf_logo.svg\")",
       "Bash(git checkout:*)"
+=======
+      "Bash(gh pr list:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(move:*)"
+>>>>>>> f8b1571b97be645e9859f571b1e0d0301037bc4d
     ]
   }
 }
