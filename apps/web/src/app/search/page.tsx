@@ -631,7 +631,7 @@ export default function SearchPage() {
           {/* 검색 결과 개수 */}
           <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
             <p className="text-sm text-gray-600">
-              <span className="font-semibold text-primary">"{searchQuery}"</span> 검색 결과{" "}
+              <span className="font-semibold text-primary">&quot;{searchQuery}&quot;</span> 검색 결과{" "}
               <span className="font-semibold">{searchResults.length}</span>건
             </p>
           </div>
