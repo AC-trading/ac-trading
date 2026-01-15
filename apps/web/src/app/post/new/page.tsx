@@ -39,18 +39,14 @@ export default function NewPostPage() {
     // TODO: 실제 상품 등록 API 호출 후 반환된 ID 사용
     // 임시로 랜덤 ID 생성
     const newPostId = Date.now();
-    console.log("등록할 데이터:", { ...formData, images });
 
-    // 작성한 데이터를 쿼리 파라미터로 전달하여 상품 상세 페이지로 이동
-    const queryParams = new URLSearchParams({
-      title: formData.title,
-      content: formData.content,
-      price: formData.price,
-      currencyType: formData.currencyType,
-      images: images.join(","),
-    });
+    // sessionStorage에 데이터 저장 (URL 길이 제한 회피)
+    sessionStorage.setItem(
+      `post_${newPostId}`,
+      JSON.stringify({ ...formData, images })
+    );
 
-    router.push(`/post/${newPostId}?${queryParams.toString()}`);
+    router.push(`/post/${newPostId}`);
   };
 
   return (
