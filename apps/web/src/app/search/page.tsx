@@ -310,21 +310,21 @@ function PriceFilterModal({
           <h2 className="text-xl font-bold text-gray-900 mb-5">가격</h2>
 
           {/* 가격 입력 */}
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-2 mb-4">
             <input
               type="text"
               placeholder="최소 금액"
               value={minValue}
               onChange={(e) => setMinValue(e.target.value.replace(/[^0-9]/g, ""))}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-primary"
+              className="flex-1 min-w-0 px-3 py-3 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-primary text-sm"
             />
-            <span className="text-gray-400">-</span>
+            <span className="text-gray-400 flex-shrink-0">-</span>
             <input
               type="text"
               placeholder="최대 금액"
               value={maxValue}
               onChange={(e) => setMaxValue(e.target.value.replace(/[^0-9]/g, ""))}
-              className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-primary"
+              className="flex-1 min-w-0 px-3 py-3 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-400 focus:outline-none focus:border-primary text-sm"
             />
           </div>
 
