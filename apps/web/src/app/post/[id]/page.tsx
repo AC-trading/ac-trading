@@ -2,7 +2,7 @@
 
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { MobileLayout, Header } from "@/components/common";
+import { MobileLayout } from "@/components/common";
 import { HeartIcon, HomeOutlineIcon } from "@/components/icons";
 import { useState } from "react";
 
