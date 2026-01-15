@@ -55,9 +55,9 @@ export default function Header({
         {/* 오른쪽 영역 */}
         <div className="flex items-center gap-3">
           {showSearch && (
-            <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+            <Link href="/search" className="p-1 hover:bg-gray-100 rounded-full transition-colors">
               <SearchIcon className="text-gray-800" />
-            </button>
+            </Link>
           )}
           {showMenu && (
             <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
