@@ -1,7 +1,11 @@
 package com.acnh.api.chat.repository;
 
 import com.acnh.api.chat.entity.ChatRoom;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -40,4 +44,13 @@ public interface ChatRoomRepository extends JpaRepository<ChatRoom, Long> {
      * 게시글 ID와 신청자 ID로 채팅방 존재 여부 확인
      */
     boolean existsByPostIdAndApplicantIdAndDeletedAtIsNull(Long postId, Long applicantId);
+
+    /**
+     * 참여자(게시글 주인 또는 신청자)로 삭제되지 않은 채팅방 페이징 조회
+     * - DB 레벨에서 페이징 처리하여 인메모리 페이징 방지
+     */
+    @Query("SELECT c FROM ChatRoom c WHERE c.deletedAt IS NULL " +
+            "AND (c.postOwnerId = :userId OR c.applicantId = :userId) " +
+            "ORDER BY c.updatedAt DESC")
+    Page<ChatRoom> findByParticipantId(@Param("userId") Long userId, Pageable pageable);
 }

@@ -1,135 +1,271 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { ChevronLeftIcon, CameraIcon } from "@/components/icons";
-
-// 더미 메시지 데이터
-const mockMessages = [
-  {
-    id: 1,
-    sender: "me",
-    content: "안녕하세요!\n7월 11일 부터 13일까지 빌릴 수 있을까요 ?",
-    time: "오후 3:59",
-  },
-  {
-    id: 2,
-    sender: "other",
-    content: "안녕하세요 가능합니다 !",
-    time: "오후 8:46",
-  },
-];
+import { useAuth } from "@/context/AuthContext";
+import { webSocketClient, ChatMessage } from "@/lib/websocket";
+import { getChatRoom, getChatMessages, formatMessageTime, ChatRoom } from "@/lib/chatApi";
 
 // 거래 상태 타입
-type TradeStatus = "available" | "reserved" | "completed" | "reviewed";
+type TradeStatus = "AVAILABLE" | "RESERVED" | "COMPLETED";
 
-// 더미 상품 데이터
-const mockProduct = {
-  id: 1,
-  title: "산악자전거 장기대여 가능합니다~!",
-  price: 5000,
-  status: "구해요",
-  image: "/images/bike.jpg",
-};
+// 메시지 타입 (화면 표시용)
+interface DisplayMessage {
+  id: number;
+  senderId: number;
+  senderNickname: string;
+  content: string | null;
+  imageUrl: string | null;
+  isMe: boolean;
+  time: string;
+  isRead: boolean;
+}
 
-// 메시지 버블 컴포넌트 - 물결 배경에 맞춘 색상
-function MessageBubble({
-  message,
-}: {
-  message: (typeof mockMessages)[0];
-}) {
-  const isMe = message.sender === "me";
-
+// 메시지 버블 컴포넌트
+function MessageBubble({ message }: { message: DisplayMessage }) {
   return (
-    <div className={`flex ${isMe ? "justify-end" : "justify-start"} mb-3`}>
-      {!isMe && (
+    <div className={`flex ${message.isMe ? "justify-end" : "justify-start"} mb-3`}>
+      {!message.isMe && (
         <img
           src="/images/defaults/raccoon.png"
           alt="프로필"
           className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 mr-2 object-cover"
         />
       )}
-      <div className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
+      <div className={`flex flex-col ${message.isMe ? "items-end" : "items-start"}`}>
         <div
           className={`max-w-[240px] px-4 py-2 rounded-2xl whitespace-pre-line shadow-sm ${
-            isMe
+            message.isMe
               ? "bg-[#7ECEC5] text-white rounded-tr-sm"
               : "bg-[#FFFFF0] text-gray-800 rounded-tl-sm"
           }`}
         >
-          {message.content}
+          {message.imageUrl ? (
+            <img src={message.imageUrl} alt="이미지" className="max-w-full rounded" />
+          ) : (
+            message.content
+          )}
         </div>
-        <span className={`text-xs mt-1 ${isMe ? "text-gray-500" : "text-gray-400"}`}>
-          {message.time}
-        </span>
+        <div className="flex items-center gap-1 mt-1">
+          {message.isMe && message.isRead && (
+            <span className="text-xs text-gray-400">읽음</span>
+          )}
+          <span className={`text-xs ${message.isMe ? "text-gray-500" : "text-gray-400"}`}>
+            {message.time}
+          </span>
+        </div>
       </div>
     </div>
   );
 }
 
 // 거래 상태 라벨 변환
-const getTradeStatusLabel = (status: TradeStatus) => {
+const getTradeStatusLabel = (status: TradeStatus | undefined) => {
   switch (status) {
-    case "available":
+    case "AVAILABLE":
       return "거래 가능";
-    case "reserved":
+    case "RESERVED":
       return "예약 중";
-    case "completed":
-      return "거래 완료 !";
-    case "reviewed":
-      return "거래 완료 !";
+    case "COMPLETED":
+      return "거래 완료";
     default:
       return "거래 가능";
   }
 };
 
-// 채팅방 페이지 - 물결 배경 UI 적용
+// 로딩 스켈레톤
+function ChatRoomSkeleton() {
+  return (
+    <div className="min-h-screen bg-gray-100 flex justify-center">
+      <div className="w-full max-w-[390px] min-h-screen bg-[#FFFFFF] flex flex-col">
+        <header className="sticky top-0 z-40 bg-white border-b border-gray-100">
+          <div className="flex items-center justify-between h-14 px-4">
+            <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
+            <div className="w-24 h-5 bg-gray-200 rounded animate-pulse" />
+            <div className="w-8" />
+          </div>
+        </header>
+        <div className="flex-1 p-4">
+          {[...Array(5)].map((_, i) => (
+            <div key={i} className={`flex ${i % 2 === 0 ? "justify-end" : "justify-start"} mb-3`}>
+              <div className="w-48 h-12 bg-gray-200 rounded-2xl animate-pulse" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 채팅방 페이지
 export default function ChatRoomPage() {
   const router = useRouter();
+  const params = useParams();
+  const roomId = Number(params.id);
+
+  const { isAuthenticated, isLoading: authLoading, user, accessToken } = useAuth();
+  const [chatRoom, setChatRoom] = useState<ChatRoom | null>(null);
+  const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
-  const [messages, setMessages] = useState(mockMessages);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const [isBottomTabOpen, setIsBottomTabOpen] = useState(false);
-  // 거래 상태 관리 (available: 거래 가능, reserved: 예약 중, completed: 거래 완료, reviewed: 후기 완료)
-  const [tradeStatus, setTradeStatus] = useState<TradeStatus>("available");
 
-  // 거래 상태 변경 핸들러
-  const handleTradeStatusChange = (newStatus: TradeStatus) => {
-    setTradeStatus(newStatus);
-    // TODO: API 호출로 거래 상태 업데이트
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const currentUserId = user?.id ? Number(user.id) : undefined;
+
+  // 메시지 목록 스크롤 하단으로
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // 후기 보내기 핸들러
-  const handleSendReview = () => {
-    // TODO: 후기 작성 모달 또는 페이지로 이동
-    alert("후기 보내기 기능은 준비 중입니다.");
-    setTradeStatus("reviewed");
-  };
+  // 메시지 포맷 변환 (API 응답 -> 화면 표시용)
+  const formatMessage = (msg: ChatMessage, userId: number | undefined): DisplayMessage => ({
+    id: msg.id,
+    senderId: msg.senderId,
+    senderNickname: msg.senderNickname,
+    content: msg.content,
+    imageUrl: msg.imageUrl,
+    isMe: msg.senderId === userId,
+    time: formatMessageTime(msg.createdAt),
+    isRead: msg.isRead,
+  });
 
-  const handleSend = () => {
-    if (!inputMessage.trim()) return;
+  // 채팅방 정보 및 이전 메시지 로드
+  useEffect(() => {
+    if (authLoading) return;
 
-    const newMessage = {
-      id: messages.length + 1,
-      sender: "me",
-      content: inputMessage,
-      time: new Date().toLocaleTimeString("ko-KR", {
-        hour: "numeric",
-        minute: "2-digit",
-        hour12: true,
-      }),
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    const loadChatRoom = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // 채팅방 정보 조회
+        const room = await getChatRoom(roomId);
+        setChatRoom(room);
+
+        // 이전 메시지 조회
+        const prevMessages = await getChatMessages(roomId);
+        const formattedMessages = prevMessages.map((msg) =>
+          formatMessage(msg as unknown as ChatMessage, currentUserId)
+        );
+        setMessages(formattedMessages);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "채팅방을 불러오는데 실패했습니다");
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    setMessages([...messages, newMessage]);
+    loadChatRoom();
+  }, [isAuthenticated, authLoading, roomId, currentUserId, router]);
+
+  // WebSocket 연결
+  useEffect(() => {
+    if (!accessToken || !roomId || isLoading) return;
+
+    // WebSocket 연결
+    webSocketClient.connect(
+      accessToken,
+      () => {
+        setIsConnected(true);
+
+        // 채팅방 구독
+        webSocketClient.subscribeToChatRoom(
+          roomId,
+          // 새 메시지 수신
+          (newMessage: ChatMessage) => {
+            const formattedMessage = formatMessage(newMessage, currentUserId);
+            setMessages((prev) => [...prev, formattedMessage]);
+            scrollToBottom();
+
+            // 상대방 메시지면 읽음 처리
+            if (newMessage.senderId !== currentUserId) {
+              webSocketClient.markAsRead(roomId);
+            }
+          },
+          // 읽음 알림 수신
+          (userId: number) => {
+            if (userId !== currentUserId) {
+              // 내 메시지들을 읽음 처리
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.isMe ? { ...msg, isRead: true } : msg
+                )
+              );
+            }
+          }
+        );
+
+        // 입장 시 읽음 처리
+        webSocketClient.markAsRead(roomId);
+      },
+      () => {
+        setIsConnected(false);
+      }
+    );
+
+    // 클린업
+    return () => {
+      webSocketClient.unsubscribeFromChatRoom(roomId);
+    };
+  }, [accessToken, roomId, isLoading, currentUserId]);
+
+  // 메시지 변경 시 스크롤
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  // 메시지 전송
+  const handleSend = () => {
+    if (!inputMessage.trim() || !isConnected) return;
+
+    webSocketClient.sendMessage({
+      chatRoomId: roomId,
+      messageType: "TEXT",
+      content: inputMessage.trim(),
+    });
+
     setInputMessage("");
   };
 
+  // 엔터키 전송
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
   };
+
+  // 로딩 중
+  if (authLoading || isLoading) {
+    return <ChatRoomSkeleton />;
+  }
+
+  // 에러 발생
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex justify-center">
+        <div className="w-full max-w-[390px] min-h-screen bg-[#FFFFFF] flex flex-col items-center justify-center p-4">
+          <p className="text-red-500 mb-4">{error}</p>
+          <button
+            onClick={() => router.back()}
+            className="px-4 py-2 bg-primary text-white rounded-lg"
+          >
+            뒤로 가기
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex justify-center">
@@ -143,100 +279,77 @@ export default function ChatRoomPage() {
             >
               <ChevronLeftIcon className="text-gray-800" />
             </button>
-            <h1 className="font-semibold text-lg">user 1</h1>
-            <div className="w-8" /> {/* 균형을 위한 빈 공간 */}
+            <div className="flex items-center gap-2">
+              <h1 className="font-semibold text-lg">{chatRoom?.otherUserNickname}</h1>
+              {!isConnected && (
+                <span className="w-2 h-2 bg-yellow-500 rounded-full" title="연결 중..." />
+              )}
+            </div>
+            <div className="w-8" />
           </div>
         </header>
 
         {/* 상품 정보 바 */}
-        <div className="relative z-10 flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white">
-          <Link
-            href={`/post/${mockProduct.id}`}
-            className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80"
-          >
-            <div className="w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0 flex items-center justify-center">
-              🚲
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                  tradeStatus === "available"
-                    ? "bg-[#5BBFB3] text-white"
-                    : tradeStatus === "reserved"
-                    ? "bg-yellow-500 text-white"
-                    : "bg-primary text-white"
-                }`}>
-                  {getTradeStatusLabel(tradeStatus)}
-                </span>
-                <span className="text-sm text-gray-900 truncate">{mockProduct.title}</span>
-              </div>
-              <p className="text-sm font-semibold text-gray-900 mt-0.5">
-                {mockProduct.price.toLocaleString()}원
-              </p>
-            </div>
-          </Link>
-
-          {/* 거래 상태별 버튼 */}
-          {tradeStatus === "available" && (
-            <div className="flex gap-1">
-              <button
-                onClick={() => handleTradeStatusChange("completed")}
-                className="px-2 py-1 text-xs bg-white border border-[#5BBFB3] text-[#5BBFB3] rounded-md hover:bg-[#5BBFB3]/10 transition-colors"
-              >
-                거래 완료
-              </button>
-              <button
-                onClick={() => handleTradeStatusChange("reserved")}
-                className="px-2 py-1 text-xs bg-white border border-[#5BBFB3] text-[#5BBFB3] rounded-md hover:bg-[#5BBFB3]/10 transition-colors"
-              >
-                예약 중
-              </button>
-            </div>
-          )}
-
-          {tradeStatus === "reserved" && (
-            <div className="flex gap-1">
-              <button
-                onClick={() => handleTradeStatusChange("completed")}
-                className="px-2 py-1 text-xs bg-white border border-[#5BBFB3] text-[#5BBFB3] rounded-md hover:bg-[#5BBFB3]/10 transition-colors"
-              >
-                거래 완료
-              </button>
-              <button
-                onClick={() => handleTradeStatusChange("available")}
-                className="px-2 py-1 text-xs bg-white border border-gray-400 text-gray-400 rounded-md hover:bg-gray-100 transition-colors"
-              >
-                예약 취소
-              </button>
-            </div>
-          )}
-
-          {tradeStatus === "completed" && (
-            <button
-              onClick={handleSendReview}
-              className="flex items-center gap-1 px-3 py-1.5 text-xs bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors"
+        {chatRoom && (
+          <div className="relative z-10 flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white">
+            <Link
+              href={`/post/${chatRoom.postId}`}
+              className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
-              후기 보내기
-            </button>
-          )}
-
-          {/* reviewed 상태일 때는 버튼 없음 */}
-        </div>
+              <div className="w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
+                {chatRoom.postImageUrl ? (
+                  <img
+                    src={chatRoom.postImageUrl}
+                    alt={chatRoom.postItemName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-2xl">
+                    📦
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                    chatRoom.postStatus === "AVAILABLE"
+                      ? "bg-[#5BBFB3] text-white"
+                      : chatRoom.postStatus === "RESERVED"
+                      ? "bg-yellow-500 text-white"
+                      : "bg-gray-500 text-white"
+                  }`}>
+                    {getTradeStatusLabel(chatRoom.postStatus as TradeStatus)}
+                  </span>
+                  <span className="text-sm text-gray-900 truncate">{chatRoom.postItemName}</span>
+                </div>
+                {chatRoom.postPrice && (
+                  <p className="text-sm font-semibold text-gray-900 mt-0.5">
+                    {chatRoom.postPrice.toLocaleString()}벨
+                  </p>
+                )}
+              </div>
+            </Link>
+          </div>
+        )}
 
         {/* 메시지 영역 */}
         <div className="flex-1 overflow-y-auto p-4 pb-4">
-          {messages.map((message) => (
-            <MessageBubble key={message.id} message={message} />
-          ))}
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-gray-400">
+              <span className="text-4xl mb-2">💬</span>
+              <p>채팅을 시작해보세요!</p>
+            </div>
+          ) : (
+            messages.map((message) => (
+              <MessageBubble key={message.id} message={message} />
+            ))
+          )}
+          <div ref={messagesEndRef} />
         </div>
 
-        {/* 입력 영역 + 물결 + 하단탭 (함께 움직임) */}
+        {/* 입력 영역 + 물결 + 하단탭 */}
         <div className="sticky bottom-0 z-20">
-          {/* 물결 배경 - 입력창 위에 붙음 */}
+          {/* 물결 배경 */}
           <div className="pointer-events-none">
             <svg
               viewBox="0 0 1440 200"
@@ -253,10 +366,11 @@ export default function ChatRoomPage() {
               />
             </svg>
           </div>
+
           {/* 입력창 */}
           <div className="bg-[#BAE8E7] p-3 -mt-1">
             <div className="flex items-center gap-2">
-              {/* + 버튼 (하단탭 토글) */}
+              {/* + 버튼 */}
               <button
                 onClick={() => setIsBottomTabOpen(!isBottomTabOpen)}
                 aria-label={isBottomTabOpen ? "메뉴 닫기" : "메뉴 열기"}
@@ -283,15 +397,16 @@ export default function ChatRoomPage() {
               </button>
               <input
                 type="text"
-                placeholder="메시지를 입력하세요"
+                placeholder={isConnected ? "메시지를 입력하세요" : "연결 중..."}
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                className="flex-1 px-4 py-2 bg-white/90 rounded-full text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50"
+                disabled={!isConnected}
+                className="flex-1 px-4 py-2 bg-white/90 rounded-full text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50 disabled:opacity-50"
               />
               <button
                 onClick={handleSend}
-                disabled={!inputMessage.trim()}
+                disabled={!inputMessage.trim() || !isConnected}
                 aria-label="메시지 전송"
                 className="p-2 bg-[#5BBFB3] rounded-full text-white hover:bg-[#4AA89C] disabled:opacity-50"
               >
