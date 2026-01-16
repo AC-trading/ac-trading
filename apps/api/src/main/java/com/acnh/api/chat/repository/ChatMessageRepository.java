@@ -4,7 +4,10 @@ import com.acnh.api.chat.entity.ChatMessage;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -37,4 +40,26 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
      * 채팅방 ID와 발신자 ID가 아닌 읽지 않은 메시지 수 조회
      */
     long countByChatRoomIdAndSenderIdNotAndIsReadFalseAndDeletedAtIsNull(Long chatRoomId, Long senderId);
+
+    /**
+     * 채팅방별 마지막 메시지 일괄 조회
+     * - chatRoomId 목록에 해당하는 각 채팅방의 최신 메시지 반환
+     */
+    @Query("SELECT m FROM ChatMessage m WHERE m.deletedAt IS NULL " +
+            "AND m.chatRoomId IN :chatRoomIds " +
+            "AND m.createdAt = (SELECT MAX(m2.createdAt) FROM ChatMessage m2 " +
+            "WHERE m2.chatRoomId = m.chatRoomId AND m2.deletedAt IS NULL)")
+    List<ChatMessage> findLastMessagesByChatRoomIds(@Param("chatRoomIds") Collection<Long> chatRoomIds);
+
+    /**
+     * 채팅방별 읽지 않은 메시지 수 일괄 조회
+     * - Object[]: [chatRoomId, count]
+     */
+    @Query("SELECT m.chatRoomId, COUNT(m) FROM ChatMessage m " +
+            "WHERE m.deletedAt IS NULL AND m.chatRoomId IN :chatRoomIds " +
+            "AND m.senderId <> :excludeSenderId AND m.isRead = false " +
+            "GROUP BY m.chatRoomId")
+    List<Object[]> countUnreadMessagesByChatRoomIds(
+            @Param("chatRoomIds") Collection<Long> chatRoomIds,
+            @Param("excludeSenderId") Long excludeSenderId);
 }
