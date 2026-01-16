@@ -55,7 +55,7 @@ public class StompHandler implements ChannelInterceptor {
                 log.info("WebSocket 연결 인증 성공 - userId: {}", userId);
             } else {
                 log.warn("WebSocket 연결 인증 실패 - 유효하지 않은 토큰");
-                // 인증 실패 시에도 연결은 허용 (구독 시 체크)
+                // STOMP 네이티브 헤더("token")에서도 토큰 추출 시도 (SockJS fallback용)
             }
         }
 
