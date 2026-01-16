@@ -23,7 +23,8 @@
       "Bash(gh pr list:*)",
       "Bash(gh pr edit:*)",
       "Bash(move:*)",
-      "Bash(git checkout:*)"
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)"
     ]
   }
 }

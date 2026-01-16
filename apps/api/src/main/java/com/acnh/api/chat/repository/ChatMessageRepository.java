@@ -50,11 +50,17 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     /**
      * 채팅방별 마지막 메시지 일괄 조회
      * - chatRoomId 목록에 해당하는 각 채팅방의 최신 메시지 반환
+     *
+     * [PR Review 수정]
+     * Before: MAX(createdAt) 사용 - 타임스탬프 중복 시 여러 행 반환 가능
+     * After: MAX(id) 사용 - 채팅방당 정확히 1행만 반환 보장
+     * 이유: 동시에 생성된 메시지의 중복 반환 방지
      */
     @Query("SELECT m FROM ChatMessage m WHERE m.deletedAt IS NULL " +
             "AND m.chatRoomId IN :chatRoomIds " +
-            "AND m.createdAt = (SELECT MAX(m2.createdAt) FROM ChatMessage m2 " +
-            "WHERE m2.chatRoomId = m.chatRoomId AND m2.deletedAt IS NULL)")
+            "AND m.id IN (SELECT MAX(m2.id) FROM ChatMessage m2 " +
+            "WHERE m2.deletedAt IS NULL AND m2.chatRoomId IN :chatRoomIds " +
+            "GROUP BY m2.chatRoomId)")
     List<ChatMessage> findLastMessagesByChatRoomIds(@Param("chatRoomIds") Collection<Long> chatRoomIds);
 
     /**
