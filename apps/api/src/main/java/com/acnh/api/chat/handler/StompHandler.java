@@ -41,7 +41,12 @@ public class StompHandler implements ChannelInterceptor {
             if (token != null && jwtTokenProvider.validateToken(token)) {
                 String userId = jwtTokenProvider.getUserId(token);
 
-                // 인증 객체 생성 및 STOMP 세션에 설정
+                /*
+                 * [PR Review 수정]
+                 * Before: SecurityContextHolder.getContext().setAuthentication() + accessor.setUser()
+                 * After: accessor.setUser()만 사용
+                 * 이유: ThreadLocal 기반 SecurityContextHolder는 STOMP 세션과 무관하여 불필요
+                 */
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
 
