@@ -16,6 +16,7 @@ import java.util.Map;
 
 /**
  * 채팅 REST API 컨트롤러
+ * Base Path: /api/chat/rooms
  * - 채팅방 CRUD
  * - 이전 메시지 조회
  */
@@ -31,7 +32,7 @@ public class ChatController {
 
     /**
      * 채팅방 생성 또는 기존 채팅방 반환
-     * POST /api/chat-rooms
+     * POST /api/chat/rooms
      */
     @PostMapping
     public ResponseEntity<?> createChatRoom(
@@ -66,7 +67,7 @@ public class ChatController {
 
     /**
      * 내 채팅방 목록 조회
-     * GET /api/chat-rooms
+     * GET /api/chat/rooms
      */
     @GetMapping
     public ResponseEntity<?> getMyChatRooms(
@@ -97,7 +98,7 @@ public class ChatController {
 
     /**
      * 채팅방 상세 조회
-     * GET /api/chat-rooms/{roomId}
+     * GET /api/chat/rooms/{roomId}
      */
     @GetMapping("/{roomId}")
     public ResponseEntity<?> getChatRoom(
@@ -132,7 +133,7 @@ public class ChatController {
 
     /**
      * 채팅 메시지 목록 조회 (이전 메시지)
-     * GET /api/chat-rooms/{roomId}/messages
+     * GET /api/chat/rooms/{roomId}/messages
      */
     @GetMapping("/{roomId}/messages")
     public ResponseEntity<?> getMessages(
