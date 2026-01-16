@@ -185,6 +185,11 @@ public class ChatService {
 
     /**
      * 메시지 저장 (STOMP에서 호출)
+     *
+     * [PR Review 수정]
+     * Before: 메시지만 저장, 채팅방 updatedAt 미갱신
+     * After: 메시지 저장 후 채팅방 updatedAt 갱신
+     * 이유: getMyChatRooms 정렬이 최신 메시지 기준으로 동작하도록
      */
     @Transactional
     public ChatMessageResponse saveMessage(ChatMessageRequest request, Long senderId) {
@@ -208,6 +213,9 @@ public class ChatService {
                 .build();
 
         ChatMessage savedMessage = chatMessageRepository.save(message);
+
+        // 채팅방 updatedAt 갱신 (목록 정렬용)
+        chatRoom.touch();
 
         Member sender = memberRepository.findByIdAndDeletedAtIsNull(senderId).orElse(null);
         String nickname = sender != null ? sender.getNickname() : "알 수 없음";

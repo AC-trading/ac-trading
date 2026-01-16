@@ -51,4 +51,12 @@ public abstract class BaseEntity {
     public boolean isDeleted() {
         return this.deletedAt != null;
     }
+
+    /**
+     * updatedAt 강제 갱신 (연관 데이터 변경 시 사용)
+     * - 예: 채팅방에 새 메시지 추가 시 채팅방 updatedAt 갱신
+     */
+    public void touch() {
+        this.updatedAt = LocalDateTime.now();
+    }
 }
