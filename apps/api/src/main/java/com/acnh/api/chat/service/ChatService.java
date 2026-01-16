@@ -153,6 +153,11 @@ public class ChatService {
     /**
      * 채팅 메시지 목록 조회 (이전 메시지)
      * - N+1 문제 방지를 위해 sender 정보를 일괄 조회
+     *
+     * [PR Review 수정]
+     * Before: 빈 메시지 목록에도 memberRepository 쿼리 실행
+     * After: messages.isEmpty() 시 빈 리스트 즉시 반환
+     * 이유: 불필요한 IN 쿼리 방지
      */
     public List<ChatMessageResponse> getMessages(Long roomId, String visitorId) {
         Member member = findMemberByUuid(visitorId);
@@ -163,6 +168,11 @@ public class ChatService {
 
         List<ChatMessage> messages = chatMessageRepository
                 .findByChatRoomIdAndDeletedAtIsNullOrderByCreatedAtAsc(roomId);
+
+        // 메시지가 없으면 빈 리스트 반환 (불필요한 쿼리 방지)
+        if (messages.isEmpty()) {
+            return List.of();
+        }
 
         // sender ID 목록 추출 후 일괄 조회
         List<Long> senderIds = messages.stream()
