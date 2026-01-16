@@ -8,6 +8,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -128,4 +129,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             "AND p.userId = :userId " +
             "ORDER BY p.createdAt DESC")
     Page<Post> findMyPosts(@Param("userId") Long userId, Pageable pageable);
+
+    /**
+     * ID 목록으로 삭제되지 않은 게시글 일괄 조회
+     */
+    List<Post> findByIdInAndDeletedAtIsNull(Collection<Long> ids);
 }

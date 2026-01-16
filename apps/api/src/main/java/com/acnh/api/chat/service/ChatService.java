@@ -78,15 +78,17 @@ public class ChatService {
 
     /**
      * 내 채팅방 목록 조회
+     * - N+1 문제 방지를 위해 관련 데이터 일괄 조회
      */
     public ChatRoomListResponse getMyChatRooms(String visitorId, Pageable pageable) {
         Member member = findMemberByUuid(visitorId);
+        Long currentUserId = member.getId();
 
         // postOwner 또는 applicant로 참여한 채팅방 모두 조회
         List<ChatRoom> asOwner = chatRoomRepository
-                .findByPostOwnerIdAndDeletedAtIsNullOrderByUpdatedAtDesc(member.getId());
+                .findByPostOwnerIdAndDeletedAtIsNullOrderByUpdatedAtDesc(currentUserId);
         List<ChatRoom> asApplicant = chatRoomRepository
-                .findByApplicantIdAndDeletedAtIsNullOrderByUpdatedAtDesc(member.getId());
+                .findByApplicantIdAndDeletedAtIsNullOrderByUpdatedAtDesc(currentUserId);
 
         // 합치고 updatedAt 기준 정렬
         List<ChatRoom> allRooms = new ArrayList<>();
@@ -98,12 +100,48 @@ public class ChatService {
         int start = (int) pageable.getOffset();
         int end = Math.min(start + pageable.getPageSize(), allRooms.size());
 
-        List<ChatRoomResponse> responses = new ArrayList<>();
-        if (start < allRooms.size()) {
-            for (ChatRoom room : allRooms.subList(start, end)) {
-                responses.add(toChatRoomResponse(room, member.getId()));
-            }
+        if (start >= allRooms.size()) {
+            Page<ChatRoomResponse> emptyPage = new PageImpl<>(new ArrayList<>(), pageable, allRooms.size());
+            return ChatRoomListResponse.from(emptyPage);
         }
+
+        List<ChatRoom> pagedRooms = allRooms.subList(start, end);
+
+        // 관련 데이터 일괄 조회를 위한 ID 수집
+        List<Long> postIds = pagedRooms.stream().map(ChatRoom::getPostId).distinct().toList();
+        List<Long> chatRoomIds = pagedRooms.stream().map(ChatRoom::getId).toList();
+        List<Long> otherUserIds = pagedRooms.stream()
+                .map(room -> room.getPostOwnerId().equals(currentUserId)
+                        ? room.getApplicantId() : room.getPostOwnerId())
+                .distinct()
+                .toList();
+
+        // 일괄 조회
+        Map<Long, Post> postMap = postRepository.findByIdInAndDeletedAtIsNull(postIds)
+                .stream()
+                .collect(Collectors.toMap(Post::getId, Function.identity()));
+
+        Map<Long, Member> memberMap = memberRepository.findByIdInAndDeletedAtIsNull(otherUserIds)
+                .stream()
+                .collect(Collectors.toMap(Member::getId, Function.identity()));
+
+        Map<Long, ChatMessage> lastMessageMap = chatMessageRepository.findLastMessagesByChatRoomIds(chatRoomIds)
+                .stream()
+                .collect(Collectors.toMap(ChatMessage::getChatRoomId, Function.identity()));
+
+        Map<Long, Long> unreadCountMap = chatMessageRepository
+                .countUnreadMessagesByChatRoomIds(chatRoomIds, currentUserId)
+                .stream()
+                .collect(Collectors.toMap(
+                        arr -> (Long) arr[0],
+                        arr -> (Long) arr[1]
+                ));
+
+        // 응답 생성 (Map에서 조회하여 N+1 방지)
+        List<ChatRoomResponse> responses = pagedRooms.stream()
+                .map(room -> toChatRoomResponseFromMaps(room, currentUserId,
+                        postMap, memberMap, lastMessageMap, unreadCountMap))
+                .toList();
 
         Page<ChatRoomResponse> page = new PageImpl<>(responses, pageable, allRooms.size());
         return ChatRoomListResponse.from(page);
@@ -269,7 +307,7 @@ public class ChatService {
     }
 
     /**
-     * ChatRoom -> ChatRoomResponse 변환
+     * ChatRoom -> ChatRoomResponse 변환 (단일 채팅방용, 개별 쿼리 사용)
      */
     private ChatRoomResponse toChatRoomResponse(ChatRoom chatRoom, Long currentUserId) {
         // 게시글 정보
@@ -302,6 +340,49 @@ public class ChatService {
         // 읽지 않은 메시지 수
         int unreadCount = (int) chatMessageRepository
                 .countByChatRoomIdAndSenderIdNotAndIsReadFalseAndDeletedAtIsNull(chatRoom.getId(), currentUserId);
+
+        return ChatRoomResponse.from(chatRoom, currentUserId, postItemName, postImageUrl, postPrice, postStatus,
+                otherNickname, otherIslandName, lastMessage, lastMessageAt, unreadCount);
+    }
+
+    /**
+     * ChatRoom -> ChatRoomResponse 변환 (목록 조회용, 미리 조회된 Map 사용하여 N+1 방지)
+     */
+    private ChatRoomResponse toChatRoomResponseFromMaps(
+            ChatRoom chatRoom,
+            Long currentUserId,
+            Map<Long, Post> postMap,
+            Map<Long, Member> memberMap,
+            Map<Long, ChatMessage> lastMessageMap,
+            Map<Long, Long> unreadCountMap) {
+
+        // 게시글 정보
+        Post post = postMap.get(chatRoom.getPostId());
+        String postItemName = post != null ? post.getItemName() : "삭제된 게시글";
+        // TODO: Post에 이미지 필드 추가 시 연동 필요
+        String postImageUrl = null;
+        Integer postPrice = post != null ? post.getPrice() : null;
+        String postStatus = post != null ? post.getStatus() : null;
+
+        // 상대방 정보
+        Long otherUserId = chatRoom.getPostOwnerId().equals(currentUserId)
+                ? chatRoom.getApplicantId()
+                : chatRoom.getPostOwnerId();
+        Member otherUser = memberMap.get(otherUserId);
+        String otherNickname = otherUser != null ? otherUser.getNickname() : "알 수 없음";
+        String otherIslandName = otherUser != null ? otherUser.getIslandName() : null;
+
+        // 마지막 메시지
+        ChatMessage lastMsg = lastMessageMap.get(chatRoom.getId());
+        String lastMessage = null;
+        LocalDateTime lastMessageAt = null;
+        if (lastMsg != null) {
+            lastMessage = lastMsg.getMessageType().equals("IMAGE") ? "[이미지]" : lastMsg.getContent();
+            lastMessageAt = lastMsg.getCreatedAt();
+        }
+
+        // 읽지 않은 메시지 수
+        int unreadCount = unreadCountMap.getOrDefault(chatRoom.getId(), 0L).intValue();
 
         return ChatRoomResponse.from(chatRoom, currentUserId, postItemName, postImageUrl, postPrice, postStatus,
                 otherNickname, otherIslandName, lastMessage, lastMessageAt, unreadCount);
