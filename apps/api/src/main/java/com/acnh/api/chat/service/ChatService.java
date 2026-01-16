@@ -12,13 +12,11 @@ import com.acnh.api.post.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -79,33 +77,23 @@ public class ChatService {
     /**
      * 내 채팅방 목록 조회
      * - N+1 문제 방지를 위해 관련 데이터 일괄 조회
+     *
+     * [PR Review 수정]
+     * Before: 모든 채팅방을 메모리에 로드 후 Java에서 정렬/페이징 (인메모리 페이징)
+     * After: DB 레벨에서 페이징 처리 (findByParticipantId)
+     * 이유: 채팅방 수가 많아질 경우 메모리 부족 및 성능 저하 방지
      */
     public ChatRoomListResponse getMyChatRooms(String visitorId, Pageable pageable) {
         Member member = findMemberByUuid(visitorId);
         Long currentUserId = member.getId();
 
-        // postOwner 또는 applicant로 참여한 채팅방 모두 조회
-        List<ChatRoom> asOwner = chatRoomRepository
-                .findByPostOwnerIdAndDeletedAtIsNullOrderByUpdatedAtDesc(currentUserId);
-        List<ChatRoom> asApplicant = chatRoomRepository
-                .findByApplicantIdAndDeletedAtIsNullOrderByUpdatedAtDesc(currentUserId);
+        // DB 레벨에서 페이징 처리 (postOwner 또는 applicant로 참여한 채팅방)
+        Page<ChatRoom> chatRoomPage = chatRoomRepository.findByParticipantId(currentUserId, pageable);
+        List<ChatRoom> pagedRooms = chatRoomPage.getContent();
 
-        // 합치고 updatedAt 기준 정렬
-        List<ChatRoom> allRooms = new ArrayList<>();
-        allRooms.addAll(asOwner);
-        allRooms.addAll(asApplicant);
-        allRooms.sort((a, b) -> b.getUpdatedAt().compareTo(a.getUpdatedAt()));
-
-        // 페이징 처리
-        int start = (int) pageable.getOffset();
-        int end = Math.min(start + pageable.getPageSize(), allRooms.size());
-
-        if (start >= allRooms.size()) {
-            Page<ChatRoomResponse> emptyPage = new PageImpl<>(new ArrayList<>(), pageable, allRooms.size());
-            return ChatRoomListResponse.from(emptyPage);
+        if (pagedRooms.isEmpty()) {
+            return ChatRoomListResponse.from(chatRoomPage.map(room -> null));
         }
-
-        List<ChatRoom> pagedRooms = allRooms.subList(start, end);
 
         // 관련 데이터 일괄 조회를 위한 ID 수집
         List<Long> postIds = pagedRooms.stream().map(ChatRoom::getPostId).distinct().toList();
@@ -143,13 +131,10 @@ public class ChatService {
                 ));
 
         // 응답 생성 (Map에서 조회하여 N+1 방지)
-        List<ChatRoomResponse> responses = pagedRooms.stream()
-                .map(room -> toChatRoomResponseFromMaps(room, currentUserId,
-                        postMap, memberMap, lastMessageMap, unreadCountMap))
-                .toList();
+        Page<ChatRoomResponse> responsePage = chatRoomPage.map(room ->
+                toChatRoomResponseFromMaps(room, currentUserId, postMap, memberMap, lastMessageMap, unreadCountMap));
 
-        Page<ChatRoomResponse> page = new PageImpl<>(responses, pageable, allRooms.size());
-        return ChatRoomListResponse.from(page);
+        return ChatRoomListResponse.from(responsePage);
     }
 
     /**
