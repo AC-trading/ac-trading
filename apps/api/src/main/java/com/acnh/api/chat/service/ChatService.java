@@ -116,7 +116,12 @@ public class ChatService {
                 .distinct()
                 .toList();
 
-        // 일괄 조회
+        /*
+         * [PR Review 수정]
+         * Before: toChatRoomResponse()에서 채팅방마다 개별 쿼리 실행 (N+1 문제)
+         * After: 필요한 데이터를 미리 일괄 조회 후 Map으로 변환하여 O(1) lookup
+         * 이유: 채팅방 N개 조회 시 4*N개 쿼리 -> 고정 6개 쿼리로 성능 개선
+         */
         Map<Long, Post> postMap = postRepository.findByIdInAndDeletedAtIsNull(postIds)
                 .stream()
                 .collect(Collectors.toMap(Post::getId, Function.identity()));

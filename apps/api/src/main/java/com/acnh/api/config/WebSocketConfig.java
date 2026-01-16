@@ -21,7 +21,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final StompHandler stompHandler;
 
-    // SecurityConfig와 동일한 허용 Origin 목록
+    /*
+     * [PR Review 수정]
+     * Before: setAllowedOriginPatterns("*") - 모든 Origin 허용 (보안 위험)
+     * After: SecurityConfig와 동일한 명시적 Origin 목록만 허용
+     * 이유: SecurityConfig와 CORS 정책 불일치 및 보안 위험 해결
+     */
     private static final String[] ALLOWED_ORIGINS = {
             "http://localhost:3000",           // 로컬 프론트엔드
             "https://ac-trading.vercel.app"    // 프로덕션 프론트엔드
