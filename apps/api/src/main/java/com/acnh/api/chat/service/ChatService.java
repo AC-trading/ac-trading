@@ -20,7 +20,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 채팅 관련 비즈니스 로직 서비스
@@ -121,6 +124,7 @@ public class ChatService {
 
     /**
      * 채팅 메시지 목록 조회 (이전 메시지)
+     * - N+1 문제 방지를 위해 sender 정보를 일괄 조회
      */
     public List<ChatMessageResponse> getMessages(Long roomId, String visitorId) {
         Member member = findMemberByUuid(visitorId);
@@ -132,9 +136,19 @@ public class ChatService {
         List<ChatMessage> messages = chatMessageRepository
                 .findByChatRoomIdAndDeletedAtIsNullOrderByCreatedAtAsc(roomId);
 
+        // sender ID 목록 추출 후 일괄 조회
+        List<Long> senderIds = messages.stream()
+                .map(ChatMessage::getSenderId)
+                .distinct()
+                .toList();
+
+        Map<Long, Member> senderMap = memberRepository.findByIdInAndDeletedAtIsNull(senderIds)
+                .stream()
+                .collect(Collectors.toMap(Member::getId, Function.identity()));
+
         return messages.stream()
                 .map(msg -> {
-                    Member sender = memberRepository.findByIdAndDeletedAtIsNull(msg.getSenderId()).orElse(null);
+                    Member sender = senderMap.get(msg.getSenderId());
                     String nickname = sender != null ? sender.getNickname() : "알 수 없음";
                     return ChatMessageResponse.from(msg, nickname);
                 })
