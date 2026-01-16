@@ -10,7 +10,6 @@ import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.messaging.support.ChannelInterceptor;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -18,7 +17,7 @@ import java.util.Collections;
 /**
  * STOMP 메시지 인터셉터
  * - CONNECT 시 JWT 토큰 검증
- * - 인증된 사용자 정보를 SecurityContext에 저장
+ * - 인증된 사용자 정보를 accessor.setUser()로 설정
  */
 @Slf4j
 @Component
@@ -42,11 +41,10 @@ public class StompHandler implements ChannelInterceptor {
             if (token != null && jwtTokenProvider.validateToken(token)) {
                 String userId = jwtTokenProvider.getUserId(token);
 
-                // 인증 객체 생성 및 설정
+                // 인증 객체 생성 및 STOMP 세션에 설정
                 UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(userId, null, Collections.emptyList());
 
-                SecurityContextHolder.getContext().setAuthentication(authentication);
                 accessor.setUser(authentication);
 
                 log.info("WebSocket 연결 인증 성공 - userId: {}", userId);
