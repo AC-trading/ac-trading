@@ -42,6 +42,12 @@ public interface ChatMessageRepository extends JpaRepository<ChatMessage, Long> 
     long countByChatRoomIdAndSenderIdNotAndIsReadFalseAndDeletedAtIsNull(Long chatRoomId, Long senderId);
 
     /**
+     * 채팅방의 최신 메시지 1건 조회 (단일 채팅방용)
+     * - 전체 목록 조회 대신 효율적으로 마지막 메시지만 조회
+     */
+    Optional<ChatMessage> findFirstByChatRoomIdAndDeletedAtIsNullOrderByCreatedAtDesc(Long chatRoomId);
+
+    /**
      * 채팅방별 마지막 메시지 일괄 조회
      * - chatRoomId 목록에 해당하는 각 채팅방의 최신 메시지 반환
      */
