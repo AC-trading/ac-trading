@@ -2,6 +2,7 @@ package com.acnh.api.config;
 
 import com.acnh.api.auth.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -29,6 +30,15 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    /*
+     * [PR Review 수정]
+     * Before: 하드코딩된 Origin 목록 사용
+     * After: 환경 변수(app.cors.allowed-origins)에서 읽어서 WebSocketConfig와 공유
+     * 이유: 환경별 설정 유연성 및 중복 제거
+     */
+    @Value("${app.cors.allowed-origins}")
+    private String allowedOriginsString;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -72,11 +82,8 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 허용할 Origin
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000",           // 로컬 프론트엔드
-            "https://ac-trading.vercel.app"    // 프로덕션 프론트엔드
-        ));
+        // 허용할 Origin (환경 변수에서 읽음)
+        configuration.setAllowedOrigins(Arrays.asList(allowedOriginsString.split(",")));
 
         // 허용할 HTTP 메서드
         configuration.setAllowedMethods(Arrays.asList(

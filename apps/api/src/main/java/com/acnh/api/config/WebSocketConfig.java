@@ -2,6 +2,7 @@ package com.acnh.api.config;
 
 import com.acnh.api.chat.handler.StompHandler;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
@@ -23,14 +24,19 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     /*
      * [PR Review 수정]
-     * Before: setAllowedOriginPatterns("*") - 모든 Origin 허용 (보안 위험)
-     * After: SecurityConfig와 동일한 명시적 Origin 목록만 허용
-     * 이유: SecurityConfig와 CORS 정책 불일치 및 보안 위험 해결
+     * Before: 하드코딩된 ALLOWED_ORIGINS 상수 사용
+     * After: 환경 변수(app.cors.allowed-origins)에서 읽어서 SecurityConfig와 공유
+     * 이유: 환경별 설정 유연성 및 중복 제거
      */
-    private static final String[] ALLOWED_ORIGINS = {
-            "http://localhost:3000",           // 로컬 프론트엔드
-            "https://ac-trading.vercel.app"    // 프로덕션 프론트엔드
-    };
+    @Value("${app.cors.allowed-origins}")
+    private String allowedOriginsString;
+
+    /**
+     * 환경 변수에서 읽은 Origin 문자열을 배열로 변환
+     */
+    private String[] getAllowedOrigins() {
+        return allowedOriginsString.split(",");
+    }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
@@ -46,9 +52,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // WebSocket 연결 엔드포인트 (SecurityConfig와 동일한 Origin만 허용)
+        // WebSocket 연결 엔드포인트 (환경 변수에서 읽은 Origin만 허용)
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns(ALLOWED_ORIGINS)
+                .setAllowedOriginPatterns(getAllowedOrigins())
                 .withSockJS();  // SockJS fallback (Vercel 등 WebSocket 미지원 환경 대응)
     }
 
