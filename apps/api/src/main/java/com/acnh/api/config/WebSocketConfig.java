@@ -21,6 +21,12 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     private final StompHandler stompHandler;
 
+    // SecurityConfig와 동일한 허용 Origin 목록
+    private static final String[] ALLOWED_ORIGINS = {
+            "http://localhost:3000",           // 로컬 프론트엔드
+            "https://ac-trading.vercel.app"    // 프로덕션 프론트엔드
+    };
+
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // 클라이언트가 구독할 prefix (서버 -> 클라이언트)
@@ -35,9 +41,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // WebSocket 연결 엔드포인트
+        // WebSocket 연결 엔드포인트 (SecurityConfig와 동일한 Origin만 허용)
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")  // CORS 허용
+                .setAllowedOriginPatterns(ALLOWED_ORIGINS)
                 .withSockJS();  // SockJS fallback (Vercel 등 WebSocket 미지원 환경 대응)
     }
 
