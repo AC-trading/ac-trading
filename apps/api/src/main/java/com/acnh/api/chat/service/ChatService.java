@@ -228,6 +228,11 @@ public class ChatService {
 
     /**
      * 메시지 읽음 처리 (STOMP에서 호출)
+     *
+     * [PR Review 수정]
+     * Before: unreadMessages.size()로 로그 출력 (실제 처리 수와 다름)
+     * After: 실제 읽음 처리된 메시지 수만 카운트하여 로그 출력
+     * 이유: 로그의 정확성 향상
      */
     @Transactional
     public void markMessagesAsRead(Long roomId, Long userId) {
@@ -240,15 +245,17 @@ public class ChatService {
         List<ChatMessage> unreadMessages = chatMessageRepository
                 .findByChatRoomIdAndIsReadFalseAndDeletedAtIsNull(roomId);
 
+        int markedCount = 0;
         for (ChatMessage message : unreadMessages) {
             // 내가 보낸 메시지가 아닌 것만 읽음 처리
             if (!message.getSenderId().equals(userId)) {
                 message.markAsRead();
+                markedCount++;
             }
         }
 
         log.info("메시지 읽음 처리 - roomId: {}, userId: {}, count: {}",
-                roomId, userId, unreadMessages.size());
+                roomId, userId, markedCount);
     }
 
     /**
@@ -306,6 +313,11 @@ public class ChatService {
 
     /**
      * ChatRoom -> ChatRoomResponse 변환 (단일 채팅방용, 개별 쿼리 사용)
+     *
+     * [PR Review 수정]
+     * Before: 전체 메시지 목록 조회 후 마지막 메시지 추출 (비효율)
+     * After: findFirstByChatRoomIdAndDeletedAtIsNullOrderByCreatedAtDesc로 1건만 조회
+     * 이유: 불필요한 전체 데이터 로드 방지
      */
     private ChatRoomResponse toChatRoomResponse(ChatRoom chatRoom, Long currentUserId) {
         // 게시글 정보
@@ -324,15 +336,15 @@ public class ChatService {
         String otherNickname = otherUser != null ? otherUser.getNickname() : "알 수 없음";
         String otherIslandName = otherUser != null ? otherUser.getIslandName() : null;
 
-        // 마지막 메시지
-        List<ChatMessage> messages = chatMessageRepository
-                .findByChatRoomIdAndDeletedAtIsNullOrderByCreatedAtAsc(chatRoom.getId());
+        // 마지막 메시지 (1건만 조회)
         String lastMessage = null;
         LocalDateTime lastMessageAt = null;
-        if (!messages.isEmpty()) {
-            ChatMessage last = messages.get(messages.size() - 1);
-            lastMessage = last.getMessageType().equals("IMAGE") ? "[이미지]" : last.getContent();
-            lastMessageAt = last.getCreatedAt();
+        var lastMsgOpt = chatMessageRepository
+                .findFirstByChatRoomIdAndDeletedAtIsNullOrderByCreatedAtDesc(chatRoom.getId());
+        if (lastMsgOpt.isPresent()) {
+            ChatMessage lastMsg = lastMsgOpt.get();
+            lastMessage = lastMsg.getMessageType().equals("IMAGE") ? "[이미지]" : lastMsg.getContent();
+            lastMessageAt = lastMsg.getCreatedAt();
         }
 
         // 읽지 않은 메시지 수
