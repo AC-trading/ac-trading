@@ -37,12 +37,27 @@ interface ApiError {
   message: string;
 }
 
+/**
+ * localStorage에서 accessToken 조회 (SSR 환경 대응)
+ *
+ * [PR Review 수정]
+ * Before: localStorage.getItem('accessToken') 직접 호출 - SSR 시 에러 발생
+ * After: typeof window !== 'undefined' 체크 후 접근
+ * 이유: Next.js SSR 환경에서 localStorage 접근 불가 문제 해결
+ */
+function getAccessToken(): string | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  return localStorage.getItem('accessToken');
+}
+
 // 공통 fetch 함수
 async function fetchWithAuth<T>(
   url: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const accessToken = localStorage.getItem('accessToken');
+  const accessToken = getAccessToken();
 
   const response = await fetch(url, {
     ...options,
