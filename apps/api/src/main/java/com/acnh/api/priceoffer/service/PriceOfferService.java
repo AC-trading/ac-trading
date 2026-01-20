@@ -204,7 +204,16 @@ public class PriceOfferService {
         if (visitorId == null) {
             throw new IllegalArgumentException("로그인이 필요합니다");
         }
-        return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
+
+        // UUID 파싱 및 에러 메시지 정규화
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(visitorId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("잘못된 사용자 ID 형식입니다");
+        }
+
+        return memberRepository.findByUuidAndDeletedAtIsNull(uuid)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
     }
 
