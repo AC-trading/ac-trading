@@ -1,5 +1,6 @@
 package com.acnh.api.review.service;
 
+import com.acnh.api.chat.entity.ChatRoom;
 import com.acnh.api.chat.repository.ChatRoomRepository;
 import com.acnh.api.filter.ProfanityFilter;
 import com.acnh.api.member.entity.Member;
@@ -225,7 +226,7 @@ public class ReviewService {
     /**
      * 리뷰 대상자 유효성 검증
      * - 채팅 요청자 → 게시글 작성자에게만 리뷰 가능
-     * - 게시글 작성자 → 채팅 요청자에게만 리뷰 가능
+     * - 게시글 작성자 → 확정된 거래자(reservedUserId)에게만 리뷰 가능
      */
     private void validateRevieweeEligibility(Post post, Member reviewer, Member reviewee) {
         // 채팅 요청자가 리뷰하는 경우: 게시글 작성자에게만 리뷰 가능
@@ -236,9 +237,14 @@ public class ReviewService {
             return;
         }
 
-        // 게시글 작성자가 리뷰하는 경우: 해당 게시글에 채팅을 요청한 유저에게만 리뷰 가능
-        if (!chatRoomRepository.existsByPostIdAndApplicantIdAndDeletedAtIsNull(post.getId(), reviewee.getId())) {
-            throw new IllegalArgumentException("해당 게시글에 채팅을 요청한 유저에게만 리뷰를 작성할 수 있습니다");
+        // 게시글 작성자가 리뷰하는 경우: 확정된 거래자에게만 리뷰 가능
+        ChatRoom chatRoom = chatRoomRepository
+                .findByPostIdAndApplicantIdAndDeletedAtIsNull(post.getId(), reviewee.getId())
+                .orElseThrow(() -> new IllegalArgumentException("해당 게시글에 채팅을 요청한 유저에게만 리뷰를 작성할 수 있습니다"));
+
+        // 예약된 거래자인지 확인 (reservedUserId가 설정되어 있어야 함)
+        if (chatRoom.getReservedUserId() == null || !chatRoom.getReservedUserId().equals(reviewee.getId())) {
+            throw new IllegalArgumentException("확정된 거래자에게만 리뷰를 작성할 수 있습니다");
         }
     }
 
