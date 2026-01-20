@@ -98,6 +98,11 @@ public class PriceOfferService {
      * 가격 제안 수락
      * - 게시글 작성자만 수락 가능
      * - 수락 시 채팅방 생성 (기존 채팅방이 있으면 해당 채팅방 반환)
+     *
+     * [PR Review 수정]
+     * Before: priceOffer.accept()로 인메모리 상태 변경 (Race Condition 취약)
+     * After: acceptPriceOfferAtomic()으로 원자적 DB 업데이트
+     * 이유: 동시 요청 시 중복 수락 방지
      */
     @Transactional
     public PriceOfferAcceptResponse acceptPriceOffer(Long offerId, String visitorId) {
@@ -109,8 +114,11 @@ public class PriceOfferService {
             throw new IllegalArgumentException("게시글 작성자만 가격 제안을 수락할 수 있습니다");
         }
 
-        // 제안 수락
-        priceOffer.accept();
+        // 원자적 제안 수락 (Race Condition 방지)
+        int updatedRows = priceOfferRepository.acceptPriceOfferAtomic(offerId);
+        if (updatedRows == 0) {
+            throw new IllegalStateException("이미 처리된 가격 제안입니다");
+        }
         log.info("가격 제안 수락 - offerId: {}", offerId);
 
         // 채팅방 생성 또는 기존 채팅방 반환
