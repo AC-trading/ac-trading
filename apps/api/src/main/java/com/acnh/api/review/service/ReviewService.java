@@ -139,7 +139,15 @@ public class ReviewService {
             return false;
         }
 
-        Member member = memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
+        // UUID 파싱 실패 시 false 반환
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(visitorId);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+
+        Member member = memberRepository.findByUuidAndDeletedAtIsNull(uuid)
                 .orElse(null);
         if (member == null) {
             return false;
