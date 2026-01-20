@@ -26,6 +26,9 @@ public class R2Config {
     @Value("${r2.endpoint}")
     private String endpoint;
 
+    @Value("${r2.region:auto}")
+    private String region;
+
     @Bean
     public S3Client s3Client() {
         AwsBasicCredentials credentials = AwsBasicCredentials.create(accessKey, secretKey);
@@ -33,8 +36,7 @@ public class R2Config {
         return S3Client.builder()
                 .endpointOverride(URI.create(endpoint))
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
-                // R2는 리전이 auto이지만, SDK에서는 임의의 리전 설정 필요
-                .region(Region.of("auto"))
+                .region(Region.of(region))
                 .forcePathStyle(true)
                 .build();
     }
