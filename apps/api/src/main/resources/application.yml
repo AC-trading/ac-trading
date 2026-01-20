@@ -48,3 +48,23 @@ cookie:
 app:
   cors:
     allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,https://ac-trading.vercel.app}
+
+# 파일 업로드 크기 제한 (환경변수로 오버라이드 가능)
+spring.servlet.multipart:
+  max-file-size: ${MULTIPART_MAX_FILE_SIZE:10MB}
+  max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:30MB}
+
+# Cloudflare R2 설정
+r2:
+  access-key: ${R2_ACCESS_KEY}
+  secret-key: ${R2_SECRET_KEY}
+  bucket-name: ${R2_BUCKET_NAME}
+  endpoint: ${R2_ENDPOINT}
+  public-url: ${R2_PUBLIC_URL}
+  region: ${R2_REGION:auto}
+
+# 이미지 업로드 설정 (환경변수로 오버라이드 가능)
+image:
+  max-count:
+    post: ${IMAGE_MAX_COUNT_POST:10}
+    chat: ${IMAGE_MAX_COUNT_CHAT:10}

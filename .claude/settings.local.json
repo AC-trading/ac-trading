@@ -24,7 +24,8 @@
       "Bash(gh pr edit:*)",
       "Bash(move:*)",
       "Bash(git checkout:*)",
-      "Bash(git branch:*)"
+      "Bash(git branch:*)",
+      "Bash(gh issue create:*)"
     ]
   }
 }
