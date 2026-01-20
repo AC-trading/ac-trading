@@ -8,6 +8,7 @@ import com.acnh.api.notification.entity.Notification;
 import com.acnh.api.notification.enums.NotificationType;
 import com.acnh.api.notification.repository.NotificationRepository;
 import com.acnh.api.post.entity.Post;
+import com.acnh.api.post.enums.CurrencyType;
 import com.acnh.api.post.repository.PostRepository;
 import com.acnh.api.priceoffer.dto.PriceOfferAcceptResponse;
 import com.acnh.api.priceoffer.dto.PriceOfferCreateRequest;
@@ -68,10 +69,13 @@ public class PriceOfferService {
                     throw new IllegalArgumentException("이미 대기 중인 가격 제안이 있습니다");
                 });
 
-        // 화폐 유형 결정 (요청에 없으면 게시글 화폐 유형 사용)
+        // 화폐 유형 결정 및 검증 (요청에 없으면 게시글 화폐 유형 사용)
         String currencyType = request.getCurrencyType();
         if (currencyType == null || currencyType.isBlank()) {
             currencyType = post.getCurrencyType();
+        } else {
+            // 요청에 화폐 유형이 있으면 유효성 검증
+            validateCurrencyType(currencyType);
         }
 
         // 가격 제안 저장
@@ -207,5 +211,17 @@ public class PriceOfferService {
     private PriceOffer findPriceOfferById(Long offerId) {
         return priceOfferRepository.findByIdAndDeletedAtIsNull(offerId)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 가격 제안입니다"));
+    }
+
+    /**
+     * 화폐 유형 유효성 검증
+     * - BELL, MILE_TICKET만 허용
+     */
+    private void validateCurrencyType(String currencyType) {
+        try {
+            CurrencyType.valueOf(currencyType);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("화폐 유형은 BELL 또는 MILE_TICKET만 가능합니다");
+        }
     }
 }
