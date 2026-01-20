@@ -1,5 +1,7 @@
 package com.acnh.api.post.controller;
 
+import com.acnh.api.chat.dto.ChatRoomResponse;
+import com.acnh.api.chat.service.ChatService;
 import com.acnh.api.post.dto.*;
 import com.acnh.api.post.service.PostService;
 import jakarta.validation.Valid;
@@ -11,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -23,6 +26,7 @@ import java.util.Map;
 public class PostController {
 
     private final PostService postService;
+    private final ChatService chatService;
 
     private static final int DEFAULT_PAGE_SIZE = 20;
 
@@ -322,6 +326,42 @@ public class PostController {
             // 끌어올리기 제한 에러
             return ResponseEntity.badRequest().body(Map.of(
                     "error", "BUMP_LIMIT_EXCEEDED",
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 게시글별 채팅방 목록 조회 (작성자용)
+     * GET /api/posts/{postId}/chat-rooms
+     * - 게시글 작성자만 조회 가능
+     */
+    @GetMapping("/{postId}/chat-rooms")
+    public ResponseEntity<?> getChatRoomsByPostId(
+            @AuthenticationPrincipal String visitorId,
+            @PathVariable Long postId) {
+
+        log.info("게시글별 채팅방 목록 조회 요청 - postId: {}, visitorId: {}", postId, visitorId);
+
+        if (visitorId == null) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "UNAUTHORIZED",
+                    "message", "로그인이 필요합니다"
+            ));
+        }
+
+        try {
+            List<ChatRoomResponse> response = chatService.getChatRoomsByPostId(postId, visitorId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("존재하지 않는")) {
+                return ResponseEntity.status(404).body(Map.of(
+                        "error", "NOT_FOUND",
+                        "message", e.getMessage()
+                ));
+            }
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "INVALID_REQUEST",
                     "message", e.getMessage()
             ));
         }

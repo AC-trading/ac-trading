@@ -165,4 +165,148 @@ public class ChatController {
             ));
         }
     }
+
+    /**
+     * 예약자 지정
+     * POST /api/chat/rooms/{roomId}/reserve
+     */
+    @PostMapping("/{roomId}/reserve")
+    public ResponseEntity<?> reserveChatRoom(
+            @AuthenticationPrincipal String visitorId,
+            @PathVariable Long roomId,
+            @RequestBody(required = false) ReserveRequest request) {
+
+        log.info("예약자 지정 요청 - roomId: {}, visitorId: {}", roomId, visitorId);
+
+        if (visitorId == null) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "UNAUTHORIZED",
+                    "message", "로그인이 필요합니다"
+            ));
+        }
+
+        try {
+            var scheduledAt = request != null ? request.getScheduledTradeAt() : null;
+            ChatRoomResponse response = chatService.reserveChatRoom(roomId, visitorId, scheduledAt);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("존재하지 않는")) {
+                return ResponseEntity.status(404).body(Map.of(
+                        "error", "NOT_FOUND",
+                        "message", e.getMessage()
+                ));
+            }
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "INVALID_REQUEST",
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 예약 해제
+     * POST /api/chat/rooms/{roomId}/unreserve
+     */
+    @PostMapping("/{roomId}/unreserve")
+    public ResponseEntity<?> unreserveChatRoom(
+            @AuthenticationPrincipal String visitorId,
+            @PathVariable Long roomId) {
+
+        log.info("예약 해제 요청 - roomId: {}, visitorId: {}", roomId, visitorId);
+
+        if (visitorId == null) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "UNAUTHORIZED",
+                    "message", "로그인이 필요합니다"
+            ));
+        }
+
+        try {
+            ChatRoomResponse response = chatService.unreserveChatRoom(roomId, visitorId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("존재하지 않는")) {
+                return ResponseEntity.status(404).body(Map.of(
+                        "error", "NOT_FOUND",
+                        "message", e.getMessage()
+                ));
+            }
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "INVALID_REQUEST",
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 거래 완료 처리
+     * POST /api/chat/rooms/{roomId}/complete
+     */
+    @PostMapping("/{roomId}/complete")
+    public ResponseEntity<?> completeTrade(
+            @AuthenticationPrincipal String visitorId,
+            @PathVariable Long roomId) {
+
+        log.info("거래 완료 요청 - roomId: {}, visitorId: {}", roomId, visitorId);
+
+        if (visitorId == null) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "UNAUTHORIZED",
+                    "message", "로그인이 필요합니다"
+            ));
+        }
+
+        try {
+            ChatRoomResponse response = chatService.completeTrade(roomId, visitorId);
+            return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("존재하지 않는")) {
+                return ResponseEntity.status(404).body(Map.of(
+                        "error", "NOT_FOUND",
+                        "message", e.getMessage()
+                ));
+            }
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "INVALID_REQUEST",
+                    "message", e.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * 채팅방 나가기
+     * POST /api/chat/rooms/{roomId}/leave
+     */
+    @PostMapping("/{roomId}/leave")
+    public ResponseEntity<?> leaveChatRoom(
+            @AuthenticationPrincipal String visitorId,
+            @PathVariable Long roomId) {
+
+        log.info("채팅방 나가기 요청 - roomId: {}, visitorId: {}", roomId, visitorId);
+
+        if (visitorId == null) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "UNAUTHORIZED",
+                    "message", "로그인이 필요합니다"
+            ));
+        }
+
+        try {
+            chatService.leaveChatRoom(roomId, visitorId);
+            return ResponseEntity.ok(Map.of(
+                    "message", "채팅방을 나갔습니다"
+            ));
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage().contains("존재하지 않는") || e.getMessage().contains("접근 권한")) {
+                return ResponseEntity.status(404).body(Map.of(
+                        "error", "NOT_FOUND",
+                        "message", e.getMessage()
+                ));
+            }
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "INVALID_REQUEST",
+                    "message", e.getMessage()
+            ));
+        }
+    }
 }
