@@ -23,7 +23,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<Map<String, String>> handleMaxSizeException(MaxUploadSizeExceededException e) {
         log.warn("파일 크기 초과: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                .body(Map.of("error", "파일 크기가 너무 큽니다. (최대 5MB)"));
+                .body(Map.of("error", "파일 크기가 너무 큽니다. (최대 10MB)"));
     }
 
     /**
