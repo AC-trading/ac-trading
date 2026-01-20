@@ -61,6 +61,7 @@ r2:
   bucket-name: ${R2_BUCKET_NAME}
   endpoint: ${R2_ENDPOINT}
   public-url: ${R2_PUBLIC_URL}
+  region: ${R2_REGION:auto}
 
 # 이미지 업로드 설정
 image:
