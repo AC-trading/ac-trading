@@ -65,7 +65,12 @@ public class SecurityConfig {
                     "/ws/**",             // WebSocket 연결 (STOMP 인증은 별도 처리)
                     "/health",            // 헬스체크
                     "/",                  // 루트
-                    "/error"              // 에러 페이지
+                    "/error",             // 에러 페이지
+                    // Swagger UI
+                    "/swagger-ui/**",
+                    "/swagger-ui.html",
+                    "/v3/api-docs/**",
+                    "/swagger-resources/**"
                 ).permitAll()
 
                 // 그 외 모든 요청은 인증 필요
