@@ -4,6 +4,7 @@ import com.acnh.api.image.dto.ImageUploadResponse;
 import com.acnh.api.image.service.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,8 +27,9 @@ public class ImageController {
      */
     @PostMapping("/posts")
     public ResponseEntity<ImageUploadResponse> uploadPostImages(
+            @AuthenticationPrincipal String visitorId,
             @RequestParam("files") List<MultipartFile> files) {
-        List<String> urls = imageService.uploadPostImages(files);
+        List<String> urls = imageService.uploadPostImages(files, visitorId);
         return ResponseEntity.ok(ImageUploadResponse.of(urls));
     }
 
@@ -37,8 +39,9 @@ public class ImageController {
      */
     @PostMapping("/chat")
     public ResponseEntity<ImageUploadResponse> uploadChatImages(
+            @AuthenticationPrincipal String visitorId,
             @RequestParam("files") List<MultipartFile> files) {
-        List<String> urls = imageService.uploadChatImages(files);
+        List<String> urls = imageService.uploadChatImages(files, visitorId);
         return ResponseEntity.ok(ImageUploadResponse.of(urls));
     }
 
@@ -48,18 +51,21 @@ public class ImageController {
      */
     @PostMapping("/profile")
     public ResponseEntity<ImageUploadResponse> uploadProfileImage(
+            @AuthenticationPrincipal String visitorId,
             @RequestParam("file") MultipartFile file) {
-        String url = imageService.uploadProfileImage(file);
+        String url = imageService.uploadProfileImage(file, visitorId);
         return ResponseEntity.ok(ImageUploadResponse.of(List.of(url)));
     }
 
     /**
-     * 이미지 삭제
+     * 이미지 삭제 (본인 이미지만 삭제 가능)
      * DELETE /api/images?url={imageUrl}
      */
     @DeleteMapping
-    public ResponseEntity<Void> deleteImage(@RequestParam("url") String imageUrl) {
-        imageService.deleteImage(imageUrl);
+    public ResponseEntity<Void> deleteImage(
+            @AuthenticationPrincipal String visitorId,
+            @RequestParam("url") String imageUrl) {
+        imageService.deleteImage(imageUrl, visitorId);
         return ResponseEntity.noContent().build();
     }
 }
