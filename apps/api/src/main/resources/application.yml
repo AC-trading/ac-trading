@@ -52,7 +52,7 @@ app:
 # 파일 업로드 크기 제한 (스크린샷 기준 개별 10MB)
 spring.servlet.multipart:
   max-file-size: 10MB
-  max-request-size: 100MB
+  max-request-size: 30MB
 
 # Cloudflare R2 설정
 r2:
