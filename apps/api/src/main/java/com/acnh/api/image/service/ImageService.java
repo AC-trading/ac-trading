@@ -79,15 +79,22 @@ public class ImageService {
     }
 
     /**
-     * 이미지 삭제 (소유권 검증 포함)
+     * 이미지 삭제 (URL 검증 및 소유권 검증 포함)
      * @param imageUrl 삭제할 이미지의 전체 URL
      * @param visitorId 요청한 사용자 UUID
      */
     public void deleteImage(String imageUrl, String visitorId) {
         Long userId = findMemberByUuid(visitorId).getId();
 
+        // URL 유효성 검증: 반드시 우리 R2 publicUrl로 시작해야 함
+        String urlPrefix = publicUrl + "/";
+        if (imageUrl == null || !imageUrl.startsWith(urlPrefix)) {
+            log.warn("잘못된 이미지 URL 요청: userId={}, imageUrl={}", userId, imageUrl);
+            throw new IllegalArgumentException("유효하지 않은 이미지 URL입니다.");
+        }
+
         // URL에서 키 추출 (publicUrl 이후 부분)
-        String key = imageUrl.replace(publicUrl + "/", "");
+        String key = imageUrl.substring(urlPrefix.length());
 
         // 소유권 검증
         validateImageOwnership(key, userId);
@@ -99,9 +106,9 @@ public class ImageService {
                     .build();
 
             s3Client.deleteObject(deleteRequest);
-            log.info("이미지 삭제 완료: userId={}, key={}", userId, key);
+            log.info("이미지 삭제 완료: bucket={}, key={}, userId={}", bucketName, key, userId);
         } catch (Exception e) {
-            log.error("이미지 삭제 실패: {}", imageUrl, e);
+            log.error("이미지 삭제 실패: bucket={}, key={}, userId={}", bucketName, key, userId, e);
             throw new RuntimeException("이미지 삭제에 실패했습니다.");
         }
     }
