@@ -3,6 +3,9 @@ package com.acnh.api.filter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -53,17 +56,21 @@ public class ProfanityFilter {
         String normalizedText = normalizeText(text);
 
         // 금칙어 목록 검사
+        // Before: log.warn("금칙어 감지: {} (원문: {})", word, text); - PII 유출 위험
+        // After: 원문 대신 해시 fingerprint 사용
         for (String word : PROFANITY_WORDS) {
             if (normalizedText.contains(word.toLowerCase())) {
-                log.warn("금칙어 감지: {} (원문: {})", word, text);
+                log.warn("금칙어 감지: {} (msgHash: {})", word, hashFingerprint(text));
                 return true;
             }
         }
 
         // 우회 표현 패턴 검사
+        // Before: log.warn("우회 금칙어 감지: {} (원문: {})", matcher.group(), text); - PII 유출 위험
+        // After: 원문 대신 해시 fingerprint 사용
         Matcher matcher = BYPASS_PATTERN.matcher(normalizedText);
         if (matcher.find()) {
-            log.warn("우회 금칙어 감지: {} (원문: {})", matcher.group(), text);
+            log.warn("우회 금칙어 감지: {} (msgHash: {})", matcher.group(), hashFingerprint(text));
             return true;
         }
 
@@ -72,31 +79,86 @@ public class ProfanityFilter {
 
     /**
      * 금칙어 마스킹 처리
+     * - containsProfanity와 동일한 정규화 전략 사용
+     * - 정규화된 텍스트에서 매칭 후 원본 텍스트의 해당 위치 마스킹
      * @param text 원본 텍스트
      * @return 금칙어가 ***로 대체된 텍스트
      */
+    // Before: 원본 텍스트에 직접 replaceAll → 공백/특수문자로 우회된 금칙어 놓침
+    // After: 정규화 후 매칭, 원본 인덱스 매핑하여 마스킹
     public String maskProfanity(String text) {
         if (text == null || text.isBlank()) {
             return text;
         }
 
-        String result = text;
+        // 원본 → 정규화 인덱스 매핑 생성
+        int[] originalToNormalized = new int[text.length()];
+        int[] normalizedToOriginalStart = new int[text.length()];
+        int[] normalizedToOriginalEnd = new int[text.length()];
+
+        StringBuilder normalizedBuilder = new StringBuilder();
+        String lowerText = text.toLowerCase();
+
+        for (int i = 0; i < text.length(); i++) {
+            char c = lowerText.charAt(i);
+            // normalizeText와 동일한 로직: 공백, 구두점 제거
+            if (!Character.isWhitespace(c) && !isPunctuation(c)) {
+                int normalizedIdx = normalizedBuilder.length();
+                normalizedToOriginalStart[normalizedIdx] = i;
+                normalizedToOriginalEnd[normalizedIdx] = i;
+                originalToNormalized[i] = normalizedIdx;
+                normalizedBuilder.append(c);
+            } else {
+                originalToNormalized[i] = normalizedBuilder.length(); // 다음 정규화 인덱스
+            }
+        }
+
+        String normalizedText = normalizedBuilder.toString();
+        char[] resultChars = text.toCharArray();
 
         // 금칙어 목록 마스킹
         for (String word : PROFANITY_WORDS) {
-            String replacement = "*".repeat(word.length());
-            result = result.replaceAll("(?i)" + Pattern.quote(word), replacement);
+            String lowerWord = word.toLowerCase();
+            int idx = 0;
+            while ((idx = normalizedText.indexOf(lowerWord, idx)) != -1) {
+                // 정규화 인덱스 → 원본 인덱스로 변환하여 마스킹
+                int origStart = normalizedToOriginalStart[idx];
+                int origEnd = normalizedToOriginalEnd[idx + lowerWord.length() - 1];
+                for (int i = origStart; i <= origEnd; i++) {
+                    if (!Character.isWhitespace(text.charAt(i))) {
+                        resultChars[i] = '*';
+                    }
+                }
+                idx += lowerWord.length();
+            }
         }
 
-        // 우회 표현 마스킹
-        Matcher matcher = BYPASS_PATTERN.matcher(result);
-        StringBuffer sb = new StringBuffer();
+        // 우회 표현 패턴 마스킹
+        Matcher matcher = BYPASS_PATTERN.matcher(normalizedText);
         while (matcher.find()) {
-            matcher.appendReplacement(sb, "*".repeat(matcher.group().length()));
+            int origStart = normalizedToOriginalStart[matcher.start()];
+            int origEnd = normalizedToOriginalEnd[matcher.end() - 1];
+            for (int i = origStart; i <= origEnd; i++) {
+                if (!Character.isWhitespace(text.charAt(i))) {
+                    resultChars[i] = '*';
+                }
+            }
         }
-        matcher.appendTail(sb);
 
-        return sb.toString();
+        return new String(resultChars);
+    }
+
+    /**
+     * 구두점 여부 확인 (normalizeText와 동일한 기준)
+     */
+    private boolean isPunctuation(char c) {
+        return Character.getType(c) == Character.CONNECTOR_PUNCTUATION
+                || Character.getType(c) == Character.DASH_PUNCTUATION
+                || Character.getType(c) == Character.START_PUNCTUATION
+                || Character.getType(c) == Character.END_PUNCTUATION
+                || Character.getType(c) == Character.INITIAL_QUOTE_PUNCTUATION
+                || Character.getType(c) == Character.FINAL_QUOTE_PUNCTUATION
+                || Character.getType(c) == Character.OTHER_PUNCTUATION;
     }
 
     /**
@@ -105,6 +167,28 @@ public class ProfanityFilter {
     private String normalizeText(String text) {
         return text.toLowerCase()
                 .replaceAll("[\\s\\p{Punct}]", ""); // 공백, 구두점 제거
+    }
+
+    /**
+     * 메시지 해시 fingerprint 생성 (PII 보호용)
+     * - 로그 상관관계 추적을 위한 비민감 식별자
+     * @param text 원본 텍스트
+     * @return SHA-256 해시의 앞 8자리
+     */
+    private String hashFingerprint(String text) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(text.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hexString = new StringBuilder();
+            for (int i = 0; i < 4; i++) { // 앞 4바이트 = 8자리 hex
+                String hex = Integer.toHexString(0xff & hash[i]);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (NoSuchAlgorithmException e) {
+            return "unknown";
+        }
     }
 
     /**
