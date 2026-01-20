@@ -196,7 +196,16 @@ public class ReviewService {
         if (visitorId == null) {
             throw new IllegalArgumentException("로그인이 필요합니다");
         }
-        return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
+
+        // UUID 파싱 실패 시 원본 예외 메시지 노출 방지
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(visitorId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("로그인이 필요합니다");
+        }
+
+        return memberRepository.findByUuidAndDeletedAtIsNull(uuid)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
     }
 
