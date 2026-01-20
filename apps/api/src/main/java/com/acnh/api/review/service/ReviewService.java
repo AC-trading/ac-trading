@@ -18,6 +18,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -99,13 +100,18 @@ public class ReviewService {
         List<Long> reviewerIds = reviews.stream().map(Review::getReviewerId).distinct().toList();
         List<Long> postIds = reviews.stream().map(Review::getPostId).distinct().toList();
 
-        Map<Long, Member> memberMap = memberRepository.findByIdInAndDeletedAtIsNull(reviewerIds)
-                .stream()
-                .collect(Collectors.toMap(Member::getId, Function.identity()));
+        // 빈 리스트일 경우 불필요한 DB 조회 방지
+        Map<Long, Member> memberMap = reviewerIds.isEmpty()
+                ? Collections.emptyMap()
+                : memberRepository.findByIdInAndDeletedAtIsNull(reviewerIds)
+                        .stream()
+                        .collect(Collectors.toMap(Member::getId, Function.identity()));
 
-        Map<Long, Post> postMap = postRepository.findByIdInAndDeletedAtIsNull(postIds)
-                .stream()
-                .collect(Collectors.toMap(Post::getId, Function.identity()));
+        Map<Long, Post> postMap = postIds.isEmpty()
+                ? Collections.emptyMap()
+                : postRepository.findByIdInAndDeletedAtIsNull(postIds)
+                        .stream()
+                        .collect(Collectors.toMap(Post::getId, Function.identity()));
 
         // 리뷰 대상자 정보 조회
         Member reviewee = memberRepository.findByIdAndDeletedAtIsNull(userId).orElse(null);
