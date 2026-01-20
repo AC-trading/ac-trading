@@ -13,6 +13,7 @@ import com.acnh.api.review.entity.Review;
 import com.acnh.api.review.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -80,7 +81,14 @@ public class ReviewService {
                 .comment(request.getComment())
                 .build();
 
-        Review savedReview = reviewRepository.save(review);
+        // DB 유니크 제약조건 위반 시 예외 처리 (동시성 문제 대응)
+        Review savedReview;
+        try {
+            savedReview = reviewRepository.save(review);
+        } catch (DataIntegrityViolationException e) {
+            throw new IllegalArgumentException("이미 해당 게시글에 리뷰를 작성하였습니다");
+        }
+
         log.info("리뷰 작성 완료 - reviewId: {}, postId: {}, reviewerId: {}, revieweeId: {}",
                 savedReview.getId(), post.getId(), reviewer.getId(), reviewee.getId());
 

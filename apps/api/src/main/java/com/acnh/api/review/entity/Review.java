@@ -12,7 +12,9 @@ import lombok.NoArgsConstructor;
  * - reviews 테이블 매핑
  */
 @Entity
-@Table(name = "reviews")
+@Table(name = "reviews", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_review_post_reviewer", columnNames = {"post_id", "reviewer_id"})
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class Review extends BaseEntity {
