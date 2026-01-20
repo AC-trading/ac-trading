@@ -68,3 +68,15 @@ image:
   max-count:
     post: ${IMAGE_MAX_COUNT_POST:10}
     chat: ${IMAGE_MAX_COUNT_CHAT:10}
+
+# Swagger/OpenAPI 설정
+springdoc:
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+    path: /v3/api-docs
+  swagger-ui:
+    enabled: ${SWAGGER_ENABLED:true}
+    path: /swagger-ui.html
+    tags-sorter: alpha
+    operations-sorter: alpha
+  server-url: ${SWAGGER_SERVER_URL:http://localhost:8080}
