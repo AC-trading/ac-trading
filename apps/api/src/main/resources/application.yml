@@ -25,7 +25,7 @@ server:
 
 # JWT 설정
 jwt:
-  secret: ${JWT_SECRET}
+  secret: ${JWT_SECRET:dev-secret-key-for-local-development-only-32chars}
   access-token-expiry: ${JWT_ACCESS_EXPIRY:3600000}
   refresh-token-expiry: ${JWT_REFRESH_EXPIRY:604800000}
 
