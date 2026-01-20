@@ -1,5 +1,6 @@
 package com.acnh.api.report.service;
 
+import com.acnh.api.block.service.BlockService;
 import com.acnh.api.member.entity.Member;
 import com.acnh.api.member.repository.MemberRepository;
 import com.acnh.api.post.entity.Post;
@@ -28,9 +29,11 @@ public class ReportService {
     private final ReportRepository reportRepository;
     private final PostRepository postRepository;
     private final MemberRepository memberRepository;
+    private final BlockService blockService;
 
     /**
      * 신고하기
+     * - blockUser가 true면 신고 후 해당 사용자 차단도 함께 처리
      */
     @Transactional
     public ReportResponse createReport(ReportCreateRequest request, String visitorId) {
@@ -45,20 +48,30 @@ public class ReportService {
             throw new IllegalArgumentException("본인의 게시글은 신고할 수 없습니다");
         }
 
-        // 신고 생성
+        // 신고 생성 (피신고자 ID = 게시글 작성자)
         Report report = Report.builder()
                 .reporterId(member.getId())
                 .postId(request.getPostId())
+                .reportedUserId(post.getUserId())
                 .reasonCode(request.getReasonCode())
                 .description(request.getDescription())
                 .build();
 
         Report savedReport = reportRepository.save(report);
 
-        log.info("신고 생성 완료 - reportId: {}, postId: {}, reporterId: {}, reasonCode: {}",
-                savedReport.getId(), request.getPostId(), member.getId(), request.getReasonCode());
+        log.info("신고 생성 완료 - reportId: {}, postId: {}, reporterId: {}, reportedUserId: {}, reasonCode: {}",
+                savedReport.getId(), request.getPostId(), member.getId(), post.getUserId(), request.getReasonCode());
 
-        return ReportResponse.from(savedReport);
+        // 차단 여부 처리 (blockUser == true 일 때만 차단)
+        boolean blocked = false;
+        if (Boolean.TRUE.equals(request.getBlockUser())) {
+            String blockReason = "신고 사유: " + request.getReasonCode();
+            blockService.blockUserById(post.getUserId(), blockReason, visitorId);
+            blocked = true;
+            log.info("신고 후 차단 처리 - blockerId: {}, blockedId: {}", member.getId(), post.getUserId());
+        }
+
+        return ReportResponse.from(savedReport, blocked);
     }
 
     // ========== Private Helper Methods ==========

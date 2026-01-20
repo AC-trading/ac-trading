@@ -5,6 +5,7 @@ import com.acnh.api.chat.entity.ChatMessage;
 import com.acnh.api.chat.entity.ChatRoom;
 import com.acnh.api.chat.repository.ChatMessageRepository;
 import com.acnh.api.chat.repository.ChatRoomRepository;
+import com.acnh.api.filter.ProfanityFilter;
 import com.acnh.api.member.entity.Member;
 import com.acnh.api.member.repository.MemberRepository;
 import com.acnh.api.post.entity.Post;
@@ -36,6 +37,7 @@ public class ChatService {
     private final ChatMessageRepository chatMessageRepository;
     private final MemberRepository memberRepository;
     private final PostRepository postRepository;
+    private final ProfanityFilter profanityFilter;
 
     /**
      * 채팅방 생성 또는 기존 채팅방 반환
@@ -195,6 +197,7 @@ public class ChatService {
 
     /**
      * 메시지 저장 (STOMP에서 호출)
+     * - 금칙어 필터링 적용 (앱스토어 정책 대응)
      *
      * [PR Review 수정]
      * Before: 메시지만 저장, 채팅방 updatedAt 미갱신
@@ -214,11 +217,18 @@ public class ChatService {
             messageType = "TEXT";
         }
 
+        // 금칙어 필터링 (TEXT 메시지만 검사)
+        String content = request.getContent();
+        if ("TEXT".equals(messageType) && content != null) {
+            // 금칙어 포함 시 마스킹 처리 (또는 예외 발생으로 변경 가능)
+            content = profanityFilter.maskProfanity(content);
+        }
+
         ChatMessage message = ChatMessage.builder()
                 .chatRoomId(request.getChatRoomId())
                 .senderId(senderId)
                 .messageType(messageType)
-                .content(request.getContent())
+                .content(content)
                 .imageUrl(request.getImageUrl())
                 .build();
 
@@ -281,6 +291,131 @@ public class ChatService {
      */
     public Member getMemberByUuid(String visitorId) {
         return findMemberByUuid(visitorId);
+    }
+
+    /**
+     * 예약자 지정
+     * - 게시글 작성자만 예약자 지정 가능
+     * - 채팅방의 신청자(applicant)를 예약자로 지정
+     */
+    @Transactional
+    public ChatRoomResponse reserveChatRoom(Long roomId, String visitorId, LocalDateTime scheduledTradeAt) {
+        Member member = findMemberByUuid(visitorId);
+        ChatRoom chatRoom = findChatRoomById(roomId);
+
+        // 게시글 작성자만 예약 가능
+        if (!chatRoom.getPostOwnerId().equals(member.getId())) {
+            throw new IllegalArgumentException("게시글 작성자만 예약자를 지정할 수 있습니다");
+        }
+
+        // 이미 예약된 경우
+        if (chatRoom.getReservedUserId() != null) {
+            throw new IllegalArgumentException("이미 예약된 채팅방입니다");
+        }
+
+        // 채팅방의 신청자를 예약자로 지정
+        chatRoom.reserve(chatRoom.getApplicantId(), scheduledTradeAt);
+        chatRoom.updateStatus("RESERVED");
+
+        log.info("예약자 지정 - roomId: {}, reservedUserId: {}", roomId, chatRoom.getApplicantId());
+
+        return toChatRoomResponse(chatRoom, member.getId());
+    }
+
+    /**
+     * 예약 해제
+     * - 게시글 작성자만 예약 해제 가능
+     */
+    @Transactional
+    public ChatRoomResponse unreserveChatRoom(Long roomId, String visitorId) {
+        Member member = findMemberByUuid(visitorId);
+        ChatRoom chatRoom = findChatRoomById(roomId);
+
+        // 게시글 작성자만 예약 해제 가능
+        if (!chatRoom.getPostOwnerId().equals(member.getId())) {
+            throw new IllegalArgumentException("게시글 작성자만 예약을 해제할 수 있습니다");
+        }
+
+        // 예약되지 않은 경우
+        if (chatRoom.getReservedUserId() == null) {
+            throw new IllegalArgumentException("예약되지 않은 채팅방입니다");
+        }
+
+        chatRoom.cancelReservation();
+        chatRoom.updateStatus("ACTIVE");
+
+        log.info("예약 해제 - roomId: {}", roomId);
+
+        return toChatRoomResponse(chatRoom, member.getId());
+    }
+
+    /**
+     * 거래 완료 처리
+     * - 게시글 작성자만 거래 완료 처리 가능
+     * - 예약된 채팅방만 거래 완료 가능
+     */
+    @Transactional
+    public ChatRoomResponse completeTrade(Long roomId, String visitorId) {
+        Member member = findMemberByUuid(visitorId);
+        ChatRoom chatRoom = findChatRoomById(roomId);
+
+        // 게시글 작성자만 거래 완료 가능
+        if (!chatRoom.getPostOwnerId().equals(member.getId())) {
+            throw new IllegalArgumentException("게시글 작성자만 거래 완료 처리할 수 있습니다");
+        }
+
+        // 예약된 채팅방만 거래 완료 가능
+        if (chatRoom.getReservedUserId() == null) {
+            throw new IllegalArgumentException("예약된 채팅방만 거래 완료 처리할 수 있습니다");
+        }
+
+        chatRoom.updateStatus("COMPLETED");
+
+        // 게시글 상태도 거래완료로 변경
+        Post post = findPostById(chatRoom.getPostId());
+        post.updateStatus("COMPLETED");
+
+        log.info("거래 완료 - roomId: {}, postId: {}", roomId, chatRoom.getPostId());
+
+        return toChatRoomResponse(chatRoom, member.getId());
+    }
+
+    /**
+     * 채팅방 나가기 (soft delete)
+     * - 참여자(게시글 작성자 또는 신청자)만 나가기 가능
+     */
+    @Transactional
+    public void leaveChatRoom(Long roomId, String visitorId) {
+        Member member = findMemberByUuid(visitorId);
+        ChatRoom chatRoom = findChatRoomById(roomId);
+
+        // 참여자만 나가기 가능
+        validateParticipant(chatRoom, member.getId());
+
+        // soft delete
+        chatRoom.delete();
+
+        log.info("채팅방 나가기 - roomId: {}, userId: {}", roomId, member.getId());
+    }
+
+    /**
+     * 게시글별 채팅방 목록 조회 (작성자용)
+     * - 게시글 작성자만 조회 가능
+     */
+    public List<ChatRoomResponse> getChatRoomsByPostId(Long postId, String visitorId) {
+        Member member = findMemberByUuid(visitorId);
+        Post post = findPostById(postId);
+
+        // 게시글 작성자만 조회 가능
+        if (!post.getUserId().equals(member.getId())) {
+            throw new IllegalArgumentException("게시글 작성자만 조회할 수 있습니다");
+        }
+
+        List<ChatRoom> chatRooms = chatRoomRepository.findByPostIdAndDeletedAtIsNull(postId);
+
+        return chatRooms.stream()
+                .map(room -> toChatRoomResponse(room, member.getId()))
+                .toList();
     }
 
     // ========== Private Helper Methods ==========
