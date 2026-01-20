@@ -63,8 +63,11 @@ public class PriceOfferService {
             throw new IllegalArgumentException("거래 가능한 게시글에만 가격 제안을 할 수 있습니다");
         }
 
-        // 중복 제안 체크 (대기 중인 제안이 있는지)
-        priceOfferRepository.findByPostIdAndOffererIdAndStatusAndDeletedAtIsNull(postId, offerer.getId(), "PENDING")
+        // 중복 제안 체크 (비관적 락으로 Race Condition 방지)
+        // [PR Review 수정]
+        // Before: 일반 조회로 동시 요청 시 중복 제안 생성 가능
+        // After: PESSIMISTIC_WRITE 락으로 동시 요청 직렬화
+        priceOfferRepository.findByPostIdAndOffererIdAndStatusWithLock(postId, offerer.getId(), "PENDING")
                 .ifPresent(existing -> {
                     throw new IllegalArgumentException("이미 대기 중인 가격 제안이 있습니다");
                 });
