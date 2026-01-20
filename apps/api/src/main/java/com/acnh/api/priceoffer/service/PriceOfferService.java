@@ -118,9 +118,17 @@ public class PriceOfferService {
             throw new IllegalArgumentException("게시글 작성자만 가격 제안을 수락할 수 있습니다");
         }
 
+        // PENDING 상태 사전 검증 (명확한 에러 메시지 제공)
+        if (!"PENDING".equals(priceOffer.getStatus())) {
+            log.warn("가격 제안 수락 실패 - offerId: {}, currentStatus: {}", offerId, priceOffer.getStatus());
+            throw new IllegalStateException(
+                    String.format("대기 중인 제안만 수락할 수 있습니다 (현재 상태: %s)", priceOffer.getStatus()));
+        }
+
         // 원자적 제안 수락 (Race Condition 방지)
         int updatedRows = priceOfferRepository.acceptPriceOfferAtomic(offerId);
         if (updatedRows == 0) {
+            log.warn("가격 제안 수락 실패 (동시 요청) - offerId: {}", offerId);
             throw new IllegalStateException("이미 처리된 가격 제안입니다");
         }
         log.info("가격 제안 수락 - offerId: {}", offerId);
