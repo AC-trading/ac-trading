@@ -16,7 +16,9 @@ import org.springframework.stereotype.Component;
 @Profile("prod")
 public class SecurityConfigValidator {
 
-    @Value("${jwt.secret}")
+    // Before: @Value("${jwt.secret}") - Spring이 먼저 PlaceholderResolutionException 발생
+    // After: 기본값 빈 문자열로 설정하여 @PostConstruct에서 커스텀 메시지로 검증
+    @Value("${jwt.secret:}")
     private String jwtSecret;
 
     // 개발용 키로 의심되는 패턴들
