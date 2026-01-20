@@ -24,4 +24,7 @@ public class ReportCreateRequest {
 
     @Size(max = 1000, message = "상세 설명은 1000자 이내로 입력해주세요")
     private String description;
+
+    // 신고 후 해당 사용자 차단 여부 (프론트에서 "차단하시겠습니까?" 응답)
+    private Boolean blockUser;
 }

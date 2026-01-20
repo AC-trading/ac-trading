@@ -27,6 +27,10 @@ public class Report extends BaseEntity {
     @Column(name = "post_id", nullable = false)
     private Long postId;
 
+    // 피신고자 ID (게시글 작성자)
+    @Column(name = "reported_user_id", nullable = false)
+    private Long reportedUserId;
+
     @Column(name = "reason_code", nullable = false, length = 50)
     private String reasonCode;
 
@@ -37,10 +41,11 @@ public class Report extends BaseEntity {
     private String status;
 
     @Builder
-    public Report(Long reporterId, Long postId, String reasonCode,
+    public Report(Long reporterId, Long postId, Long reportedUserId, String reasonCode,
                   String description, String status) {
         this.reporterId = reporterId;
         this.postId = postId;
+        this.reportedUserId = reportedUserId;
         this.reasonCode = reasonCode;
         this.description = description;
         this.status = status != null ? status : "PENDING";
