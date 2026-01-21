@@ -62,7 +62,7 @@ export default function ProfilePage() {
       >
         {/* 프로필 이미지 */}
         <Image
-          src={user?.profileImage || "/images/defaults/raccoon.png"}
+          src="/images/defaults/raccoon.png"
           alt="프로필 이미지"
           width={56}
           height={56}
