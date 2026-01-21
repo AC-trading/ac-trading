@@ -487,7 +487,12 @@ export default function PostDetailPage() {
       {showReportModal && (
         <div
           className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center"
-          onClick={() => setShowReportModal(false)}
+          onClick={() => {
+            setShowReportModal(false);
+            setSelectedReportReason(null);
+            setReportDescription("");
+            setReportError(null);
+          }}
         >
           <div
             className="w-full max-w-[390px] bg-white rounded-t-2xl overflow-hidden animate-slide-up max-h-[80vh] overflow-y-auto"
