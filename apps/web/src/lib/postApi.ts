@@ -149,6 +149,77 @@ export interface ReviewListResponse {
   hasPrevious: boolean;
 }
 
+// ========== 채팅 타입 정의 ==========
+
+// 채팅방 응답 타입
+export interface ChatRoom {
+  id: number;
+  postId: number;
+  postItemName: string | null;
+  postStatus: 'AVAILABLE' | 'RESERVED' | 'COMPLETED';
+  sellerId: number;
+  sellerNickname: string | null;
+  buyerId: number;
+  buyerNickname: string | null;
+  lastMessage: string | null;
+  lastMessageAt: string | null;
+  unreadCount: number;
+  createdAt: string;
+}
+
+// 채팅방 목록 응답 타입
+export interface ChatRoomListResponse {
+  rooms: ChatRoom[];
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  hasNext: boolean;
+}
+
+// 채팅 메시지 응답 타입
+export interface ChatMessage {
+  id: number;
+  roomId: number;
+  senderId: number;
+  senderNickname: string | null;
+  content: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+// 채팅 메시지 목록 응답 타입
+export interface ChatMessageListResponse {
+  messages: ChatMessage[];
+  currentPage: number;
+  totalPages: number;
+  hasNext: boolean;
+}
+
+// 채팅방 생성 요청 타입
+export interface ChatRoomCreateRequest {
+  postId: number;
+  initialMessage?: string;
+}
+
+// ========== 차단 타입 정의 ==========
+
+// 차단된 사용자 응답 타입
+export interface BlockedUser {
+  id: number;
+  blockedUserId: string;
+  blockedUserNickname: string | null;
+  blockedAt: string;
+}
+
+// 차단 목록 응답 타입
+export interface BlockListResponse {
+  blocks: BlockedUser[];
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  hasNext: boolean;
+}
+
 // ========== 신고 타입 정의 ==========
 
 // 신고 사유 코드
@@ -570,4 +641,118 @@ export function getStatusLabel(status: string): string {
     default:
       return status;
   }
+}
+
+// ========== 채팅 API 함수 ==========
+
+/**
+ * 채팅방 목록 조회
+ * GET /api/chat/rooms
+ */
+export async function getChatRooms(page = 0, size = 20): Promise<ChatRoomListResponse> {
+  return fetchWithAuth<ChatRoomListResponse>(`${API_URL}/api/chat/rooms?page=${page}&size=${size}`);
+}
+
+/**
+ * 채팅방 생성 또는 조회
+ * POST /api/chat/rooms
+ */
+export async function createOrGetChatRoom(request: ChatRoomCreateRequest): Promise<ChatRoom> {
+  return fetchWithAuth<ChatRoom>(`${API_URL}/api/chat/rooms`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}
+
+/**
+ * 채팅방 상세 조회
+ * GET /api/chat/rooms/{roomId}
+ */
+export async function getChatRoom(roomId: number): Promise<ChatRoom> {
+  return fetchWithAuth<ChatRoom>(`${API_URL}/api/chat/rooms/${roomId}`);
+}
+
+/**
+ * 채팅 메시지 목록 조회
+ * GET /api/chat/rooms/{roomId}/messages
+ */
+export async function getChatMessages(
+  roomId: number,
+  page = 0,
+  size = 50
+): Promise<ChatMessageListResponse> {
+  return fetchWithAuth<ChatMessageListResponse>(
+    `${API_URL}/api/chat/rooms/${roomId}/messages?page=${page}&size=${size}`
+  );
+}
+
+/**
+ * 채팅방 나가기
+ * POST /api/chat/rooms/{roomId}/leave
+ */
+export async function leaveChatRoom(roomId: number): Promise<{ message: string }> {
+  return fetchWithAuth<{ message: string }>(`${API_URL}/api/chat/rooms/${roomId}/leave`, {
+    method: 'POST',
+  });
+}
+
+/**
+ * 거래 예약하기
+ * POST /api/chat/rooms/{roomId}/reserve
+ */
+export async function reserveChatRoom(roomId: number): Promise<ChatRoom> {
+  return fetchWithAuth<ChatRoom>(`${API_URL}/api/chat/rooms/${roomId}/reserve`, {
+    method: 'POST',
+  });
+}
+
+/**
+ * 거래 예약 취소
+ * POST /api/chat/rooms/{roomId}/unreserve
+ */
+export async function unreserveChatRoom(roomId: number): Promise<ChatRoom> {
+  return fetchWithAuth<ChatRoom>(`${API_URL}/api/chat/rooms/${roomId}/unreserve`, {
+    method: 'POST',
+  });
+}
+
+/**
+ * 거래 완료
+ * POST /api/chat/rooms/{roomId}/complete
+ */
+export async function completeChatRoom(roomId: number): Promise<ChatRoom> {
+  return fetchWithAuth<ChatRoom>(`${API_URL}/api/chat/rooms/${roomId}/complete`, {
+    method: 'POST',
+  });
+}
+
+// ========== 차단 API 함수 ==========
+
+/**
+ * 차단 목록 조회
+ * GET /api/blocks
+ */
+export async function getBlockedUsers(page = 0, size = 20): Promise<BlockListResponse> {
+  return fetchWithAuth<BlockListResponse>(`${API_URL}/api/blocks?page=${page}&size=${size}`);
+}
+
+/**
+ * 사용자 차단
+ * POST /api/blocks
+ */
+export async function blockUser(blockedUserId: string): Promise<BlockedUser> {
+  return fetchWithAuth<BlockedUser>(`${API_URL}/api/blocks`, {
+    method: 'POST',
+    body: JSON.stringify({ blockedUserId }),
+  });
+}
+
+/**
+ * 사용자 차단 해제
+ * DELETE /api/blocks/{blockedUserId}
+ */
+export async function unblockUser(blockedUserId: string): Promise<{ message: string }> {
+  return fetchWithAuth<{ message: string }>(`${API_URL}/api/blocks/${blockedUserId}`, {
+    method: 'DELETE',
+  });
 }

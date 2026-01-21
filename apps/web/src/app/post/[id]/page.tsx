@@ -1,9 +1,9 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import { MobileLayout } from "@/components/common";
-import { HeartIcon, HomeOutlineIcon } from "@/components/icons";
+import { HeartIcon, HomeOutlineIcon, MoreVerticalIcon, BlockIcon, FlagIcon } from "@/components/icons";
 import { useState, useEffect } from "react";
 import {
   getPost,
@@ -14,11 +14,26 @@ import {
   createPriceOffer,
   togglePostLike,
   PriceOfferCreateRequest,
+  blockUser,
+  createReport,
+  ReportReasonCode,
 } from "@/lib/postApi";
+
+// 신고 사유 옵션
+const REPORT_REASONS: { code: ReportReasonCode; label: string }[] = [
+  { code: "HACKED_ITEM", label: "해킹 아이템" },
+  { code: "DUPLICATE_POST", label: "중복 게시글" },
+  { code: "ABUSIVE_LANGUAGE", label: "욕설/비방" },
+  { code: "REAL_MONEY_TRADE", label: "현금 거래" },
+  { code: "SCAM", label: "사기" },
+  { code: "EXTERNAL_MESSENGER", label: "외부 메신저 유도" },
+  { code: "OTHER", label: "기타" },
+];
 
 // 상품 상세 페이지 - Figma 디자인 기반
 export default function PostDetailPage() {
   const params = useParams();
+  const router = useRouter();
   // params.id가 string[] 일 수 있으므로 안전하게 처리
   const postId = Array.isArray(params.id) ? params.id[0] : params.id;
 
@@ -35,6 +50,17 @@ export default function PostDetailPage() {
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
   const [offerError, setOfferError] = useState<string | null>(null);
   const [offerSuccess, setOfferSuccess] = useState(false);
+
+  // 더보기 메뉴 바텀시트 상태
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  // 신고하기 모달 상태
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedReportReason, setSelectedReportReason] = useState<ReportReasonCode | null>(null);
+  const [reportDescription, setReportDescription] = useState("");
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  // 차단하기 상태
+  const [isBlocking, setIsBlocking] = useState(false);
 
   // API에서 게시글 데이터 로드
   useEffect(() => {
@@ -114,6 +140,49 @@ export default function PostDetailPage() {
     }
   };
 
+  // 사용자 차단 핸들러
+  const handleBlockUser = async () => {
+    if (!post) return;
+
+    setIsBlocking(true);
+    try {
+      await blockUser(String(post.userId));
+      setShowMoreMenu(false);
+      alert("해당 사용자를 차단했습니다. 더 이상 이 사용자의 글을 볼 수 없습니다.");
+      router.push("/");
+    } catch (err) {
+      console.error("차단 실패:", err);
+      alert(err instanceof Error ? err.message : "차단에 실패했습니다");
+    } finally {
+      setIsBlocking(false);
+    }
+  };
+
+  // 신고 제출 핸들러
+  const handleReportSubmit = async () => {
+    if (!post || !selectedReportReason) return;
+
+    setIsSubmittingReport(true);
+    setReportError(null);
+
+    try {
+      await createReport({
+        postId: post.id,
+        reasonCode: selectedReportReason,
+        description: reportDescription || undefined,
+      });
+      setShowReportModal(false);
+      setSelectedReportReason(null);
+      setReportDescription("");
+      alert("신고가 접수되었습니다. 검토 후 조치하겠습니다.");
+    } catch (err) {
+      console.error("신고 실패:", err);
+      setReportError(err instanceof Error ? err.message : "신고에 실패했습니다");
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
+
   // 로딩 상태
   if (isLoading) {
     return (
@@ -170,7 +239,12 @@ export default function PostDetailPage() {
             <HomeOutlineIcon className="w-6 h-6 text-gray-800" />
           </Link>
           <h1 className="font-semibold text-lg">상품 상세</h1>
-          <div className="w-8" /> {/* 균형을 위한 빈 공간 */}
+          <button
+            onClick={() => setShowMoreMenu(true)}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+          >
+            <MoreVerticalIcon className="w-6 h-6 text-gray-800" />
+          </button>
         </div>
       </header>
 
@@ -356,6 +430,136 @@ export default function PostDetailPage() {
 
       {/* 하단 바 높이만큼 여백 */}
       <div className="h-20" />
+
+      {/* 더보기 메뉴 바텀시트 */}
+      {showMoreMenu && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center"
+          onClick={() => setShowMoreMenu(false)}
+        >
+          <div
+            className="w-full max-w-[390px] bg-white rounded-t-2xl overflow-hidden animate-slide-up"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 핸들 바 */}
+            <div className="flex justify-center py-3">
+              <div className="w-10 h-1 bg-gray-300 rounded-full" />
+            </div>
+
+            {/* 메뉴 아이템들 */}
+            <div className="pb-6">
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  handleBlockUser();
+                }}
+                disabled={isBlocking}
+                className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                <BlockIcon className="w-5 h-5 text-gray-600" />
+                <span className="text-gray-800">이 사용자의 글 보지 않기</span>
+              </button>
+              <button
+                onClick={() => {
+                  setShowMoreMenu(false);
+                  setShowReportModal(true);
+                }}
+                className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors"
+              >
+                <FlagIcon className="w-5 h-5 text-gray-600" />
+                <span className="text-gray-800">신고하기</span>
+              </button>
+            </div>
+
+            {/* 취소 버튼 */}
+            <button
+              onClick={() => setShowMoreMenu(false)}
+              className="w-full py-4 border-t border-gray-100 text-gray-500 font-medium hover:bg-gray-50 transition-colors"
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 신고하기 모달 */}
+      {showReportModal && (
+        <div
+          className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center"
+          onClick={() => setShowReportModal(false)}
+        >
+          <div
+            className="w-full max-w-[390px] bg-white rounded-t-2xl overflow-hidden animate-slide-up max-h-[80vh] overflow-y-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 헤더 */}
+            <div className="flex items-center justify-between p-4 border-b border-gray-100">
+              <h3 className="text-lg font-semibold">신고하기</h3>
+              <button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setSelectedReportReason(null);
+                  setReportDescription("");
+                  setReportError(null);
+                }}
+                className="p-1 hover:bg-gray-100 rounded-full"
+              >
+                <span className="text-xl text-gray-500">✕</span>
+              </button>
+            </div>
+
+            {/* 신고 사유 선택 */}
+            <div className="p-4 space-y-2">
+              <p className="text-sm text-gray-600 mb-3">신고 사유를 선택해주세요</p>
+              {REPORT_REASONS.map((reason) => (
+                <button
+                  key={reason.code}
+                  onClick={() => setSelectedReportReason(reason.code)}
+                  className={`w-full px-4 py-3 text-left rounded-lg border transition-colors ${
+                    selectedReportReason === reason.code
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  {reason.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 추가 설명 */}
+            {selectedReportReason && (
+              <div className="px-4 pb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  추가 설명 (선택)
+                </label>
+                <textarea
+                  value={reportDescription}
+                  onChange={(e) => setReportDescription(e.target.value)}
+                  placeholder="신고 내용을 자세히 적어주세요"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-primary"
+                  rows={3}
+                />
+              </div>
+            )}
+
+            {/* 에러 메시지 */}
+            {reportError && (
+              <p className="px-4 pb-2 text-sm text-red-500">{reportError}</p>
+            )}
+
+            {/* 제출 버튼 */}
+            <div className="p-4 border-t border-gray-100">
+              <button
+                onClick={handleReportSubmit}
+                disabled={!selectedReportReason || isSubmittingReport}
+                className="w-full py-4 bg-[#5BBFB3] text-white font-semibold rounded-xl hover:bg-[#4DAE9F] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                {isSubmittingReport ? "신고 중..." : "신고하기"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </MobileLayout>
   );
 }
