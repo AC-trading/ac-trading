@@ -112,9 +112,11 @@ export default function ProfileEditPage() {
       <div className="flex-1 flex flex-col items-center px-8 pt-4">
         {/* 프로필 이미지 */}
         <div className="mb-4">
-          <div className="w-28 h-28 rounded-full bg-gray-200 flex items-center justify-center text-6xl border-4 border-white/50">
-            🐰
-          </div>
+          <img
+            src={user?.profileImage || "/images/defaults/raccoon.png"}
+            alt="프로필 이미지"
+            className="w-28 h-28 rounded-full object-cover border-4 border-white/50"
+          />
           <button className="mt-2 px-4 py-1 bg-white/20 text-white text-sm rounded-full hover:bg-white/30 transition-colors">
             사진 수정
           </button>
@@ -173,7 +175,7 @@ export default function ProfileEditPage() {
 
           {/* 꿈번지 */}
           <div>
-            <label className="block text-white font-medium mb-1">꿈번지</label>
+            <label className="block text-white font-medium mb-1">꿈번지 (선택)</label>
             <input
               type="text"
               name="dreamAddress"
