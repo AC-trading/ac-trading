@@ -69,14 +69,18 @@ image:
     post: ${IMAGE_MAX_COUNT_POST:10}
     chat: ${IMAGE_MAX_COUNT_CHAT:10}
 
-# Swagger/OpenAPI 설정
+# Swagger/OpenAPI 설정 (환경변수로 오버라이드 가능)
 springdoc:
   api-docs:
     enabled: ${SWAGGER_ENABLED:true}
-    path: /v3/api-docs
+    path: ${SWAGGER_API_DOCS_PATH:/v3/api-docs}
   swagger-ui:
     enabled: ${SWAGGER_ENABLED:true}
-    path: /swagger-ui.html
-    tags-sorter: alpha
-    operations-sorter: alpha
+    path: ${SWAGGER_UI_PATH:/swagger-ui.html}
+    tags-sorter: ${SWAGGER_TAGS_SORTER:alpha}
+    operations-sorter: ${SWAGGER_OPERATIONS_SORTER:alpha}
   server-url: ${SWAGGER_SERVER_URL:http://localhost:8080}
+  info:
+    contact:
+      name: ${SWAGGER_CONTACT_NAME:AC Trading Team}
+      url: ${SWAGGER_CONTACT_URL:https://github.com/AC-trading/ac-trading}
