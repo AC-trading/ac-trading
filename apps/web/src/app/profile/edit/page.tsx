@@ -133,9 +133,9 @@ export default function ProfileEditPage() {
               placeholder="섬 이름을 입력하세요"
               className="w-full px-4 py-3 rounded-lg border-2 border-white/50 bg-transparent text-white placeholder-white/70 focus:outline-none focus:border-white"
             />
-            {formData.islandName && (
-              <p className={`text-sm mt-1 ${isIslandNameValid ? "text-green-200" : "text-red-200"}`}>
-                * {isIslandNameValid ? "사용 가능한 섬 이름입니다." : "2자 이상 입력해주세요."}
+            {formData.islandName && !isIslandNameValid && (
+              <p className="text-sm mt-1 text-red-200">
+                * 2자 이상 입력해주세요.
               </p>
             )}
           </div>
