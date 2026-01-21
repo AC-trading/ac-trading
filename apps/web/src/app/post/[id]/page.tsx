@@ -65,7 +65,11 @@ export default function PostDetailPage() {
   // API에서 게시글 데이터 로드
   useEffect(() => {
     async function loadPost() {
-      if (!postId) return;
+      if (!postId) {
+        setError("잘못된 게시글 ID입니다");
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);
@@ -73,6 +77,7 @@ export default function PostDetailPage() {
         const postNum = parseInt(postId, 10);
         if (isNaN(postNum)) {
           setError("잘못된 게시글 ID입니다");
+          setIsLoading(false);
           return;
         }
         const data = await getPost(postNum);
@@ -263,7 +268,7 @@ export default function PostDetailPage() {
           <p className="font-semibold text-gray-900">{post.userNickname || "익명"}</p>
           <p className="text-sm text-gray-500">{post.userIslandName || "섬 이름 없음"}</p>
         </div>
-        {post.userMannerScore && (
+        {post.userMannerScore != null && (
           <div className="text-right">
             <p className="text-sm font-medium text-primary">{post.userMannerScore}°C</p>
             <p className="text-xs text-gray-400">매너온도</p>
