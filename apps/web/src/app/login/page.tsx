@@ -11,7 +11,16 @@ import { useAuth } from "@/context/AuthContext";
 // 백엔드 OAuth 시작 URL 생성
 function getBackendLoginUrl(provider: "google" | "kakao") {
   const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-  return `${apiUrl}/api/auth/login/${provider}`;
+
+  // 환경 변수 검증
+  if (!apiUrl) {
+    throw new Error("NEXT_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다.");
+  }
+
+  // trailing slash 제거하여 URL 정규화
+  const cleanedApiUrl = apiUrl.replace(/\/+$/, "");
+
+  return `${cleanedApiUrl}/api/auth/login/${provider}`;
 }
 
 // 로그인 폼 컴포넌트 (소셜 로그인만)
