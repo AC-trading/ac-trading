@@ -245,9 +245,11 @@ public class PostService {
 
     /**
      * UUID로 회원 조회
+     * Before: visitorId == null 만 체크하여 "anonymousUser"가 UUID 파싱 시도됨
+     * After: "anonymousUser" 문자열도 비인증 상태로 처리
      */
     private Member findMemberByUuid(String visitorId) {
-        if (visitorId == null) {
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             throw new IllegalArgumentException("로그인이 필요합니다");
         }
         return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
@@ -264,9 +266,11 @@ public class PostService {
 
     /**
      * 현재 로그인한 사용자 ID 조회 (null 허용)
+     * Before: visitorId == null 만 체크하여 "anonymousUser"가 UUID 파싱 시도됨
+     * After: "anonymousUser" 문자열도 비인증 상태로 처리
      */
     private Long getCurrentUserId(String visitorId) {
-        if (visitorId == null) {
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return null;
         }
         return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
