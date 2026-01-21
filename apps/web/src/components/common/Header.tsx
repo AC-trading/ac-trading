@@ -44,7 +44,7 @@ export default function Header({
           )}
           {showLocation ? (
             <button className="flex items-center gap-1 font-semibold text-lg">
-              <span>군자동</span>
+              <span>{isAuthenticated && user?.islandName ? user.islandName : "내 섬"}</span>
               <ChevronDownIcon className="text-gray-600" />
             </button>
           ) : (

@@ -9,6 +9,7 @@ import {
   HeartIcon,
   ListIcon,
 } from "@/components/icons";
+import { useAuth } from "@/context/AuthContext";
 
 // 프로필 메뉴 아이템 컴포넌트
 function MenuItem({
@@ -34,18 +35,41 @@ function MenuItem({
 
 // 프로필 페이지 - Figma 디자인 기반
 export default function ProfilePage() {
-  // 더미 사용자 데이터
-  const user = {
-    name: "가나다",
-    location: "군자동",
-    id: "#123456789",
-  };
+  const { user, isLoading, isAuthenticated } = useAuth();
+
+  // 비로그인 상태
+  if (!isLoading && !isAuthenticated) {
+    return (
+      <MobileLayout>
+        <Header title="나의 거동숲" />
+        <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+          <span className="text-6xl mb-4">🔒</span>
+          <p className="text-sm">로그인이 필요합니다</p>
+          <Link href="/login" className="mt-4 px-6 py-2 bg-primary text-white rounded-lg">
+            로그인하기
+          </Link>
+        </div>
+      </MobileLayout>
+    );
+  }
+
+  // 로딩 상태
+  if (isLoading) {
+    return (
+      <MobileLayout>
+        <Header title="나의 거동숲" />
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+        </div>
+      </MobileLayout>
+    );
+  }
 
   return (
     <MobileLayout>
       {/* 헤더 */}
       <Header
-        title="나의 당근"
+        title="나의 거동숲"
         rightElement={
           <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
             <SettingsIcon className="text-gray-800" />
@@ -60,22 +84,17 @@ export default function ProfilePage() {
       >
         {/* 프로필 이미지 */}
         <div className="w-14 h-14 rounded-full bg-[#BAE8E7] flex items-center justify-center text-2xl">
-          👤
+          {user?.nickname?.charAt(0) || "👤"}
         </div>
         <div className="flex-1">
-          <h2 className="font-semibold text-lg">{user.name}</h2>
+          <h2 className="font-semibold text-lg">{user?.nickname || "닉네임 없음"}</h2>
           <p className="text-sm text-gray-500">
-            {user.location} {user.id}
+            {user?.islandName || "섬 이름 없음"}
           </p>
         </div>
         <ChevronRightIcon className="text-gray-400" />
       </Link>
 
-      {/* 당근페이 배너 */}
-      <div className="mx-4 my-2 p-4 bg-[#BAE8E7] rounded-xl flex items-center justify-between">
-        <span className="text-primary font-semibold">당근페이</span>
-        <span className="text-gray-600 text-sm">중고거래는 이제 당근페이로 해보세요!</span>
-      </div>
 
       {/* 거래 관련 메뉴 */}
       <div className="flex justify-around py-4 border-b border-gray-100">
@@ -113,7 +132,7 @@ export default function ProfilePage() {
         <h3 className="px-4 py-2 font-semibold text-gray-800">나의 활동</h3>
         <MenuItem icon={<ListIcon />} label="키워드 알림" href="/profile/keywords" />
         <MenuItem icon={<ListIcon />} label="모아보기" href="/profile/collection" />
-        <MenuItem icon={<ListIcon />} label="당근가계부" href="/profile/ledger" />
+        <MenuItem icon={<ListIcon />} label="거동숲 가계부" href="/profile/ledger" />
       </div>
     </MobileLayout>
   );
