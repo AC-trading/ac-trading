@@ -268,11 +268,9 @@ export default function ChatRoomPage() {
   const handleBlockUser = async () => {
     if (!chatRoom) return;
 
-    const otherUserId = chatRoom.sellerId === currentUserId ? chatRoom.buyerId : chatRoom.sellerId;
-
     setIsBlocking(true);
     try {
-      await blockUser(String(otherUserId));
+      await blockUser(String(chatRoom.otherUserId));
       setShowMoreMenu(false);
       alert("해당 사용자를 차단했습니다.");
       router.push("/chat");
