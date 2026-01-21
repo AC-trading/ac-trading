@@ -133,11 +133,16 @@ export default function PostDetailPage() {
             <HeartIcon filled={isLiked} className="w-6 h-6" />
           </button>
 
-          {/* 가격 & 채팅 버튼 */}
+          {/* 가격 & 버튼들 */}
           <div className="flex items-center gap-4">
-            <span className="text-xl font-bold text-primary">
-              {formatPrice(price)}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xl font-bold text-primary">
+                {formatPrice(price)}
+              </span>
+              <button className="text-sm font-medium text-[#5BBFB3] hover:text-[#7ECEC5] transition-colors">
+                가격 제안하기
+              </button>
+            </div>
             <Link
               href={`/chat/new?postId=${postId}`}
               className="px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition-colors"

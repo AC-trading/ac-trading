@@ -86,7 +86,7 @@ export default function NewPostPage() {
               name="title"
               value={formData.title}
               onChange={handleChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
               placeholder="상품명을 입력하세요"
             />
           </div>
@@ -98,7 +98,7 @@ export default function NewPostPage() {
               name="content"
               value={formData.content}
               onChange={handleChange}
-              className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              className="w-full h-32 px-4 py-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-gray-900"
               placeholder="상품에 대한 설명을 적어주세요"
             />
           </div>
@@ -133,7 +133,7 @@ export default function NewPostPage() {
                 name="price"
                 value={formData.price}
                 onChange={handleChange}
-                className="flex-1 px-4 py-3 focus:outline-none"
+                className="flex-1 px-4 py-3 focus:outline-none text-gray-900"
                 placeholder="가격을 입력해주세요.."
               />
               <span className="px-4 text-primary font-medium">
