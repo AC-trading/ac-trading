@@ -88,15 +88,20 @@ public class AuthController {
         String identityProvider = normalizedProvider.substring(0, 1).toUpperCase()
                 + normalizedProvider.substring(1);
 
-        // provider별 redirect URI 생성
-        String redirectUri = getRedirectUri(normalizedProvider);
+        // Before: provider별 redirect URI 사용 - Cognito Hosted UI와 호환 불가
+        // After: 기본 redirect URI 사용 (provider path 없음) - Cognito Hosted UI 호환
+        // Cognito는 모든 Identity Provider에 대해 동일한 callback URL 사용
+        String redirectUri = defaultRedirectUri;
 
-        // Before: state 파라미터 없음
-        // After: CSRF 방어를 위한 state 파라미터 추가
-        // 랜덤 state 생성 및 쿠키에 저장
-        String state = UUID.randomUUID().toString();
-        ResponseCookie stateCookie = cookieUtil.createOAuthStateCookie(state);
+        // Before: state에 uuid만 저장
+        // After: state에 uuid:provider 형식으로 저장하여 callback에서 provider 식별
+        // 랜덤 state 생성 및 쿠키에 저장 (uuid만 저장, provider는 state 파라미터에 포함)
+        String stateUuid = UUID.randomUUID().toString();
+        ResponseCookie stateCookie = cookieUtil.createOAuthStateCookie(stateUuid);
         cookieUtil.addCookie(response, stateCookie);
+
+        // state 파라미터: uuid:provider 형식 (예: "abc123:kakao")
+        String stateWithProvider = stateUuid + ":" + normalizedProvider;
 
         // Cognito OAuth authorize URL 생성 (state 파라미터 포함)
         String authorizeUrl = String.format(
@@ -105,11 +110,32 @@ public class AuthController {
                 cognitoClientId,
                 URLEncoder.encode(redirectUri, StandardCharsets.UTF_8),
                 identityProvider,
-                URLEncoder.encode(state, StandardCharsets.UTF_8)
+                URLEncoder.encode(stateWithProvider, StandardCharsets.UTF_8)
         );
 
         log.info("소셜 로그인 시작 - provider: {}, redirectUri: {}", normalizedProvider, redirectUri);
         response.sendRedirect(authorizeUrl);
+    }
+
+    /**
+     * OAuth 콜백 핸들러 (provider 없는 버전)
+     * - Cognito Hosted UI는 모든 Identity Provider에 대해 동일한 callback URL 사용
+     * - provider 정보는 state 파라미터 또는 ID Token의 identities claim에서 추출
+     */
+    @GetMapping("/callback")
+    public void handleOAuthCallbackWithoutProvider(
+            @RequestParam(value = "code", required = false) String code,
+            @RequestParam(value = "state", required = false) String state,
+            @RequestParam(value = "error", required = false) String error,
+            @RequestParam(value = "error_description", required = false) String errorDescription,
+            HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+
+        // state에서 provider 추출 (형식: uuid:provider)
+        String provider = extractProviderFromState(state);
+
+        // provider를 추출했으면 기존 핸들러로 위임
+        processOAuthCallback(provider, code, state, error, errorDescription, request, response);
     }
 
     /**
@@ -128,20 +154,24 @@ public class AuthController {
             HttpServletRequest request,
             HttpServletResponse response) throws IOException {
 
-        String normalizedProvider = provider.toLowerCase();
+        processOAuthCallback(provider, code, state, error, errorDescription, request, response);
+    }
 
-        // Before: state 검증 없음
-        // After: CSRF 방어를 위한 state 파라미터 검증 추가
+    /**
+     * OAuth 콜백 공통 처리 로직
+     */
+    private void processOAuthCallback(
+            String provider,
+            String code,
+            String state,
+            String error,
+            String errorDescription,
+            HttpServletRequest request,
+            HttpServletResponse response) throws IOException {
+
         // state 쿠키 삭제 (사용 후 즉시 삭제)
         ResponseCookie deleteStateCookie = cookieUtil.deleteOAuthStateCookie();
         cookieUtil.addCookie(response, deleteStateCookie);
-
-        // 지원하지 않는 provider 체크
-        if (!SUPPORTED_PROVIDERS.contains(normalizedProvider)) {
-            log.warn("지원하지 않는 OAuth provider: {}", provider);
-            response.sendRedirect(frontendUrl + "/login?error=unsupported_provider");
-            return;
-        }
 
         // 에러 응답 처리 (사용자가 로그인 취소한 경우 등)
         if (error != null) {
@@ -151,10 +181,11 @@ public class AuthController {
             return;
         }
 
-        // state 검증 (CSRF 방어)
+        // state 검증 (CSRF 방어) - state에서 uuid 부분만 추출하여 비교
         String storedState = cookieUtil.getOAuthStateFromCookie(request).orElse(null);
-        if (state == null || storedState == null || !state.equals(storedState)) {
-            log.warn("OAuth state 불일치 - CSRF 공격 의심. received: {}, stored: {}", state, storedState);
+        String stateUuid = extractUuidFromState(state);
+        if (stateUuid == null || storedState == null || !stateUuid.equals(storedState)) {
+            log.warn("OAuth state 불일치 - CSRF 공격 의심. received: {}, stored: {}", stateUuid, storedState);
             response.sendRedirect(frontendUrl + "/login?error=invalid_state");
             return;
         }
@@ -167,12 +198,23 @@ public class AuthController {
         }
 
         try {
-            // 1. Cognito에서 토큰 교환 (provider별 redirect URI 사용)
-            String callbackRedirectUri = getRedirectUri(normalizedProvider);
-            CognitoTokenResponse cognitoTokens = cognitoAuthService.exchangeCodeForTokens(code, callbackRedirectUri);
+            // 1. Cognito에서 토큰 교환 (기본 redirect URI 사용)
+            CognitoTokenResponse cognitoTokens = cognitoAuthService.exchangeCodeForTokens(code);
 
-            // 2. ID Token에서 사용자 정보 파싱
+            // 2. ID Token에서 사용자 정보 파싱 (provider 정보 포함)
             CognitoUserInfo userInfo = cognitoAuthService.parseIdToken(cognitoTokens.getIdToken());
+
+            // provider가 없거나 지원하지 않는 경우 ID Token에서 추출한 provider 사용
+            String normalizedProvider = (provider != null && !provider.isBlank())
+                    ? provider.toLowerCase()
+                    : userInfo.getProvider();
+
+            // 지원하지 않는 provider 체크
+            if (!SUPPORTED_PROVIDERS.contains(normalizedProvider)) {
+                log.warn("지원하지 않는 OAuth provider: {}", normalizedProvider);
+                response.sendRedirect(frontendUrl + "/login?error=unsupported_provider");
+                return;
+            }
 
             // 3. DB에서 사용자 조회 또는 생성
             Member member = findOrCreateMember(userInfo);
@@ -189,8 +231,6 @@ public class AuthController {
             ResponseCookie refreshCookie = cookieUtil.createRefreshTokenCookie(refreshToken, maxAgeSeconds);
             cookieUtil.addCookie(response, refreshCookie);
 
-            // Before: 토큰을 쿼리 파라미터(?)로 전달 - 서버 로그/Referer에 노출 위험
-            // After: Fragment(#)로 전달 - 서버로 전송되지 않아 보안 강화
             // 6. 프론트엔드 콜백 페이지로 리다이렉트 (토큰은 URL Fragment로)
             String redirectUrl = frontendUrl + "/auth/callback#" +
                     "accessToken=" + URLEncoder.encode(accessToken, StandardCharsets.UTF_8) +
@@ -205,6 +245,34 @@ public class AuthController {
                     URLEncoder.encode("auth_failed", StandardCharsets.UTF_8);
             response.sendRedirect(errorUrl);
         }
+    }
+
+    /**
+     * state 파라미터에서 provider 추출
+     * - 형식: uuid:provider (예: "abc123:kakao")
+     * - provider가 없으면 null 반환
+     */
+    private String extractProviderFromState(String state) {
+        if (state == null || !state.contains(":")) {
+            return null;
+        }
+        String[] parts = state.split(":", 2);
+        return parts.length > 1 ? parts[1] : null;
+    }
+
+    /**
+     * state 파라미터에서 UUID 부분만 추출
+     * - 형식: uuid:provider → uuid 반환
+     * - provider가 없으면 전체 state 반환
+     */
+    private String extractUuidFromState(String state) {
+        if (state == null) {
+            return null;
+        }
+        if (state.contains(":")) {
+            return state.split(":", 2)[0];
+        }
+        return state;
     }
 
     /**
