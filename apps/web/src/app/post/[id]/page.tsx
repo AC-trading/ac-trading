@@ -260,7 +260,10 @@ export default function PostDetailPage() {
       </div>
 
       {/* 판매자 정보 */}
-      <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+      <Link
+        href={`/user/${post.userId}`}
+        className="flex items-center gap-3 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors"
+      >
         <div className="w-12 h-12 rounded-full bg-primary-light flex items-center justify-center text-2xl">
           🐰
         </div>
@@ -274,7 +277,7 @@ export default function PostDetailPage() {
             <p className="text-xs text-gray-400">매너온도</p>
           </div>
         )}
-      </div>
+      </Link>
 
       {/* 상품 정보 */}
       <div className="p-4 space-y-4">
