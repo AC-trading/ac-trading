@@ -35,6 +35,7 @@ cognito:
   client-id: ${COGNITO_CLIENT_ID}
   client-secret: ${COGNITO_CLIENT_SECRET}
   redirect-uri: ${COGNITO_REDIRECT_URI}
+  redirect-uri-base: ${COGNITO_REDIRECT_URI_BASE:}
 
 # 프론트엔드 URL (OAuth 콜백 후 리다이렉트)
 frontend:

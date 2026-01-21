@@ -3,10 +3,11 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
-import { ChevronLeftIcon, CameraIcon } from "@/components/icons";
+import { ChevronLeftIcon, CameraIcon, MoreVerticalIcon, FlagIcon, BlockIcon, ExitIcon, BellOffIcon, StarIcon } from "@/components/icons";
 import { useAuth } from "@/context/AuthContext";
 import { webSocketClient, ChatMessage } from "@/lib/websocket";
 import { getChatRoom, getChatMessages, formatMessageTime, ChatRoom } from "@/lib/chatApi";
+import { blockUser, leaveChatRoom, createReport, ReportReasonCode } from "@/lib/postApi";
 
 // 거래 상태 타입
 type TradeStatus = "AVAILABLE" | "RESERVED" | "COMPLETED";
@@ -116,6 +117,24 @@ export default function ChatRoomPage() {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const currentUserId = user?.id ? Number(user.id) : undefined;
+
+  // 더보기 메뉴 상태
+  const [showMoreMenu, setShowMoreMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [selectedReportReason, setSelectedReportReason] = useState<ReportReasonCode | null>(null);
+  const [reportDescription, setReportDescription] = useState("");
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+  const [reportError, setReportError] = useState<string | null>(null);
+  const [isBlocking, setIsBlocking] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
+
+  // 신고 사유 옵션
+  const REPORT_REASONS: { code: ReportReasonCode; label: string }[] = [
+    { code: "ABUSIVE_LANGUAGE", label: "욕설/비방" },
+    { code: "SCAM", label: "사기" },
+    { code: "EXTERNAL_MESSENGER", label: "외부 메신저 유도" },
+    { code: "OTHER", label: "기타" },
+  ];
 
   // 메시지 목록 스크롤 하단으로
   const scrollToBottom = () => {
@@ -245,6 +264,66 @@ export default function ChatRoomPage() {
     }
   };
 
+  // 사용자 차단 핸들러
+  const handleBlockUser = async () => {
+    if (!chatRoom) return;
+    if (!confirm("이 사용자를 차단하시겠습니까?")) return;
+
+    setIsBlocking(true);
+    try {
+      await blockUser(String(chatRoom.otherUserId));
+      alert("해당 사용자를 차단했습니다.");
+      router.push("/chat");
+    } catch (err) {
+      console.error("차단 실패:", err);
+      alert(err instanceof Error ? err.message : "차단에 실패했습니다");
+    } finally {
+      setIsBlocking(false);
+    }
+  };
+
+  // 채팅방 나가기 핸들러
+  const handleLeaveChatRoom = async () => {
+    if (!confirm("채팅방을 나가시겠습니까? 대화 내용이 삭제됩니다.")) return;
+
+    setIsLeaving(true);
+    try {
+      await leaveChatRoom(roomId);
+      alert("채팅방에서 나왔습니다.");
+      router.push("/chat");
+    } catch (err) {
+      console.error("채팅방 나가기 실패:", err);
+      alert(err instanceof Error ? err.message : "채팅방 나가기에 실패했습니다");
+    } finally {
+      setIsLeaving(false);
+    }
+  };
+
+  // 신고 제출 핸들러
+  const handleReportSubmit = async () => {
+    if (!chatRoom || !selectedReportReason) return;
+
+    setIsSubmittingReport(true);
+    setReportError(null);
+
+    try {
+      await createReport({
+        postId: chatRoom.postId,
+        reasonCode: selectedReportReason,
+        description: reportDescription || undefined,
+      });
+      setShowReportModal(false);
+      setSelectedReportReason(null);
+      setReportDescription("");
+      alert("신고가 접수되었습니다. 검토 후 조치하겠습니다.");
+    } catch (err) {
+      console.error("신고 실패:", err);
+      setReportError(err instanceof Error ? err.message : "신고에 실패했습니다");
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
+
   // 로딩 중
   if (authLoading || isLoading) {
     return <ChatRoomSkeleton />;
@@ -285,7 +364,12 @@ export default function ChatRoomPage() {
                 <span className="w-2 h-2 bg-yellow-500 rounded-full" title="연결 중..." />
               )}
             </div>
-            <div className="w-8" />
+            <button
+              onClick={() => setShowMoreMenu(true)}
+              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <MoreVerticalIcon className="w-6 h-6 text-gray-800" />
+            </button>
           </div>
         </header>
 
@@ -482,6 +566,183 @@ export default function ChatRoomPage() {
             </div>
           </div>
         </div>
+
+        {/* 더보기 메뉴 바텀시트 */}
+        {showMoreMenu && (
+          <div
+            className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center"
+            onClick={() => setShowMoreMenu(false)}
+          >
+            <div
+              className="w-full max-w-[390px] bg-white rounded-t-2xl overflow-hidden animate-slide-up"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* 핸들 바 */}
+              <div className="flex justify-center py-3">
+                <div className="w-10 h-1 bg-gray-300 rounded-full" />
+              </div>
+
+              {/* 메뉴 아이템들 */}
+              <div className="pb-6">
+                {/* 매너 평가하기 */}
+                <button
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    // TODO: 매너 평가 기능 구현
+                    alert("매너 평가 기능은 준비 중입니다.");
+                  }}
+                  className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors"
+                >
+                  <StarIcon filled={false} className="w-5 h-5 text-gray-600" />
+                  <span className="text-gray-800">매너 평가하기</span>
+                </button>
+
+                {/* 차단하기 */}
+                <button
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    handleBlockUser();
+                  }}
+                  disabled={isBlocking}
+                  className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  <BlockIcon className="w-5 h-5 text-gray-600" />
+                  <span className="text-gray-800">차단하기</span>
+                </button>
+
+                {/* 신고하기 */}
+                <button
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    setShowReportModal(true);
+                  }}
+                  className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors"
+                >
+                  <FlagIcon className="w-5 h-5 text-gray-600" />
+                  <span className="text-gray-800">신고하기</span>
+                </button>
+
+                {/* 알림 끄기 */}
+                <button
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    // TODO: 알림 끄기 기능 구현
+                    alert("알림 끄기 기능은 준비 중입니다.");
+                  }}
+                  className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors"
+                >
+                  <BellOffIcon className="w-5 h-5 text-gray-600" />
+                  <span className="text-gray-800">알림 끄기</span>
+                </button>
+
+                {/* 채팅방 나가기 */}
+                <button
+                  onClick={() => {
+                    setShowMoreMenu(false);
+                    handleLeaveChatRoom();
+                  }}
+                  disabled={isLeaving}
+                  className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  <ExitIcon className="w-5 h-5 text-red-500" />
+                  <span className="text-red-500">채팅방 나가기</span>
+                </button>
+              </div>
+
+              {/* 취소 버튼 */}
+              <button
+                onClick={() => setShowMoreMenu(false)}
+                className="w-full py-4 border-t border-gray-100 text-gray-500 font-medium hover:bg-gray-50 transition-colors"
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 신고하기 모달 */}
+        {showReportModal && (
+          <div
+            className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center"
+            onClick={() => {
+              setShowReportModal(false);
+              setSelectedReportReason(null);
+              setReportDescription("");
+              setReportError(null);
+            }}
+          >
+            <div
+              className="w-full max-w-[390px] bg-white rounded-t-2xl overflow-hidden animate-slide-up max-h-[80vh] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* 헤더 */}
+              <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                <h3 className="text-lg font-semibold">신고하기</h3>
+                <button
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setSelectedReportReason(null);
+                    setReportDescription("");
+                    setReportError(null);
+                  }}
+                  className="p-1 hover:bg-gray-100 rounded-full"
+                >
+                  <span className="text-xl text-gray-500">✕</span>
+                </button>
+              </div>
+
+              {/* 신고 사유 선택 */}
+              <div className="p-4 space-y-2">
+                <p className="text-sm text-gray-600 mb-3">신고 사유를 선택해주세요</p>
+                {REPORT_REASONS.map((reason) => (
+                  <button
+                    key={reason.code}
+                    onClick={() => setSelectedReportReason(reason.code)}
+                    className={`w-full px-4 py-3 text-left rounded-lg border transition-colors ${
+                      selectedReportReason === reason.code
+                        ? "border-[#7ECEC5] bg-[#7ECEC5]/10 text-[#5BBFB3]"
+                        : "border-gray-200 text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {reason.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* 추가 설명 */}
+              {selectedReportReason && (
+                <div className="px-4 pb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    추가 설명 (선택)
+                  </label>
+                  <textarea
+                    value={reportDescription}
+                    onChange={(e) => setReportDescription(e.target.value)}
+                    placeholder="신고 내용을 자세히 적어주세요"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-[#7ECEC5]"
+                    rows={3}
+                  />
+                </div>
+              )}
+
+              {/* 에러 메시지 */}
+              {reportError && (
+                <p className="px-4 pb-2 text-sm text-red-500">{reportError}</p>
+              )}
+
+              {/* 제출 버튼 */}
+              <div className="p-4 border-t border-gray-100">
+                <button
+                  onClick={handleReportSubmit}
+                  disabled={!selectedReportReason || isSubmittingReport}
+                  className="w-full py-4 bg-[#5BBFB3] text-white font-semibold rounded-xl hover:bg-[#4DAE9F] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                >
+                  {isSubmittingReport ? "신고 중..." : "신고하기"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

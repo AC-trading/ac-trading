@@ -1,70 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { MobileLayout, Header } from "@/components/common";
-import { HeartIcon, CommentIcon, PlusIcon } from "@/components/icons";
-
-// 더미 거래글 데이터
-const mockPosts = [
-  {
-    id: 1,
-    title: "에어팟 프로",
-    location: "군자동",
-    time: "3일 전",
-    price: 220000,
-    image: "/images/airpods.jpg",
-    comments: 3,
-    likes: 11,
-  },
-  {
-    id: 2,
-    title: "바이레도 블랑쉬 50ml",
-    location: "광진구 구의제3동",
-    time: "26초 전",
-    price: 4000,
-    image: "/images/perfume.jpg",
-    comments: 0,
-    likes: 2,
-  },
-  {
-    id: 3,
-    title: "샌드위치",
-    location: "동대문구 휘경동",
-    time: "끌올 59초 전",
-    price: 8000,
-    image: "/images/sandwich.jpg",
-    comments: 0,
-    likes: 0,
-  },
-  {
-    id: 4,
-    title: "아이폰 13프로맥스",
-    location: "군자동",
-    time: "1일 전",
-    price: 1000000,
-    image: "/images/iphone.jpg",
-    comments: 0,
-    likes: 0,
-  },
-  {
-    id: 5,
-    title: "커피머신",
-    location: "구리시 교문1동",
-    time: "1초 전",
-    price: 100000,
-    image: "/images/coffee.jpg",
-    comments: 0,
-    likes: 0,
-  },
-];
-
-// 가격 포맷팅 함수
-function formatPrice(price: number): string {
-  return price.toLocaleString("ko-KR") + "원";
-}
+import { HeartIcon, PlusIcon } from "@/components/icons";
+import { useAuth } from "@/context/AuthContext";
+import {
+  getPosts,
+  formatPrice,
+  formatRelativeTime,
+  Post,
+} from "@/lib/postApi";
 
 // 거래글 아이템 컴포넌트
-function PostItem({ post }: { post: (typeof mockPosts)[0] }) {
+function PostItem({ post }: { post: Post }) {
   return (
     <Link
       href={`/post/${post.id}`}
@@ -88,24 +37,18 @@ function PostItem({ post }: { post: (typeof mockPosts)[0] }) {
       {/* 상품 정보 */}
       <div className="flex-1 flex flex-col justify-between py-1">
         <div>
-          <h3 className="font-medium text-gray-900 line-clamp-2">{post.title}</h3>
+          <h3 className="font-medium text-gray-900 line-clamp-2">{post.itemName}</h3>
           <p className="text-xs text-gray-500 mt-1">
-            {post.location} · {post.time}
+            {post.userIslandName || "섬 이름 없음"} · {formatRelativeTime(post.bumpedAt || post.createdAt)}
           </p>
         </div>
         <div className="flex items-center justify-between">
-          <p className="font-bold text-primary">{formatPrice(post.price)}</p>
+          <p className="font-bold text-primary">{formatPrice(post.price, post.currencyType)}</p>
           <div className="flex items-center gap-3 text-gray-400">
-            {post.comments > 0 && (
-              <span className="flex items-center gap-1">
-                <CommentIcon />
-                <span className="text-xs">{post.comments}</span>
-              </span>
-            )}
-            {post.likes > 0 && (
+            {post.likeCount > 0 && (
               <span className="flex items-center gap-1">
                 <HeartIcon className="w-4 h-4" />
-                <span className="text-xs">{post.likes}</span>
+                <span className="text-xs">{post.likeCount}</span>
               </span>
             )}
           </div>
@@ -117,16 +60,86 @@ function PostItem({ post }: { post: (typeof mockPosts)[0] }) {
 
 // 홈 페이지 (거래글 목록) - Figma 디자인 기반
 export default function HomePage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 게시글 목록 로드
+  useEffect(() => {
+    async function loadPosts() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await getPosts({ page: 0, size: 20 });
+        setPosts(response.posts);
+      } catch (err) {
+        console.error("게시글 로드 실패:", err);
+        setError(err instanceof Error ? err.message : "게시글을 불러오는데 실패했습니다");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadPosts();
+  }, []);
+
   return (
     <MobileLayout>
-      <Header showLocation showSearch showMenu showBell />
+      <Header showLocation showSearch showBell />
+
+      {/* 비로그인 사용자 안내 배너 */}
+      {!authLoading && !isAuthenticated && (
+        <Link
+          href="/login"
+          className="block mx-4 mt-3 p-4 bg-[#BAE8E7] rounded-xl"
+        >
+          <p className="text-sm font-medium text-gray-800">
+            로그인을 통해 거래해주세요
+          </p>
+          <p className="text-xs text-gray-600 mt-1">
+            로그인하면 채팅, 가격 제안 등 모든 기능을 이용할 수 있어요
+          </p>
+        </Link>
+      )}
+
+      {/* 로딩 상태 */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+        </div>
+      )}
+
+      {/* 에러 상태 */}
+      {error && !isLoading && (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+          <p className="text-sm">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 text-sm text-primary hover:underline"
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
+
+      {/* 빈 상태 */}
+      {!isLoading && !error && posts.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+          <span className="text-6xl mb-4">🏝️</span>
+          <p>아직 등록된 거래글이 없어요</p>
+          <p className="text-sm mt-1">첫 번째 거래글을 등록해보세요!</p>
+        </div>
+      )}
 
       {/* 거래글 목록 */}
-      <div className="divide-y divide-gray-100">
-        {mockPosts.map((post) => (
-          <PostItem key={post.id} post={post} />
-        ))}
-      </div>
+      {!isLoading && !error && posts.length > 0 && (
+        <div className="divide-y divide-gray-100">
+          {posts.map((post) => (
+            <PostItem key={post.id} post={post} />
+          ))}
+        </div>
+      )}
 
       {/* 글쓰기 FAB 버튼 */}
       <Link
