@@ -45,7 +45,7 @@ export default function ProfilePage() {
     <MobileLayout>
       {/* 헤더 */}
       <Header
-        title="나의 당근"
+        title="나의 거동숲"
         rightElement={
           <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
             <SettingsIcon className="text-gray-800" />
@@ -71,11 +71,6 @@ export default function ProfilePage() {
         <ChevronRightIcon className="text-gray-400" />
       </Link>
 
-      {/* 당근페이 배너 */}
-      <div className="mx-4 my-2 p-4 bg-[#BAE8E7] rounded-xl flex items-center justify-between">
-        <span className="text-primary font-semibold">당근페이</span>
-        <span className="text-gray-600 text-sm">중고거래는 이제 당근페이로 해보세요!</span>
-      </div>
 
       {/* 거래 관련 메뉴 */}
       <div className="flex justify-around py-4 border-b border-gray-100">
@@ -113,7 +108,7 @@ export default function ProfilePage() {
         <h3 className="px-4 py-2 font-semibold text-gray-800">나의 활동</h3>
         <MenuItem icon={<ListIcon />} label="키워드 알림" href="/profile/keywords" />
         <MenuItem icon={<ListIcon />} label="모아보기" href="/profile/collection" />
-        <MenuItem icon={<ListIcon />} label="당근가계부" href="/profile/ledger" />
+        <MenuItem icon={<ListIcon />} label="거동숲 가계부" href="/profile/ledger" />
       </div>
     </MobileLayout>
   );

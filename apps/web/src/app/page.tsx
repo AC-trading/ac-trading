@@ -119,7 +119,7 @@ function PostItem({ post }: { post: (typeof mockPosts)[0] }) {
 export default function HomePage() {
   return (
     <MobileLayout>
-      <Header showLocation showSearch showMenu showBell />
+      <Header showLocation showSearch showBell />
 
       {/* 거래글 목록 */}
       <div className="divide-y divide-gray-100">

@@ -68,7 +68,7 @@ export default function ReviewPage() {
               {transaction.seller.name}님과의 거래가 어떠셨나요?
             </h2>
             <p className="text-sm text-gray-500 mt-2">
-              남겨주신 후기는 당근이지에 도움이 됩니다
+              남겨주신 후기는 거동숲에 도움이 됩니다
             </p>
           </div>
 
