@@ -83,9 +83,11 @@ export default function ProfilePage() {
         className="flex items-center gap-4 p-4 hover:bg-gray-50 transition-colors"
       >
         {/* 프로필 이미지 */}
-        <div className="w-14 h-14 rounded-full bg-[#BAE8E7] flex items-center justify-center text-2xl">
-          {user?.nickname?.charAt(0) || "👤"}
-        </div>
+        <img
+          src={user?.profileImage || "/images/defaults/raccoon.png"}
+          alt="프로필 이미지"
+          className="w-14 h-14 rounded-full object-cover"
+        />
         <div className="flex-1">
           <h2 className="font-semibold text-lg">{user?.nickname || "닉네임 없음"}</h2>
           <p className="text-sm text-gray-500">
@@ -94,6 +96,20 @@ export default function ProfilePage() {
         </div>
         <ChevronRightIcon className="text-gray-400" />
       </Link>
+
+      {/* 나의 무 가격 (매너 점수) */}
+      <div className="mx-4 p-4 bg-gray-50 rounded-lg">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-sm text-gray-600">나의 무 가격</span>
+          <span className="text-xs text-gray-400 cursor-pointer">ⓘ</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-2xl font-bold text-red-500">
+            {user?.mannerScore != null ? `${user.mannerScore.toFixed(1)}점` : "-"}
+          </span>
+          <img src="/icons/radish.png" alt="무" className="w-8 h-8" />
+        </div>
+      </div>
 
 
       {/* 거래 관련 메뉴 */}
