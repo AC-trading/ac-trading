@@ -8,6 +8,9 @@ interface User {
   email?: string;
   nickname?: string;
   profileImage?: string;
+  islandName?: string;
+  hemisphere?: 'NORTH' | 'SOUTH';
+  dreamCode?: string;
 }
 
 // AuthContext 타입

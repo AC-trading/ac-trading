@@ -83,6 +83,103 @@ export interface PostStatusUpdateRequest {
   status: 'AVAILABLE' | 'RESERVED' | 'COMPLETED';
 }
 
+// ========== 가격 제안 타입 정의 ==========
+
+// 가격 제안 요청 타입
+export interface PriceOfferCreateRequest {
+  offeredPrice: number;
+  currencyType?: 'BELL' | 'MILE_TICKET';
+}
+
+// 가격 제안 응답 타입
+export interface PriceOfferResponse {
+  id: number;
+  postId: number;
+  postItemName: string | null;
+  offererId: number;
+  offererNickname: string | null;
+  offererIslandName: string | null;
+  offeredPrice: number;
+  currencyType: string | null;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  createdAt: string;
+}
+
+// 가격 제안 수락 응답 타입
+export interface PriceOfferAcceptResponse {
+  offerId: number;
+  status: string;
+  chatRoomId: number;
+  message: string;
+}
+
+// ========== 리뷰 타입 정의 ==========
+
+// 리뷰 작성 요청 타입
+export interface ReviewCreateRequest {
+  postId: number;
+  revieweeId: number;
+  rating: number; // 0-5
+  comment?: string;
+}
+
+// 리뷰 응답 타입
+export interface ReviewResponse {
+  id: number;
+  postId: number;
+  postItemName: string | null;
+  reviewerId: number;
+  reviewerNickname: string | null;
+  reviewerIslandName: string | null;
+  revieweeId: number;
+  revieweeNickname: string | null;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// 리뷰 목록 응답 타입
+export interface ReviewListResponse {
+  reviews: ReviewResponse[];
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+// ========== 신고 타입 정의 ==========
+
+// 신고 사유 코드
+export type ReportReasonCode =
+  | 'HACKED_ITEM'
+  | 'DUPLICATE_POST'
+  | 'ABUSIVE_LANGUAGE'
+  | 'REAL_MONEY_TRADE'
+  | 'SCAM'
+  | 'EXTERNAL_MESSENGER'
+  | 'OTHER';
+
+// 신고 요청 타입
+export interface ReportCreateRequest {
+  postId: number;
+  reasonCode: ReportReasonCode;
+  description?: string;
+  blockUser?: boolean;
+}
+
+// 신고 응답 타입
+export interface ReportResponse {
+  id: number;
+  postId: number;
+  reporterId: number;
+  reasonCode: string;
+  description: string | null;
+  status: 'PENDING' | 'REVIEWED' | 'RESOLVED';
+  createdAt: string;
+}
+
 // API 에러 응답 타입
 interface ApiError {
   error: string;
@@ -284,6 +381,134 @@ export async function bumpPost(postId: number): Promise<Post> {
   return fetchWithAuth<Post>(`${API_URL}/api/posts/${postId}/bump`, {
     method: 'POST',
   });
+}
+
+// ========== 가격 제안 API 함수 ==========
+
+/**
+ * 가격 제안 생성
+ * POST /api/posts/{postId}/price-offer
+ */
+export async function createPriceOffer(
+  postId: number,
+  request: PriceOfferCreateRequest
+): Promise<PriceOfferResponse> {
+  return fetchWithAuth<PriceOfferResponse>(`${API_URL}/api/posts/${postId}/price-offer`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}
+
+/**
+ * 가격 제안 수락
+ * POST /api/price-offers/{offerId}/accept
+ */
+export async function acceptPriceOffer(offerId: number): Promise<PriceOfferAcceptResponse> {
+  return fetchWithAuth<PriceOfferAcceptResponse>(`${API_URL}/api/price-offers/${offerId}/accept`, {
+    method: 'POST',
+  });
+}
+
+/**
+ * 가격 제안 거절
+ * POST /api/price-offers/{offerId}/reject
+ */
+export async function rejectPriceOffer(offerId: number): Promise<PriceOfferResponse> {
+  return fetchWithAuth<PriceOfferResponse>(`${API_URL}/api/price-offers/${offerId}/reject`, {
+    method: 'POST',
+  });
+}
+
+/**
+ * 내가 받은 가격 제안 목록 조회
+ * GET /api/price-offers/received
+ */
+export async function getReceivedPriceOffers(
+  page = 0,
+  size = 20
+): Promise<{ offers: PriceOfferResponse[]; totalElements: number; hasNext: boolean }> {
+  return fetchWithAuth(`${API_URL}/api/price-offers/received?page=${page}&size=${size}`);
+}
+
+/**
+ * 내가 보낸 가격 제안 목록 조회
+ * GET /api/price-offers/sent
+ */
+export async function getSentPriceOffers(
+  page = 0,
+  size = 20
+): Promise<{ offers: PriceOfferResponse[]; totalElements: number; hasNext: boolean }> {
+  return fetchWithAuth(`${API_URL}/api/price-offers/sent?page=${page}&size=${size}`);
+}
+
+// ========== 리뷰 API 함수 ==========
+
+/**
+ * 리뷰 작성
+ * POST /api/reviews
+ */
+export async function createReview(request: ReviewCreateRequest): Promise<ReviewResponse> {
+  return fetchWithAuth<ReviewResponse>(`${API_URL}/api/reviews`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}
+
+/**
+ * 특정 사용자의 리뷰 목록 조회
+ * GET /api/users/{userId}/reviews
+ */
+export async function getUserReviews(
+  userId: number,
+  page = 0,
+  size = 20
+): Promise<ReviewListResponse> {
+  return fetchWithAuth<ReviewListResponse>(
+    `${API_URL}/api/users/${userId}/reviews?page=${page}&size=${size}`
+  );
+}
+
+/**
+ * 리뷰 작성 가능 여부 확인
+ * GET /api/posts/{postId}/can-review
+ */
+export async function canWriteReview(postId: number): Promise<{ canReview: boolean; reason?: string }> {
+  return fetchWithAuth<{ canReview: boolean; reason?: string }>(
+    `${API_URL}/api/posts/${postId}/can-review`
+  );
+}
+
+// ========== 신고 API 함수 ==========
+
+/**
+ * 게시글 신고
+ * POST /api/reports
+ */
+export async function createReport(request: ReportCreateRequest): Promise<ReportResponse> {
+  return fetchWithAuth<ReportResponse>(`${API_URL}/api/reports`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}
+
+// ========== 좋아요 API 함수 ==========
+
+/**
+ * 게시글 좋아요 토글
+ * POST /api/posts/{postId}/like
+ */
+export async function togglePostLike(postId: number): Promise<{ liked: boolean; likeCount: number }> {
+  return fetchWithAuth<{ liked: boolean; likeCount: number }>(`${API_URL}/api/posts/${postId}/like`, {
+    method: 'POST',
+  });
+}
+
+/**
+ * 내가 좋아요한 게시글 목록 조회
+ * GET /api/posts/liked
+ */
+export async function getLikedPosts(page = 0, size = 20): Promise<PostListResponse> {
+  return fetchWithAuth<PostListResponse>(`${API_URL}/api/posts/liked?page=${page}&size=${size}`);
 }
 
 // ========== 유틸리티 함수 ==========
