@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronDownIcon, SearchIcon, MenuIcon, BellIcon, ChevronLeftIcon } from "../icons";
+import { SearchIcon, MenuIcon, BellIcon, ChevronLeftIcon } from "../icons";
 import { useAuth } from "@/context/AuthContext";
 
 interface HeaderProps {
@@ -43,10 +43,9 @@ export default function Header({
             </button>
           )}
           {showLocation ? (
-            <button className="flex items-center gap-1 font-semibold text-lg">
-              <span>{isAuthenticated && user?.islandName ? user.islandName : "내 섬"}</span>
-              <ChevronDownIcon className="text-gray-600" />
-            </button>
+            <span className="font-semibold text-lg">
+              {isAuthenticated && user?.islandName ? user.islandName : "내 섬"}
+            </span>
           ) : (
             title && <h1 className="font-semibold text-lg">{title}</h1>
           )}
