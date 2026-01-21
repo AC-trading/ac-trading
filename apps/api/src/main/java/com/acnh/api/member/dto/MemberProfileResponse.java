@@ -24,6 +24,7 @@ public class MemberProfileResponse {
     private Integer totalTradeCount;
     private Long reviewCount;
     private LocalDateTime createdAt;
+    private boolean isProfileComplete;
 
     /**
      * Entity -> DTO 변환
@@ -39,6 +40,7 @@ public class MemberProfileResponse {
                 .totalTradeCount(member.getTotalTradeCount())
                 .reviewCount(reviewCount)
                 .createdAt(member.getCreatedAt())
+                .isProfileComplete(member.isProfileComplete())
                 .build();
     }
 }
