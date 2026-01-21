@@ -6,22 +6,12 @@ import { useEffect, Suspense } from "react";
 import { HomeOutlineIcon } from "@/components/icons";
 import { useAuth } from "@/context/AuthContext";
 
-// Cognito OAuth URL 생성
-function getCognitoLoginUrl(provider: "Google" | "Kakao") {
-  const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
-  const clientId = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID;
-  // 백엔드로 콜백 (토큰 교환은 백엔드에서 처리)
-  const redirectUri = process.env.NEXT_PUBLIC_COGNITO_REDIRECT_URI || `${process.env.NEXT_PUBLIC_API_URL}/api/auth/callback`;
-
-  const params = new URLSearchParams({
-    client_id: clientId!,
-    response_type: "code",
-    scope: "openid email profile",
-    redirect_uri: redirectUri,
-    identity_provider: provider,
-  });
-
-  return `https://${cognitoDomain}/oauth2/authorize?${params.toString()}`;
+// Before: 프론트에서 Cognito로 직접 리다이렉트 - 백엔드 state 쿠키 미설정
+// After: 백엔드 /api/auth/login/{provider}로 리다이렉트 - state 쿠키 설정됨
+// 백엔드 OAuth 시작 URL 생성
+function getBackendLoginUrl(provider: "google" | "kakao") {
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+  return `${apiUrl}/api/auth/login/${provider}`;
 }
 
 // 로그인 폼 컴포넌트 (소셜 로그인만)
@@ -41,14 +31,14 @@ function LoginForm() {
   const error = searchParams.get("error");
   const errorMessage = error ? getErrorMessage(error) : null;
 
-  // 구글 로그인
+  // 구글 로그인 - 백엔드로 리다이렉트하여 state 쿠키 설정
   const handleGoogleLogin = () => {
-    window.location.href = getCognitoLoginUrl("Google");
+    window.location.href = getBackendLoginUrl("google");
   };
 
-  // 카카오 로그인
+  // 카카오 로그인 - 백엔드로 리다이렉트하여 state 쿠키 설정
   const handleKakaoLogin = () => {
-    window.location.href = getCognitoLoginUrl("Kakao");
+    window.location.href = getBackendLoginUrl("kakao");
   };
 
   if (isLoading) {
