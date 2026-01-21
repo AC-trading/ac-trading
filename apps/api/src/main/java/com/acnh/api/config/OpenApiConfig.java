@@ -23,6 +23,12 @@ public class OpenApiConfig {
     @Value("${springdoc.server-url:http://localhost:8080}")
     private String serverUrl;
 
+    @Value("${springdoc.info.contact.name:AC Trading Team}")
+    private String contactName;
+
+    @Value("${springdoc.info.contact.url:https://github.com/AC-trading/ac-trading}")
+    private String contactUrl;
+
     @Bean
     public OpenAPI openAPI() {
         // JWT Bearer 인증 스키마 정의
@@ -50,7 +56,7 @@ public class OpenApiConfig {
                 .description("모여봐요 동물의 숲 아이템 거래 플랫폼 API")
                 .version("1.0.0")
                 .contact(new Contact()
-                        .name("AC Trading Team")
-                        .url("https://github.com/AC-trading/ac-trading"));
+                        .name(contactName)
+                        .url(contactUrl));
     }
 }

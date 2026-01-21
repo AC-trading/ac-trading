@@ -24,6 +24,9 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+    # 모든 브랜치에서 리뷰 활성화 (기본값은 main만)
+    base_branches:
+      - ".*"
 
 chat:
   # 채팅 응답도 한국어로
