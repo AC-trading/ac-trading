@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { HomeOutlineIcon } from "@/components/icons";
@@ -112,10 +113,12 @@ export default function ProfileEditPage() {
       <div className="flex-1 flex flex-col items-center px-8 pt-4">
         {/* 프로필 이미지 */}
         <div className="mb-4 flex flex-col items-center">
-          <img
+          <Image
             src={user?.profileImage || "/images/defaults/raccoon.png"}
             alt="프로필 이미지"
-            className="w-28 h-28 rounded-full object-cover border-4 border-gray-200"
+            width={112}
+            height={112}
+            className="rounded-full object-cover border-4 border-gray-200"
           />
           <button className="mt-2 px-4 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-gray-200 transition-colors">
             사진 수정

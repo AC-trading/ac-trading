@@ -12,6 +12,7 @@ interface User {
   hemisphere?: 'NORTH' | 'SOUTH';
   dreamCode?: string;
   isProfileComplete?: boolean;
+  mannerScore?: number;
 }
 
 // AuthContext 타입

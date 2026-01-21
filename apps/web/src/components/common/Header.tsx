@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { SearchIcon, MenuIcon, BellIcon, ChevronLeftIcon } from "../icons";
 import { useAuth } from "@/context/AuthContext";
 
@@ -75,10 +76,12 @@ export default function Header({
               {isAuthenticated ? (
                 <div className="flex items-center gap-2">
                   {user?.profileImage ? (
-                    <img
+                    <Image
                       src={user.profileImage}
                       alt="프로필"
-                      className="w-8 h-8 rounded-full object-cover"
+                      width={32}
+                      height={32}
+                      className="rounded-full object-cover"
                     />
                   ) : (
                     <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
