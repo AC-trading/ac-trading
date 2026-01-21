@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, notFound } from "next/navigation";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { MobileLayout, Header } from "@/components/common";
@@ -31,7 +31,14 @@ export default function UserProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const userId = params.id as string;
+  // params.id가 string[] 일 수 있으므로 처리
+  const rawId = params.id;
+  const userId = Array.isArray(rawId) ? rawId[0] : rawId;
+
+  // userId가 없으면 404
+  if (!userId) {
+    notFound();
+  }
 
   // 유저 프로필 로드
   useEffect(() => {
