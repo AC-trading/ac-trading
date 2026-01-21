@@ -138,4 +138,12 @@ public class Member extends BaseEntity {
     public void incrementTradeCount() {
         this.totalTradeCount++;
     }
+
+    /**
+     * 프로필 완성 여부 확인
+     * - 기본 닉네임 "섬주민"으로 시작하면 미완성으로 판단
+     */
+    public boolean isProfileComplete() {
+        return nickname != null && !nickname.startsWith("섬주민");
+    }
 }

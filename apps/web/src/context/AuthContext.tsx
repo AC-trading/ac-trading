@@ -11,6 +11,7 @@ interface User {
   islandName?: string;
   hemisphere?: 'NORTH' | 'SOUTH';
   dreamCode?: string;
+  isProfileComplete?: boolean;
 }
 
 // AuthContext 타입
