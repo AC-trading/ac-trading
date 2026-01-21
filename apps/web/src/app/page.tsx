@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { MobileLayout, Header } from "@/components/common";
-import { HeartIcon, CommentIcon, PlusIcon } from "@/components/icons";
+import { HeartIcon, PlusIcon } from "@/components/icons";
+import { useAuth } from "@/context/AuthContext";
 import {
   getPosts,
   formatPrice,
@@ -59,6 +60,7 @@ function PostItem({ post }: { post: Post }) {
 
 // 홈 페이지 (거래글 목록) - Figma 디자인 기반
 export default function HomePage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
   const [posts, setPosts] = useState<Post[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -85,6 +87,21 @@ export default function HomePage() {
   return (
     <MobileLayout>
       <Header showLocation showSearch showBell />
+
+      {/* 비로그인 사용자 안내 배너 */}
+      {!authLoading && !isAuthenticated && (
+        <Link
+          href="/login"
+          className="block mx-4 mt-3 p-4 bg-[#BAE8E7] rounded-xl"
+        >
+          <p className="text-sm font-medium text-gray-800">
+            로그인을 통해 거래해주세요
+          </p>
+          <p className="text-xs text-gray-600 mt-1">
+            로그인하면 채팅, 가격 제안 등 모든 기능을 이용할 수 있어요
+          </p>
+        </Link>
+      )}
 
       {/* 로딩 상태 */}
       {isLoading && (
