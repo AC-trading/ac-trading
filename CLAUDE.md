@@ -1,5 +1,6 @@
 컨셉: 모여봐요 동물의 숲 아이템 거래 플랫폼 (당근마켓 벤치마킹)
 절대로 하드코딩 하지 말고 환경 변수로 분리할것
+Redis 는 MVP 이후 기능이므로 지금은 안할것임.
 스택: Next.js(프론트) + Spring Boot(백엔드) + PostgreSQL(Neon) + Redis(Upstash) + Cloudflare R2(이미지)
 앱: React Native WebView + 네이티브(OAuth (일반 로그인 제거, 소셜 로그인만 구현), 푸시, 딥링크, 하단탭) - 플레이스토어 정책 충족용
 인증: Cognito → 백엔드 콜백(/api/auth/callback) → JWT 발급. access token은 로컬스토리지, refresh token은 HttpOnly 쿠키
