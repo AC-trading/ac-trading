@@ -6,7 +6,17 @@ import { useState, useEffect } from "react";
 import { MobileLayout, Header } from "@/components/common";
 import { useAuth } from "@/context/AuthContext";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
+// API URL 검증 - 개발 환경에서만 localhost 폴백 허용
+const API_URL = (() => {
+  const url = process.env.NEXT_PUBLIC_API_URL;
+  if (!url) {
+    if (process.env.NODE_ENV === "development") {
+      return "http://localhost:8080";
+    }
+    throw new Error("NEXT_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다.");
+  }
+  return url;
+})();
 
 // 유저 프로필 타입
 interface UserProfile {
