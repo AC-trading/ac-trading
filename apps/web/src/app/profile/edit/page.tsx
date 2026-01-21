@@ -114,15 +114,12 @@ export default function ProfileEditPage() {
         {/* 프로필 이미지 */}
         <div className="mb-4 flex flex-col items-center">
           <Image
-            src={user?.profileImage || "/images/defaults/raccoon.png"}
+            src="/images/defaults/raccoon.png"
             alt="프로필 이미지"
             width={112}
             height={112}
             className="rounded-full object-cover border-4 border-gray-200"
           />
-          <button className="mt-2 px-4 py-1 bg-gray-100 text-gray-700 text-sm rounded-full hover:bg-gray-200 transition-colors">
-            사진 수정
-          </button>
         </div>
 
         {/* 입력 폼 */}
