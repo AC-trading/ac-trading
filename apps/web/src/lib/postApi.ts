@@ -565,17 +565,46 @@ export async function createReport(request: ReportCreateRequest): Promise<Report
 // ========== 좋아요 API 함수 ==========
 
 /**
- * 게시글 좋아요 토글
+ * 게시글 좋아요
  * POST /api/posts/{postId}/like
  */
-export async function togglePostLike(postId: number): Promise<{ liked: boolean; likeCount: number }> {
+export async function likePost(postId: number): Promise<{ liked: boolean; likeCount: number }> {
   return fetchWithAuth<{ liked: boolean; likeCount: number }>(`${API_URL}/api/posts/${postId}/like`, {
     method: 'POST',
   });
 }
 
 /**
- * 내가 좋아요한 게시글 목록 조회
+ * 게시글 좋아요 해제
+ * POST /api/posts/{postId}/unlike
+ */
+export async function unlikePost(postId: number): Promise<{ liked: boolean; likeCount: number }> {
+  return fetchWithAuth<{ liked: boolean; likeCount: number }>(`${API_URL}/api/posts/${postId}/unlike`, {
+    method: 'POST',
+  });
+}
+
+/**
+ * 게시글 좋아요 토글 (클라이언트에서 상태에 따라 like/unlike 호출)
+ */
+export async function togglePostLike(postId: number, currentlyLiked: boolean): Promise<{ liked: boolean; likeCount: number }> {
+  if (currentlyLiked) {
+    return unlikePost(postId);
+  } else {
+    return likePost(postId);
+  }
+}
+
+/**
+ * 내 좋아요 목록 조회
+ * GET /api/likes
+ */
+export async function getMyLikes(page = 0, size = 20): Promise<PostListResponse> {
+  return fetchWithAuth<PostListResponse>(`${API_URL}/api/likes?page=${page}&size=${size}`);
+}
+
+/**
+ * 내가 좋아요한 게시글 목록 조회 (기존 호환용)
  * GET /api/posts/liked
  */
 export async function getLikedPosts(page = 0, size = 20): Promise<PostListResponse> {

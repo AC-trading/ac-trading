@@ -99,11 +99,12 @@ export default function PostDetailPage() {
     if (!post) return;
 
     try {
-      const result = await togglePostLike(post.id);
+      const result = await togglePostLike(post.id, isLiked);
       setIsLiked(result.liked);
       setLikeCount(result.likeCount);
     } catch (err) {
       console.error("좋아요 실패:", err);
+      alert(err instanceof Error ? err.message : "좋아요에 실패했습니다");
     }
   };
 
