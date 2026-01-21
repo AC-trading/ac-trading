@@ -4,8 +4,8 @@
 # 1. 로그인 (브라우저 열림)
 railway login
 
-# 2. 프로젝트 연결
-cd c:\Users\mycin\proj\ac-trading
+# 2. 프로젝트 연결 (프로젝트 루트 디렉토리에서 실행)
+cd <project-path>
 railway link
 
 # 3. 실시간 로그 보기
