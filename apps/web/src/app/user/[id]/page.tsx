@@ -123,7 +123,7 @@ export default function UserProfilePage() {
       <div className="flex items-center gap-4 p-4">
         {/* 프로필 이미지 */}
         <Image
-          src="/images/defaults/raccoon.png"
+          src={process.env.NEXT_PUBLIC_DEFAULT_PROFILE_IMAGE || "/images/defaults/raccoon.png"}
           alt="프로필 이미지"
           width={56}
           height={56}
