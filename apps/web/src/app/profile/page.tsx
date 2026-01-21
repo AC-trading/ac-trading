@@ -122,9 +122,9 @@ export default function ProfilePage() {
         {/* 온도 바 */}
         {user?.mannerScore != null && (
           <div className="mt-3">
-            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div className="w-full h-2 bg-[#FFFFF0] rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-blue-400 via-green-400 to-red-500 rounded-full"
+                className="h-full bg-gradient-to-r from-[#BAE8E7] via-[#7ECEC5] to-[#5BBFB3] rounded-full"
                 style={{ width: `${Math.min(Math.max(user.mannerScore, 0), 100)}%` }}
               />
             </div>
