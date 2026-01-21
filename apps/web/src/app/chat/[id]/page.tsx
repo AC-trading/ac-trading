@@ -267,11 +267,11 @@ export default function ChatRoomPage() {
   // 사용자 차단 핸들러
   const handleBlockUser = async () => {
     if (!chatRoom) return;
+    if (!confirm("이 사용자를 차단하시겠습니까?")) return;
 
     setIsBlocking(true);
     try {
       await blockUser(String(chatRoom.otherUserId));
-      setShowMoreMenu(false);
       alert("해당 사용자를 차단했습니다.");
       router.push("/chat");
     } catch (err) {
@@ -601,9 +601,7 @@ export default function ChatRoomPage() {
                 <button
                   onClick={() => {
                     setShowMoreMenu(false);
-                    if (confirm("이 사용자를 차단하시겠습니까?")) {
-                      handleBlockUser();
-                    }
+                    handleBlockUser();
                   }}
                   disabled={isBlocking}
                   className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors disabled:opacity-50"
