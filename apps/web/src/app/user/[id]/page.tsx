@@ -1,6 +1,7 @@
 "use client";
 
 import { useParams, useRouter } from "next/navigation";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { MobileLayout, Header } from "@/components/common";
 import { useAuth } from "@/context/AuthContext";
@@ -121,10 +122,12 @@ export default function UserProfilePage() {
       {/* 프로필 정보 */}
       <div className="flex items-center gap-4 p-4">
         {/* 프로필 이미지 */}
-        <img
+        <Image
           src="/images/defaults/raccoon.png"
           alt="프로필 이미지"
-          className="w-14 h-14 rounded-full object-cover"
+          width={56}
+          height={56}
+          className="rounded-full object-cover"
         />
         <div className="flex-1">
           <h2 className="font-semibold text-lg">{userProfile.nickname || "닉네임 없음"}</h2>
@@ -145,7 +148,7 @@ export default function UserProfilePage() {
             <span className="text-3xl font-bold text-red-500">
               {userProfile.mannerScore != null ? `${userProfile.mannerScore.toFixed(1)}` : "-"}
             </span>
-            <img src="/icons/radish.png" alt="무" className="w-10 h-10" />
+            <Image src="/icons/radish.png" alt="무" width={40} height={40} />
           </div>
         </div>
         {/* 온도 바 */}

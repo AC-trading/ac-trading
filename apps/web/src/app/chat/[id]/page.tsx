@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronLeftIcon, CameraIcon, MoreVerticalIcon, FlagIcon, BlockIcon, ExitIcon, BellOffIcon, StarIcon } from "@/components/icons";
 import { useAuth } from "@/context/AuthContext";
 import { webSocketClient, ChatMessage } from "@/lib/websocket";
@@ -29,10 +30,12 @@ function MessageBubble({ message }: { message: DisplayMessage }) {
   return (
     <div className={`flex ${message.isMe ? "justify-end" : "justify-start"} mb-3`}>
       {!message.isMe && (
-        <img
+        <Image
           src="/images/defaults/raccoon.png"
           alt="프로필"
-          className="w-10 h-10 rounded-full bg-gray-200 flex-shrink-0 mr-2 object-cover"
+          width={40}
+          height={40}
+          className="rounded-full bg-gray-200 flex-shrink-0 mr-2 object-cover"
         />
       )}
       <div className={`flex flex-col ${message.isMe ? "items-end" : "items-start"}`}>
@@ -44,7 +47,7 @@ function MessageBubble({ message }: { message: DisplayMessage }) {
           }`}
         >
           {message.imageUrl ? (
-            <img src={message.imageUrl} alt="이미지" className="max-w-full rounded" />
+            <Image src={message.imageUrl} alt="이미지" width={200} height={200} className="max-w-full rounded object-contain" />
           ) : (
             message.content
           )}
@@ -382,9 +385,11 @@ export default function ChatRoomPage() {
             >
               <div className="w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
                 {chatRoom.postImageUrl ? (
-                  <img
+                  <Image
                     src={chatRoom.postImageUrl}
                     alt={chatRoom.postItemName}
+                    width={48}
+                    height={48}
                     className="w-full h-full object-cover"
                   />
                 ) : (

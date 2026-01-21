@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { MobileLayout, Header } from "@/components/common";
 import { RefreshIcon, BellIcon } from "@/components/icons";
@@ -16,10 +17,12 @@ function ChatItem({ chat }: { chat: ChatRoom }) {
       className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 relative"
     >
       {/* 프로필 이미지 */}
-      <img
+      <Image
         src="/images/defaults/raccoon.png"
         alt="프로필"
-        className="w-12 h-12 rounded-full bg-gray-200 flex-shrink-0 object-cover"
+        width={48}
+        height={48}
+        className="rounded-full bg-gray-200 flex-shrink-0 object-cover"
       />
 
       {/* 채팅 정보 */}
