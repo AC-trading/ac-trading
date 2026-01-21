@@ -278,14 +278,26 @@ export default function PostDetailPage() {
 
       {/* 상품 정보 */}
       <div className="p-4 space-y-4">
-        {/* 상태 배지 */}
-        {post.status !== "AVAILABLE" && (
-          <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-            post.status === "RESERVED" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-600"
+        {/* 거래 유형 & 상태 배지 */}
+        <div className="flex items-center gap-2">
+          {/* 거래 유형 칩 */}
+          <span className={`inline-block px-3 py-1.5 text-sm font-medium rounded-full border ${
+            post.postType === "SELL"
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-[#5BBFB3] bg-[#5BBFB3]/10 text-[#5BBFB3]"
           }`}>
-            {getStatusLabel(post.status)}
+            {post.postType === "SELL" ? "팔아요" : "구해요"}
           </span>
-        )}
+
+          {/* 상태 배지 */}
+          {post.status !== "AVAILABLE" && (
+            <span className={`inline-block px-3 py-1.5 text-sm font-medium rounded-full ${
+              post.status === "RESERVED" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-600"
+            }`}>
+              {getStatusLabel(post.status)}
+            </span>
+          )}
+        </div>
 
         {/* 제목 */}
         <h2 className="text-xl font-bold text-gray-900">{post.itemName}</h2>
