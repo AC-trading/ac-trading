@@ -111,8 +111,13 @@ public class MemberService {
 
     /**
      * UUID로 회원 조회 (공통 메서드)
+     * Before: visitorId == null 체크 없이 바로 UUID 파싱 시도됨
+     * After: "anonymousUser" 문자열도 비인증 상태로 처리
      */
     private Member findMemberByUuid(String visitorId) {
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
+            throw new IllegalArgumentException("로그인이 필요합니다");
+        }
         return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
     }
