@@ -85,14 +85,15 @@ public class CookieUtil {
     /**
      * OAuth State 쿠키 생성 (CSRF 방어용)
      * - HttpOnly: true (JS 접근 차단)
-     * - SameSite: Lax (OAuth 리다이렉트 허용)
+     * - SameSite: None (크로스 도메인 OAuth 허용)
+     * - Secure: true (SameSite=None 필수 조건)
      * - maxAge: 5분 (OAuth 플로우 완료 시간)
      */
     public ResponseCookie createOAuthStateCookie(String state) {
         return ResponseCookie.from(OAUTH_STATE_COOKIE_NAME, state)
                 .httpOnly(true)
-                .secure(secureCookie)
-                .sameSite("Lax")
+                .secure(true)           // SameSite=None 필수
+                .sameSite("None")       // 크로스 도메인 허용
                 .path(COOKIE_PATH)
                 .maxAge(300)  // 5분
                 .build();
@@ -104,8 +105,8 @@ public class CookieUtil {
     public ResponseCookie deleteOAuthStateCookie() {
         return ResponseCookie.from(OAUTH_STATE_COOKIE_NAME, "")
                 .httpOnly(true)
-                .secure(secureCookie)
-                .sameSite("Lax")
+                .secure(true)           // SameSite=None 필수
+                .sameSite("None")       // 크로스 도메인 허용
                 .path(COOKIE_PATH)
                 .maxAge(0)
                 .build();
