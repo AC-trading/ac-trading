@@ -7,31 +7,8 @@ import {
   ChevronRightIcon,
   ShoppingBagIcon,
   HeartIcon,
-  ListIcon,
 } from "@/components/icons";
 import { useAuth } from "@/context/AuthContext";
-
-// 프로필 메뉴 아이템 컴포넌트
-function MenuItem({
-  icon,
-  label,
-  href,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  href: string;
-}) {
-  return (
-    <Link
-      href={href}
-      className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors"
-    >
-      <span className="text-gray-500">{icon}</span>
-      <span className="flex-1 text-gray-800">{label}</span>
-      <ChevronRightIcon className="text-gray-400" />
-    </Link>
-  );
-}
 
 // 프로필 페이지 - Figma 디자인 기반
 export default function ProfilePage() {
@@ -97,21 +74,6 @@ export default function ProfilePage() {
         <ChevronRightIcon className="text-gray-400" />
       </Link>
 
-      {/* 나의 무 가격 (매너 점수) */}
-      <div className="mx-4 p-4 bg-gray-50 rounded-lg">
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-sm text-gray-600">나의 무 가격</span>
-          <span className="text-xs text-gray-400 cursor-pointer">ⓘ</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold text-red-500">
-            {user?.mannerScore != null ? `${user.mannerScore.toFixed(1)}점` : "-"}
-          </span>
-          <img src="/icons/radish.png" alt="무" className="w-8 h-8" />
-        </div>
-      </div>
-
-
       {/* 거래 관련 메뉴 */}
       <div className="flex justify-around py-4 border-b border-gray-100">
         <Link
@@ -143,12 +105,31 @@ export default function ProfilePage() {
         </Link>
       </div>
 
-      {/* 나의 활동 섹션 */}
-      <div className="mt-4">
-        <h3 className="px-4 py-2 font-semibold text-gray-800">나의 활동</h3>
-        <MenuItem icon={<ListIcon />} label="키워드 알림" href="/profile/keywords" />
-        <MenuItem icon={<ListIcon />} label="모아보기" href="/profile/collection" />
-        <MenuItem icon={<ListIcon />} label="거동숲 가계부" href="/profile/ledger" />
+      {/* 나의 무 가격 (매너 점수) - 당근마켓 스타일 */}
+      <div className="mx-4 mt-4 p-4 bg-gray-50 rounded-xl">
+        <div className="flex items-center gap-1 mb-3">
+          <span className="font-semibold text-gray-800">나의 무 가격</span>
+          <span className="text-xs text-gray-400 cursor-pointer">ⓘ</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-3xl font-bold text-red-500">
+              {user?.mannerScore != null ? `${user.mannerScore.toFixed(1)}` : "-"}
+            </span>
+            <img src="/icons/radish.png" alt="무" className="w-10 h-10" />
+          </div>
+        </div>
+        {/* 온도 바 */}
+        {user?.mannerScore != null && (
+          <div className="mt-3">
+            <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-400 via-green-400 to-red-500 rounded-full"
+                style={{ width: `${Math.min(Math.max(user.mannerScore, 0), 100)}%` }}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </MobileLayout>
   );
