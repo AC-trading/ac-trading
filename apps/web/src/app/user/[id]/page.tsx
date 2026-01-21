@@ -53,7 +53,17 @@ export default function UserProfilePage() {
   // 유저 프로필 로드
   useEffect(() => {
     async function loadUserProfile() {
-      if (!accessToken || !userId) return;
+      // 인증 토큰이 없으면 로그인 페이지로 리다이렉트
+      if (!accessToken) {
+        router.push("/login");
+        return;
+      }
+
+      // userId가 없으면 로딩 종료 (notFound에서 처리됨)
+      if (!userId) {
+        setIsLoading(false);
+        return;
+      }
 
       try {
         setIsLoading(true);
@@ -85,7 +95,7 @@ export default function UserProfilePage() {
     if (!authLoading) {
       loadUserProfile();
     }
-  }, [accessToken, userId, authLoading]);
+  }, [accessToken, userId, authLoading, router]);
 
   // 로딩 상태
   if (isLoading || authLoading) {
