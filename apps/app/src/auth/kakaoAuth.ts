@@ -26,10 +26,13 @@ export async function signInWithKakao(
   }
 
   try {
-    // Redirect URI 생성
+    // Redirect URI 생성 (Expo Go에서는 auth.expo.io 사용)
     const redirectUri = AuthSession.makeRedirectUri({
       scheme: 'acnh-trading',
+      useProxy: true,
     });
+
+    console.log('Kakao redirectUri:', redirectUri);
 
     // Authorization Code 요청
     const authRequest = new AuthSession.AuthRequest({
