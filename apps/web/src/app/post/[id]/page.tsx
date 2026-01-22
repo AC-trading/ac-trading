@@ -260,7 +260,10 @@ export default function PostDetailPage() {
       </div>
 
       {/* 판매자 정보 */}
-      <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+      <Link
+        href={`/user/${post.userId}`}
+        className="flex items-center gap-3 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors"
+      >
         <div className="w-12 h-12 rounded-full bg-primary-light flex items-center justify-center text-2xl">
           🐰
         </div>
@@ -274,18 +277,30 @@ export default function PostDetailPage() {
             <p className="text-xs text-gray-400">매너온도</p>
           </div>
         )}
-      </div>
+      </Link>
 
       {/* 상품 정보 */}
       <div className="p-4 space-y-4">
-        {/* 상태 배지 */}
-        {post.status !== "AVAILABLE" && (
-          <span className={`inline-block px-2 py-1 text-xs font-medium rounded ${
-            post.status === "RESERVED" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-600"
+        {/* 거래 유형 & 상태 배지 */}
+        <div className="flex items-center gap-2">
+          {/* 거래 유형 칩 */}
+          <span className={`inline-block px-3 py-1.5 text-sm font-medium rounded-full border ${
+            post.postType === "SELL"
+              ? "border-primary bg-primary/10 text-primary"
+              : "border-[#5BBFB3] bg-[#5BBFB3]/10 text-[#5BBFB3]"
           }`}>
-            {getStatusLabel(post.status)}
+            {post.postType === "SELL" ? "팔아요" : "구해요"}
           </span>
-        )}
+
+          {/* 상태 배지 */}
+          {post.status !== "AVAILABLE" && (
+            <span className={`inline-block px-3 py-1.5 text-sm font-medium rounded-full ${
+              post.status === "RESERVED" ? "bg-yellow-100 text-yellow-800" : "bg-gray-100 text-gray-600"
+            }`}>
+              {getStatusLabel(post.status)}
+            </span>
+          )}
+        </div>
 
         {/* 제목 */}
         <h2 className="text-xl font-bold text-gray-900">{post.itemName}</h2>
