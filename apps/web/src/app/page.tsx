@@ -86,7 +86,7 @@ export default function HomePage() {
 
   return (
     <MobileLayout>
-      <Header showLocation showSearch showBell />
+      <Header showLocation showSearch showBell showAuth={false} />
 
       {/* 비로그인 사용자 안내 배너 */}
       {!authLoading && !isAuthenticated && (
