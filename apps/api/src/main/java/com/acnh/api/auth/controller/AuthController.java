@@ -509,15 +509,16 @@ public class AuthController {
 
     /**
      * 소셜 로그인 회원 조회 또는 생성 (네이티브 앱용)
+     * - Before: cognitoSubFormat으로 조회 - 웹 Cognito 로그인과 회원 불일치 문제
+     * - After: provider + providerId로 조회 - 웹/앱 동일 회원 인식
      */
     private Member findOrCreateMemberFromSocial(SocialUserInfo userInfo) {
-        String cognitoSubFormat = userInfo.toCognitoSubFormat();
-
-        return memberRepository.findByCognitoSubAndDeletedAtIsNull(cognitoSubFormat)
+        return memberRepository.findByProviderAndProviderIdAndDeletedAtIsNull(
+                        userInfo.getProvider(), userInfo.getProviderId())
                 .orElseGet(() -> {
                     Member newMember = Member.builder()
                             .uuid(UUID.randomUUID())
-                            .cognitoSub(cognitoSubFormat)
+                            .cognitoSub(userInfo.toCognitoSubFormat())
                             .email(userInfo.getEmail())
                             .provider(userInfo.getProvider())
                             .providerId(userInfo.getProviderId())
