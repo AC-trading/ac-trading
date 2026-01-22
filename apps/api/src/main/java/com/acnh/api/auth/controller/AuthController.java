@@ -276,12 +276,13 @@ public class AuthController {
     }
 
     /**
-     * 회원 조회 또는 생성
-     * - cognitoSub로 기존 회원 조회
-     * - 없으면 새로 생성
+     * 회원 조회 또는 생성 (웹 Cognito 로그인용)
+     * - Before: cognitoSub로 조회 - 앱 SDK 로그인과 회원 불일치 문제
+     * - After: provider + providerId로 조회 - 웹/앱 동일 회원 인식
      */
     private Member findOrCreateMember(CognitoUserInfo userInfo) {
-        return memberRepository.findByCognitoSubAndDeletedAtIsNull(userInfo.getSub())
+        return memberRepository.findByProviderAndProviderIdAndDeletedAtIsNull(
+                        userInfo.getProvider(), userInfo.getProviderId())
                 .orElseGet(() -> {
                     // 새 회원 생성
                     Member newMember = Member.builder()
