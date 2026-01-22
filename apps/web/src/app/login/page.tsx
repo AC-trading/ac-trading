@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, Suspense } from "react";
 import { HomeOutlineIcon } from "@/components/icons";
@@ -157,10 +158,12 @@ export default function LoginPage() {
       <div className="flex-1 flex flex-col items-center justify-center px-8">
         <div className="mb-8 text-center">
           {/* 너굴 아이콘 */}
-          <img
+          <Image
             src="/images/defaults/raccoon.png"
             alt="AC Trading"
-            className="w-24 h-24 mx-auto mb-2 rounded-full"
+            width={96}
+            height={96}
+            className="mx-auto mb-2 rounded-full"
           />
           <h1 className="text-4xl font-bold text-white" style={{ fontFamily: "cursive" }}>
             AC Trading
