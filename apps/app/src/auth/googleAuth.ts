@@ -18,6 +18,8 @@ export function useGoogleAuth(onSuccess?: () => void, onError?: (error: Error) =
     clientId: GOOGLE_CLIENT_ID,
     iosClientId: GOOGLE_IOS_CLIENT_ID,
     scopes: ['openid', 'email', 'profile'],
+    // Expo Go에서 auth.expo.io 프록시 사용
+    redirectUri: 'https://auth.expo.io/@mycindy0710/acnh-trading',
   });
 
   useEffect(() => {
