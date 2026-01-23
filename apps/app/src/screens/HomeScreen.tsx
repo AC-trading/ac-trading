@@ -16,9 +16,15 @@ export default function HomeScreen() {
   }, []);
 
   async function loadToken() {
-    const accessToken = await getAccessToken();
-    setToken(accessToken);
-    setIsLoading(false);
+    try {
+      const accessToken = await getAccessToken();
+      setToken(accessToken);
+    } catch (error) {
+      console.error('토큰 로드 실패:', error);
+      setToken(null);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   if (isLoading) {
