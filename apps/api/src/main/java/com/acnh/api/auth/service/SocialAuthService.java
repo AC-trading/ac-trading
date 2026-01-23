@@ -4,6 +4,7 @@ import com.acnh.api.auth.dto.SocialUserInfo;
 import com.fasterxml.jackson.databind.JsonNode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -18,6 +19,9 @@ import org.springframework.web.client.RestTemplate;
 public class SocialAuthService {
 
     private final RestTemplate restTemplate;
+
+    @Value("${google.client-id:}")
+    private String googleClientId;
 
     private static final String GOOGLE_USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo";
     private static final String KAKAO_USERINFO_URL = "https://kapi.kakao.com/v2/user/me";
@@ -109,6 +113,17 @@ public class SocialAuthService {
             // 에러 응답 체크
             if (body.has("error")) {
                 throw new RuntimeException("Google ID Token 검증 실패: " + body.get("error").asText());
+            }
+
+            // aud(audience) 검증: 토큰이 우리 앱용으로 발급됐는지 확인
+            if (googleClientId != null && !googleClientId.isBlank()) {
+                String aud = body.has("aud") ? body.get("aud").asText() : null;
+                if (aud == null || !aud.equals(googleClientId)) {
+                    log.error("Google ID Token aud 불일치 - expected: {}, actual: {}", googleClientId, aud);
+                    throw new RuntimeException("Google ID Token 검증 실패: aud 불일치 (토큰이 다른 앱용으로 발급됨)");
+                }
+            } else {
+                log.warn("GOOGLE_CLIENT_ID가 설정되지 않아 aud 검증을 건너뜁니다.");
             }
 
             String sub = body.has("sub") ? body.get("sub").asText() : null;
