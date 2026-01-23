@@ -9,6 +9,7 @@ Redis 는 MVP 이후 기능이므로 지금은 안할것임.
 MVP 기능: 로그인, 거래글 CRUD, 이미지 업로드, 검색/필터, 실시간 채팅, 알림
 코딩 규칙: 한국어 주석, PR 리뷰로 고친것은 주석에 Before,After 달아둘것
  Controller-Service-Repository 레이어, 도메인별 패키지 분리, DTO/Entity 분리, URL 환경변수 처리, 커밋 prefix 사용
+앱 디버그 로그: __DEV__ 가드 사용 (프로덕션 빌드에서 자동 제거)
 
 프로젝트 구조/
 ├── acnh-web/          # Next.js (웹 프론트엔드)
