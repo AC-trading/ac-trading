@@ -18,7 +18,8 @@ const discovery = {
 // Kakao 로그인 함수
 export async function signInWithKakao(
   onSuccess?: () => void,
-  onError?: (error: Error) => void
+  onError?: (error: Error) => void,
+  onCancel?: () => void
 ) {
   if (!KAKAO_APP_KEY) {
     onError?.(new Error('Kakao App Key가 설정되지 않았습니다.'));
@@ -26,12 +27,11 @@ export async function signInWithKakao(
   }
 
   try {
-    // Redirect URI 생성 (Expo Go에서는 auth.expo.io 사용)
+    // Development Build: 커스텀 스킴 사용
     const redirectUri = AuthSession.makeRedirectUri({
       scheme: 'acnh-trading',
-      useProxy: true,
+      path: 'oauth/kakao',
     });
-
     console.log('Kakao redirectUri:', redirectUri);
 
     // Authorization Code 요청
@@ -45,8 +45,10 @@ export async function signInWithKakao(
     const result = await authRequest.promptAsync(discovery);
 
     if (result.type !== 'success' || !result.params.code) {
-      if (result.type === 'cancel') {
-        return; // 사용자가 취소한 경우
+      if (result.type === 'cancel' || result.type === 'dismiss') {
+        // 사용자가 취소한 경우 - 취소 콜백 호출
+        onCancel?.();
+        return;
       }
       throw new Error('Kakao 인증 실패');
     }

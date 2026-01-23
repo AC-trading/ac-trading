@@ -51,6 +51,10 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       (error) => {
         setIsLoading(false);
         Alert.alert('로그인 실패', error.message);
+      },
+      () => {
+        // 사용자가 취소한 경우 - 로딩 상태만 해제
+        setIsLoading(false);
       }
     );
   };
