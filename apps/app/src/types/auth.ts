@@ -18,8 +18,8 @@ export interface TokenResponse {
 
 export interface SocialLoginRequest {
   provider: 'google' | 'kakao';
-  accessToken: string;
-  idToken?: string;
+  accessToken?: string;  // Kakao용 (Google 네이티브 SDK는 accessToken 미제공)
+  idToken?: string;      // Google용
 }
 
 export interface AuthState {

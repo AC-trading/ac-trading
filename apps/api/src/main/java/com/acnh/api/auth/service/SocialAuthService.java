@@ -35,13 +35,21 @@ public class SocialAuthService {
 
     /**
      * Google 토큰 검증 및 사용자 정보 조회
-     * - Before: ID Token이 있으면 서명 검증 없이 Base64 디코딩만 수행 (보안 취약)
-     * - After: 항상 Google userinfo API를 호출하여 토큰 검증 (Google이 검증 수행)
-     * - TODO: MVP 이후 Google JWKS를 이용한 ID Token 서명 검증 구현 시 성능 개선 가능
+     * - 네이티브 SDK: idToken만 제공 → Google tokeninfo API로 검증
+     * - 웹/기타: accessToken 제공 시 → Google userinfo API로 검증
      */
     private SocialUserInfo verifyGoogleToken(String accessToken, String idToken) {
         try {
-            // Access Token으로 userinfo API 호출 (Google이 토큰 검증)
+            // 네이티브 앱 SDK: idToken만 있는 경우 tokeninfo API 사용
+            if ((accessToken == null || accessToken.isBlank()) && idToken != null && !idToken.isBlank()) {
+                return verifyGoogleIdToken(idToken);
+            }
+
+            // accessToken이 있는 경우 userinfo API 사용
+            if (accessToken == null || accessToken.isBlank()) {
+                throw new RuntimeException("Google accessToken 또는 idToken이 필요합니다.");
+            }
+
             HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(accessToken);
 
@@ -64,9 +72,7 @@ public class SocialAuthService {
             String name = body.has("name") ? body.get("name").asText() : null;
             String picture = body.has("picture") ? body.get("picture").asText() : null;
 
-            // Before: log.info("Google 사용자 정보 조회 성공 - sub: {}, email: {}", sub, email);
-            // After: PII(이메일) 로깅 제거
-            log.info("Google 사용자 정보 조회 성공 - sub: {}", sub);
+            log.info("Google 사용자 정보 조회 성공 (userinfo) - sub: {}", sub);
 
             return SocialUserInfo.builder()
                     .provider("google")
@@ -79,6 +85,50 @@ public class SocialAuthService {
         } catch (Exception e) {
             log.error("Google 토큰 검증 실패: {}", e.getMessage());
             throw new RuntimeException("Google 토큰 검증에 실패했습니다.", e);
+        }
+    }
+
+    /**
+     * Google ID Token 검증 (네이티브 앱 SDK용)
+     * - Google tokeninfo API를 호출하여 idToken 검증
+     */
+    private static final String GOOGLE_TOKENINFO_URL = "https://oauth2.googleapis.com/tokeninfo";
+
+    private SocialUserInfo verifyGoogleIdToken(String idToken) {
+        try {
+            // Google tokeninfo API로 idToken 검증
+            String url = GOOGLE_TOKENINFO_URL + "?id_token=" + idToken;
+
+            ResponseEntity<JsonNode> response = restTemplate.getForEntity(url, JsonNode.class);
+
+            JsonNode body = response.getBody();
+            if (body == null) {
+                throw new RuntimeException("Google ID Token 검증 실패: 응답이 없습니다.");
+            }
+
+            // 에러 응답 체크
+            if (body.has("error")) {
+                throw new RuntimeException("Google ID Token 검증 실패: " + body.get("error").asText());
+            }
+
+            String sub = body.has("sub") ? body.get("sub").asText() : null;
+            String email = body.has("email") ? body.get("email").asText() : null;
+            String name = body.has("name") ? body.get("name").asText() : null;
+            String picture = body.has("picture") ? body.get("picture").asText() : null;
+
+            log.info("Google 사용자 정보 조회 성공 (tokeninfo) - sub: {}", sub);
+
+            return SocialUserInfo.builder()
+                    .provider("google")
+                    .providerId(sub)
+                    .email(email)
+                    .name(name)
+                    .picture(picture)
+                    .build();
+
+        } catch (Exception e) {
+            log.error("Google ID Token 검증 실패: {}", e.getMessage());
+            throw new RuntimeException("Google ID Token 검증에 실패했습니다.", e);
         }
     }
 
