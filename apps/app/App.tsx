@@ -4,7 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView, StyleSheet, ActivityIndicator, View } from 'react-native';
 import { LoginScreen, HomeScreen } from './src/screens';
-import { getAccessToken } from './src/auth';
+import { getAccessToken, saveAccessToken, removeAccessToken } from './src/auth';
+import { getCurrentUser, refreshToken } from './src/api/auth';
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -14,13 +15,37 @@ export default function App() {
     checkAuthStatus();
   }, []);
 
-  // 앱 시작 시 로그인 상태 확인
+  // 앱 시작 시 로그인 상태 확인 및 토큰 유효성 검증
   async function checkAuthStatus() {
     try {
       const token = await getAccessToken();
-      setIsAuthenticated(!!token);
+
+      if (!token) {
+        setIsAuthenticated(false);
+        return;
+      }
+
+      // 토큰 유효성 검증: 사용자 정보 조회 시도
+      try {
+        await getCurrentUser(token);
+        setIsAuthenticated(true);
+      } catch (error) {
+        // 토큰이 만료/무효한 경우 갱신 시도
+        console.log('토큰 검증 실패, 갱신 시도...');
+        try {
+          const tokenResponse = await refreshToken();
+          await saveAccessToken(tokenResponse.accessToken);
+          setIsAuthenticated(true);
+        } catch (refreshError) {
+          // 갱신도 실패하면 로그아웃 처리
+          console.log('토큰 갱신 실패, 로그아웃 처리');
+          await removeAccessToken();
+          setIsAuthenticated(false);
+        }
+      }
     } catch (error) {
       console.error('인증 상태 확인 실패:', error);
+      await removeAccessToken();
       setIsAuthenticated(false);
     } finally {
       setIsLoading(false);
