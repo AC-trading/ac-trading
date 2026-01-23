@@ -43,7 +43,6 @@ export function useGoogleAuth(
 
       // Google 로그인 실행
       const response = await GoogleSignin.signIn();
-      console.log('Google signIn response:', JSON.stringify(response, null, 2));
 
       if (isSuccessResponse(response)) {
         const { idToken } = response.data;
@@ -63,7 +62,9 @@ export function useGoogleAuth(
         onSuccess?.();
       }
     } catch (error) {
-      console.log('Google signIn error:', error);
+      if (__DEV__) {
+        console.log('Google signIn error:', error);
+      }
 
       if (isErrorWithCode(error)) {
         switch (error.code) {
@@ -100,6 +101,8 @@ export async function signOutGoogle() {
   try {
     await GoogleSignin.signOut();
   } catch (error) {
-    console.log('Google signOut error:', error);
+    if (__DEV__) {
+      console.log('Google signOut error:', error);
+    }
   }
 }
