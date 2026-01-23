@@ -32,7 +32,6 @@ export async function signInWithKakao(
       scheme: 'acnh-trading',
       path: 'oauth/kakao',
     });
-    console.log('Kakao redirectUri:', redirectUri);
 
     // Authorization Code 요청
     const authRequest = new AuthSession.AuthRequest({
