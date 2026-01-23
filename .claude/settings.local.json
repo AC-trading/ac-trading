@@ -32,7 +32,8 @@
       "Bash(railway list:*)",
       "Bash(railway logs:*)",
       "Bash(railway domain:*)",
-      "Bash(gh pr create:*)"
+      "Bash(gh pr create:*)",
+      "Bash(./gradlew test:*)"
     ]
   }
 }

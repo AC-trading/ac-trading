@@ -1,6 +1,7 @@
 컨셉: 모여봐요 동물의 숲 아이템 거래 플랫폼 (당근마켓 벤치마킹)
 절대로 하드코딩 하지 말고 환경 변수로 분리할것
-스택: Next.js(프론트) + Spring Boot(백엔드) + PostgreSQL(Neon) + Redis(Upstash) + Cloudflare R2(이미지)
+Redis 는 MVP 이후 기능이므로 지금은 안할것임.
+스택: Next.js(프론트) + Spring Boot(백엔드) + PostgreSQL(Neon) + Cloudflare R2(이미지) + Redis(Upstash, MVP 이후)
 앱: React Native WebView + 네이티브(OAuth (일반 로그인 제거, 소셜 로그인만 구현), 푸시, 딥링크, 하단탭) - 플레이스토어 정책 충족용
 인증: Cognito → 백엔드 콜백(/api/auth/callback) → JWT 발급. access token은 로컬스토리지, refresh token은 HttpOnly 쿠키
 인프라: Vercel(무료) + Railway($5~15) + Neon/Upstash/R2(무료) | 월 10만원 이하
@@ -8,6 +9,7 @@
 MVP 기능: 로그인, 거래글 CRUD, 이미지 업로드, 검색/필터, 실시간 채팅, 알림
 코딩 규칙: 한국어 주석, PR 리뷰로 고친것은 주석에 Before,After 달아둘것
  Controller-Service-Repository 레이어, 도메인별 패키지 분리, DTO/Entity 분리, URL 환경변수 처리, 커밋 prefix 사용
+앱 디버그 로그: __DEV__ 가드 사용 (프로덕션 빌드에서 자동 제거)
 
 프로젝트 구조/
 ├── acnh-web/          # Next.js (웹 프론트엔드)
