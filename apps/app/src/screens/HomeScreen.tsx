@@ -35,10 +35,10 @@ export default function HomeScreen() {
     );
   }
 
-  // WebView에 토큰 주입 스크립트
+  // WebView에 토큰 주입 스크립트 (JSON.stringify로 안전하게 이스케이프)
   const injectedJavaScript = token
     ? `
-      localStorage.setItem('accessToken', '${token}');
+      localStorage.setItem('accessToken', ${JSON.stringify(token)});
       true;
     `
     : '';
