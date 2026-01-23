@@ -15,10 +15,10 @@ public class SocialLoginRequest {
     @NotBlank(message = "provider는 필수입니다.")
     private String provider;  // google, kakao
 
-    @NotBlank(message = "accessToken은 필수입니다.")
-    private String accessToken;  // 소셜 SDK에서 받은 access token
+    // Kakao: accessToken 필수, Google: idToken 필수
+    private String accessToken;  // 소셜 SDK에서 받은 access token (Kakao용)
 
-    // ID Token (Google의 경우 선택적으로 사용)
+    // Google 네이티브 SDK는 idToken만 제공
     private String idToken;
 
     public SocialLoginRequest(String provider, String accessToken, String idToken) {
