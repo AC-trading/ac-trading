@@ -3,7 +3,7 @@
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 if (!API_URL) {
-  console.warn('EXPO_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다.');
+  throw new Error('EXPO_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다. .env 파일을 확인해주세요.');
 }
 
 interface RequestOptions extends RequestInit {
