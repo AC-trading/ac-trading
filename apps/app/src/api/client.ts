@@ -36,5 +36,11 @@ export async function apiRequest<T>(
     throw new Error(error.message || `API 요청 실패: ${response.status}`);
   }
 
+  // 204 No Content 또는 빈 body 처리
+  const contentLength = response.headers.get('Content-Length');
+  if (response.status === 204 || contentLength === '0') {
+    return {} as T;
+  }
+
   return response.json();
 }
