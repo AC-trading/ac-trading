@@ -1,60 +1,105 @@
-// Google 로그인 (expo-auth-session 사용)
+// Google 로그인 (네이티브 SDK 사용)
 
-import * as Google from 'expo-auth-session/providers/google';
-import * as WebBrowser from 'expo-web-browser';
-import { useEffect } from 'react';
+import {
+  GoogleSignin,
+  isSuccessResponse,
+  isErrorWithCode,
+  statusCodes,
+} from '@react-native-google-signin/google-signin';
+import { useEffect, useState } from 'react';
 import { socialLogin } from '../api/auth';
 import { saveAccessToken } from './tokenStorage';
 
-// 웹 브라우저 리다이렉트 완료 처리
-WebBrowser.maybeCompleteAuthSession();
+// Google Cloud Console에서 발급받은 웹 클라이언트 ID
+// (ID 토큰 검증용 - 백엔드에서 사용)
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
 
-const GOOGLE_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_CLIENT_ID;
-const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID;
+// Google Sign-In 초기화
+GoogleSignin.configure({
+  // 웹 클라이언트 ID (ID 토큰 발급에 필요)
+  webClientId: GOOGLE_WEB_CLIENT_ID,
+  // 오프라인 액세스 토큰 요청
+  offlineAccess: true,
+  scopes: ['openid', 'email', 'profile'],
+});
 
 // Google 로그인 훅
-export function useGoogleAuth(onSuccess?: () => void, onError?: (error: Error) => void) {
-  const [request, response, promptAsync] = Google.useAuthRequest({
-    clientId: GOOGLE_CLIENT_ID,
-    iosClientId: GOOGLE_IOS_CLIENT_ID,
-    scopes: ['openid', 'email', 'profile'],
-    // Expo Go에서 auth.expo.io 프록시 사용
-    redirectUri: 'https://auth.expo.io/@mycindy0710/acnh-trading',
-  });
+export function useGoogleAuth(
+  onSuccess?: () => void,
+  onError?: (error: Error) => void,
+  onCancel?: () => void
+) {
+  const [isReady, setIsReady] = useState(true);
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
-  useEffect(() => {
-    handleGoogleResponse();
-  }, [response]);
-
-  async function handleGoogleResponse() {
-    if (response?.type !== 'success') return;
-
-    const { authentication } = response;
-    if (!authentication?.accessToken) {
-      onError?.(new Error('Google 인증 토큰을 받지 못했습니다.'));
-      return;
-    }
+  async function signIn() {
+    if (isSigningIn) return;
 
     try {
-      // 백엔드로 토큰 전송하여 JWT 발급
-      const tokenResponse = await socialLogin({
-        provider: 'google',
-        accessToken: authentication.accessToken,
-        idToken: authentication.idToken,
-      });
+      setIsSigningIn(true);
 
-      // Access Token 저장
-      await saveAccessToken(tokenResponse.accessToken);
-      onSuccess?.();
+      // Google Play Services 확인
+      await GoogleSignin.hasPlayServices();
+
+      // Google 로그인 실행
+      const response = await GoogleSignin.signIn();
+      console.log('Google signIn response:', JSON.stringify(response, null, 2));
+
+      if (isSuccessResponse(response)) {
+        const { idToken } = response.data;
+
+        if (!idToken) {
+          throw new Error('Google ID 토큰을 받지 못했습니다.');
+        }
+
+        // 백엔드로 ID 토큰 전송하여 JWT 발급
+        const tokenResponse = await socialLogin({
+          provider: 'google',
+          idToken,
+        });
+
+        // Access Token 저장
+        await saveAccessToken(tokenResponse.accessToken);
+        onSuccess?.();
+      }
     } catch (error) {
-      onError?.(error as Error);
+      console.log('Google signIn error:', error);
+
+      if (isErrorWithCode(error)) {
+        switch (error.code) {
+          case statusCodes.SIGN_IN_CANCELLED:
+            // 사용자가 취소한 경우 - 에러 표시 없이 취소 콜백 호출
+            onCancel?.();
+            break;
+          case statusCodes.IN_PROGRESS:
+            // 이미 로그인 진행 중 - 취소 콜백 호출
+            onCancel?.();
+            break;
+          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+            onError?.(new Error('Google Play Services가 필요합니다.'));
+            break;
+          default:
+            onError?.(new Error(error.message || 'Google 로그인 실패'));
+        }
+      } else {
+        onError?.(error as Error);
+      }
+    } finally {
+      setIsSigningIn(false);
     }
   }
 
   return {
-    // 로그인 가능 여부
-    isReady: !!request,
-    // 로그인 시작
-    signIn: () => promptAsync(),
+    isReady,
+    signIn,
   };
+}
+
+// Google 로그아웃
+export async function signOutGoogle() {
+  try {
+    await GoogleSignin.signOut();
+  } catch (error) {
+    console.log('Google signOut error:', error);
+  }
 }
