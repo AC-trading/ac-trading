@@ -5,7 +5,11 @@ import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { getAccessToken } from '../auth';
 
-const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || 'https://your-web.vercel.app';
+const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL;
+
+if (!WEB_URL) {
+  throw new Error('EXPO_PUBLIC_WEB_URL 환경 변수가 설정되지 않았습니다. .env 파일을 확인해주세요.');
+}
 
 export default function HomeScreen() {
   const [token, setToken] = React.useState<string | null>(null);
