@@ -40,10 +40,12 @@ export function useGoogleAuth(
   async function signIn() {
     if (isSigningIn) return;
 
-    // 로그인 시도 전에 Google Sign-In 초기화
-    ensureConfigured();
-
     try {
+      // 로그인 시도 전에 Google Sign-In 초기화
+      // Before: try 블록 바깥에서 호출하여 에러가 onError로 전달되지 않음
+      // After: try 블록 안에서 호출하여 모든 에러가 onError로 전달됨
+      ensureConfigured();
+
       setIsSigningIn(true);
 
       // 기존 세션 정리 (새 토큰을 받기 위해)
