@@ -1,13 +1,16 @@
 // API 클라이언트 설정
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL;
-
-if (!API_URL) {
-  throw new Error('EXPO_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다. .env 파일을 확인해주세요.');
-}
-
 interface RequestOptions extends RequestInit {
   token?: string;
+}
+
+// API URL을 런타임에 가져오는 함수
+function getApiUrl(): string {
+  const url = process.env.EXPO_PUBLIC_API_URL;
+  if (!url) {
+    throw new Error('EXPO_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다.');
+  }
+  return url;
 }
 
 // API 요청 함수
@@ -15,6 +18,7 @@ export async function apiRequest<T>(
   endpoint: string,
   options: RequestOptions = {}
 ): Promise<T> {
+  const API_URL = getApiUrl();
   const { token, ...fetchOptions } = options;
 
   // Headers 인스턴스로 정규화하여 모든 헤더 타입 지원

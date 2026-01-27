@@ -5,12 +5,34 @@
   "build": {
     "development": {
       "developmentClient": true,
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_WEB_URL": "https://ac-trading.vercel.app",
+        "EXPO_PUBLIC_API_URL": "https://ac-trading-production.up.railway.app",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "641164748452-qlqnp5t0mai4hmiu6e4hugd9f0tjib8h.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "641164748452-cjnpgdkr79glqfdfh9u2qlcquskg18h2.apps.googleusercontent.com",
+        "EXPO_PUBLIC_KAKAO_APP_KEY": "cdbefe8c4e6c3af0f0e3bc910290c1db"
+      }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "env": {
+        "EXPO_PUBLIC_WEB_URL": "https://ac-trading.vercel.app",
+        "EXPO_PUBLIC_API_URL": "https://ac-trading-production.up.railway.app",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "641164748452-dibnrej3oi01v4e8ho0of4dlk8bqos7c.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "641164748452-cjnpgdkr79glqfdfh9u2qlcquskg18h2.apps.googleusercontent.com",
+        "EXPO_PUBLIC_KAKAO_APP_KEY": "cdbefe8c4e6c3af0f0e3bc910290c1db"
+      }
     },
-    "production": {}
+    "production": {
+      "env": {
+        "EXPO_PUBLIC_WEB_URL": "https://ac-trading.vercel.app",
+        "EXPO_PUBLIC_API_URL": "https://ac-trading-production.up.railway.app",
+        "EXPO_PUBLIC_GOOGLE_CLIENT_ID": "641164748452-dibnrej3oi01v4e8ho0of4dlk8bqos7c.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "641164748452-cjnpgdkr79glqfdfh9u2qlcquskg18h2.apps.googleusercontent.com",
+        "EXPO_PUBLIC_KAKAO_APP_KEY": "cdbefe8c4e6c3af0f0e3bc910290c1db"
+      }
+    }
   },
   "submit": {
     "production": {}
