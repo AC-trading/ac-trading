@@ -29,7 +29,18 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-secure-store"
-    ]
+      "expo-secure-store",
+      [
+        "@react-native-seoul/kakao-login",
+        {
+          "kakaoAppKey": "REDACTED_KAKAO_KEY"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "5f202b10-28ae-41b1-80db-f9273916c55d"
+      }
+    }
   }
 }
