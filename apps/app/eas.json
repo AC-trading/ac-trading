@@ -3,14 +3,23 @@
     "version": ">= 10.2.2"
   },
   "build": {
+    "base": {
+      "android": {
+        "prebuildCommand": "npx expo prebuild --platform android && bash scripts/fix-kotlin-version.sh"
+      }
+    },
     "development": {
+      "extends": "base",
       "developmentClient": true,
       "distribution": "internal"
     },
     "preview": {
+      "extends": "base",
       "distribution": "internal"
     },
-    "production": {}
+    "production": {
+      "extends": "base"
+    }
   },
   "submit": {
     "production": {}
