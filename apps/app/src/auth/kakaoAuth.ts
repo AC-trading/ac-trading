@@ -1,19 +1,10 @@
-// Kakao 로그인 (expo-auth-session 사용)
+// Kakao 로그인 (네이티브 SDK 사용)
+// Before: expo-auth-session (웹 브라우저 OAuth)
+// After: @react-native-seoul/kakao-login (네이티브 SDK) - 앱스토어 정책 충족
 
-import * as AuthSession from 'expo-auth-session';
-import * as WebBrowser from 'expo-web-browser';
+import { login, getProfile } from '@react-native-seoul/kakao-login';
 import { socialLogin } from '../api/auth';
 import { saveAccessToken } from './tokenStorage';
-
-WebBrowser.maybeCompleteAuthSession();
-
-const KAKAO_APP_KEY = process.env.EXPO_PUBLIC_KAKAO_APP_KEY;
-
-// Kakao OAuth 엔드포인트
-const discovery = {
-  authorizationEndpoint: 'https://kauth.kakao.com/oauth/authorize',
-  tokenEndpoint: 'https://kauth.kakao.com/oauth/token',
-};
 
 // Kakao 로그인 함수
 export async function signInWithKakao(
@@ -21,61 +12,29 @@ export async function signInWithKakao(
   onError?: (error: Error) => void,
   onCancel?: () => void
 ) {
-  if (!KAKAO_APP_KEY) {
-    onError?.(new Error('Kakao App Key가 설정되지 않았습니다.'));
-    return;
-  }
-
   try {
-    // Development Build: 커스텀 스킴 사용
-    const redirectUri = AuthSession.makeRedirectUri({
-      scheme: 'acnh-trading',
-      path: 'oauth/kakao',
-    });
+    // 네이티브 Kakao SDK로 로그인
+    const loginResult = await login();
 
-    // Authorization Code 요청
-    const authRequest = new AuthSession.AuthRequest({
-      clientId: KAKAO_APP_KEY,
-      redirectUri,
-      scopes: ['profile_nickname', 'account_email'],
-      responseType: AuthSession.ResponseType.Code,
-    });
-
-    const result = await authRequest.promptAsync(discovery);
-
-    if (result.type !== 'success' || !result.params.code) {
-      if (result.type === 'cancel' || result.type === 'dismiss') {
-        // 사용자가 취소한 경우 - 취소 콜백 호출
-        onCancel?.();
-        return;
-      }
-      throw new Error('Kakao 인증 실패');
-    }
-
-    // Authorization Code로 Access Token 교환
-    const tokenResult = await AuthSession.exchangeCodeAsync(
-      {
-        clientId: KAKAO_APP_KEY,
-        code: result.params.code,
-        redirectUri,
-      },
-      discovery
-    );
-
-    if (!tokenResult.accessToken) {
-      throw new Error('Kakao 토큰 교환 실패');
+    if (!loginResult.accessToken) {
+      throw new Error('Kakao 로그인 실패: 토큰을 받지 못했습니다.');
     }
 
     // 백엔드로 토큰 전송하여 JWT 발급
     const tokenResponse = await socialLogin({
       provider: 'kakao',
-      accessToken: tokenResult.accessToken,
+      accessToken: loginResult.accessToken,
     });
 
     // Access Token 저장
     await saveAccessToken(tokenResponse.accessToken);
     onSuccess?.();
-  } catch (error) {
+  } catch (error: any) {
+    // 사용자가 취소한 경우
+    if (error.message?.includes('cancelled') || error.message?.includes('cancel')) {
+      onCancel?.();
+      return;
+    }
     onError?.(error as Error);
   }
 }
