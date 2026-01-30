@@ -32,20 +32,20 @@ export default function App() {
         setIsAuthenticated(true);
       } catch (error) {
         // 토큰이 만료/무효한 경우 갱신 시도
-        console.log('토큰 검증 실패, 갱신 시도...');
+        if (__DEV__) console.log('토큰 검증 실패, 갱신 시도...');
         try {
           const tokenResponse = await refreshToken();
           await saveAccessToken(tokenResponse.accessToken);
           setIsAuthenticated(true);
         } catch (refreshError) {
           // 갱신도 실패하면 로그아웃 처리
-          console.log('토큰 갱신 실패, 로그아웃 처리');
+          if (__DEV__) console.log('토큰 갱신 실패, 로그아웃 처리');
           await removeAccessToken();
           setIsAuthenticated(false);
         }
       }
     } catch (error) {
-      console.error('인증 상태 확인 실패:', error);
+      if (__DEV__) console.error('인증 상태 확인 실패:', error);
       await removeAccessToken();
       setIsAuthenticated(false);
     } finally {
