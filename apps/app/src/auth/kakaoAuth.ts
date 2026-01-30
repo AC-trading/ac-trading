@@ -30,8 +30,8 @@ export async function signInWithKakao(
     await saveAccessToken(tokenResponse.accessToken);
     onSuccess?.();
   } catch (error: any) {
-    // 사용자가 취소한 경우
-    if (error.message?.includes('cancelled') || error.message?.includes('cancel')) {
+    // 사용자가 취소한 경우 (SDK 공식 에러 코드 사용)
+    if (error.code === 'E_CANCELLED_OPERATION') {
       onCancel?.();
       return;
     }
