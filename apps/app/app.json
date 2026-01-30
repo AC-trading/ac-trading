@@ -36,7 +36,8 @@
           "kakaoAppKey": "REDACTED_KAKAO_KEY",
           "kotlinVersion": "2.0.21"
         }
-      ]
+      ],
+      "./plugins/withKakaoMaven"
     ],
     "extra": {
       "eas": {

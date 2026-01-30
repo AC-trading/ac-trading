@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView, StyleSheet, ActivityIndicator, View } from 'react-native';
+import { StyleSheet, ActivityIndicator, View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { LoginScreen, HomeScreen } from './src/screens';
 import { getAccessToken, saveAccessToken, removeAccessToken } from './src/auth';
 import { getCurrentUser, refreshToken } from './src/api/auth';
@@ -60,22 +61,26 @@ export default function App() {
   // 로딩 중
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#7ECEC5" />
-        <StatusBar style="auto" />
-      </View>
+      <SafeAreaProvider>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#7ECEC5" />
+          <StatusBar style="dark" backgroundColor="#7ECEC5" />
+        </View>
+      </SafeAreaProvider>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {isAuthenticated ? (
-        <HomeScreen />
-      ) : (
-        <LoginScreen onLoginSuccess={handleLoginSuccess} />
-      )}
-      <StatusBar style="auto" />
-    </SafeAreaView>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container}>
+        {isAuthenticated ? (
+          <HomeScreen />
+        ) : (
+          <LoginScreen onLoginSuccess={handleLoginSuccess} />
+        )}
+        <StatusBar style="dark" backgroundColor="#7ECEC5" />
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
