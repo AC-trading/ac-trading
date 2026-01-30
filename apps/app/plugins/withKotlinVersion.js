@@ -15,7 +15,8 @@ function withKotlinVersion(config) {
       const gradlePropsPath = path.join(projectRoot, 'android', 'gradle.properties');
       if (fs.existsSync(gradlePropsPath)) {
         let content = fs.readFileSync(gradlePropsPath, 'utf-8');
-        content = content.replace(/^android\.kotlinVersion=.*\n?/gm, '');
+        // 1.5.10 버전만 타깃 (kakao-login 플러그인이 추가하는 오래된 버전)
+        content = content.replace(/^android\.kotlinVersion=1\.5\.10.*\r?\n?/gm, '');
         fs.writeFileSync(gradlePropsPath, content);
       }
 
