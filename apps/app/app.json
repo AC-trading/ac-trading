@@ -11,7 +11,7 @@
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FFFFF0"
+      "backgroundColor": "#FFFFFF"
     },
     "ios": {
       "supportsTablet": true,
@@ -20,10 +20,14 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFF0"
+        "backgroundColor": "#FFFFFF"
       },
       "package": "com.actrading.app",
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "statusBar": {
+        "backgroundColor": "#FFFFFF",
+        "barStyle": "dark-content"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

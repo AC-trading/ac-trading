@@ -64,7 +64,7 @@ export default function App() {
       <SafeAreaProvider>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#7ECEC5" />
-          <StatusBar style="dark" backgroundColor="#7ECEC5" />
+          <StatusBar style="dark" backgroundColor="#FFFFFF" />
         </View>
       </SafeAreaProvider>
     );
@@ -72,13 +72,13 @@ export default function App() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         {isAuthenticated ? (
           <HomeScreen />
         ) : (
           <LoginScreen onLoginSuccess={handleLoginSuccess} />
         )}
-        <StatusBar style="dark" backgroundColor="#7ECEC5" />
+        <StatusBar style="dark" backgroundColor="#FFFFFF" />
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -87,11 +87,11 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFF0',
+    backgroundColor: '#FFFFFF',
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: '#FFFFF0',
+    backgroundColor: '#FFFFFF',
     justifyContent: 'center',
     alignItems: 'center',
   },
