@@ -30,6 +30,22 @@
     },
     "plugins": [
       "expo-secure-store",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "kotlinVersion": "2.0.21"
+          }
+        }
+      ],
+      [
+        "@react-native-seoul/kakao-login",
+        {
+          "kakaoAppKey": "REDACTED_KAKAO_KEY",
+          "kotlinVersion": "2.0.21"
+        }
+      ],
+      "./plugins/withKakaoMaven",
       "@react-native-google-signin/google-signin"
     ],
     "extra": {

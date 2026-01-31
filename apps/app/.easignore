@@ -1,0 +1,4 @@
+# EAS 빌드 시 제외할 파일/폴더
+# 로컬에서 생성된 android 폴더가 EAS 빌드와 충돌하므로 제외
+android/
+ios/
