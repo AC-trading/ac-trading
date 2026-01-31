@@ -45,8 +45,8 @@ export default function BottomNav() {
           );
         })}
       </div>
-      {/* 아이폰 하단 홈인디케이터 영역 */}
-      <div className="h-1 w-32 bg-black rounded-full mx-auto mb-2" />
+      {/* 아이폰 하단 safe area 여백 - 모바일에서만 표시 */}
+      <div className="h-2 md:h-0" />
     </nav>
   );
 }

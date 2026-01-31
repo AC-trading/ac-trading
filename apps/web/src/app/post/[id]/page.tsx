@@ -18,6 +18,7 @@ import {
   createReport,
   ReportReasonCode,
 } from "@/lib/postApi";
+import { addRecentViewedPost } from "@/lib/recentPosts";
 
 // 신고 사유 옵션
 const REPORT_REASONS: { code: ReportReasonCode; label: string }[] = [
@@ -88,6 +89,8 @@ export default function PostDetailPage() {
         if (data.currencyType) {
           setOfferCurrencyType(data.currencyType);
         }
+        // 최근 본 글에 기록
+        addRecentViewedPost(postNum);
       } catch (err) {
         console.error("게시글 로드 실패:", err);
         setError(err instanceof Error ? err.message : "게시글을 불러오는데 실패했습니다");
