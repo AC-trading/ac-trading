@@ -44,11 +44,11 @@ export default function Header({
             </button>
           )}
           {showLocation ? (
-            <span className="font-semibold text-lg">
+            <span className="font-semibold text-lg text-gray-900">
               {isAuthenticated && user?.islandName ? user.islandName : "내 섬"}
             </span>
           ) : (
-            title && <h1 className="font-semibold text-lg">{title}</h1>
+            title && <h1 className="font-semibold text-lg text-gray-900">{title}</h1>
           )}
         </div>
 

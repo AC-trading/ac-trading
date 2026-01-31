@@ -19,7 +19,7 @@ export default function ProfilePage() {
   if (!isLoading && !isAuthenticated) {
     return (
       <MobileLayout>
-        <Header title="나의 거동숲" />
+        <Header showLocation />
         <div className="flex flex-col items-center justify-center py-20 text-gray-500">
           <span className="text-6xl mb-4">🔒</span>
           <p className="text-sm">로그인이 필요합니다</p>
@@ -35,7 +35,7 @@ export default function ProfilePage() {
   if (isLoading) {
     return (
       <MobileLayout>
-        <Header title="나의 거동숲" />
+        <Header showLocation />
         <div className="flex items-center justify-center py-20">
           <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
         </div>
@@ -47,7 +47,7 @@ export default function ProfilePage() {
     <MobileLayout>
       {/* 헤더 */}
       <Header
-        title="나의 거동숲"
+        showLocation
         rightElement={
           <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
             <SettingsIcon className="text-gray-800" />
@@ -69,8 +69,8 @@ export default function ProfilePage() {
           className="rounded-full object-cover"
         />
         <div className="flex-1">
-          <h2 className="font-semibold text-lg">{user?.nickname || "닉네임 없음"}</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="font-semibold text-lg text-gray-900">{user?.nickname || "닉네임 없음"}</h2>
+          <p className="text-sm text-gray-900">
             {user?.islandName || "섬 이름 없음"}
           </p>
         </div>
