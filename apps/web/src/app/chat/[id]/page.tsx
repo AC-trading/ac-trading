@@ -82,8 +82,8 @@ const getTradeStatusLabel = (status: TradeStatus | undefined) => {
 // 로딩 스켈레톤
 function ChatRoomSkeleton() {
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center">
-      <div className="w-full max-w-[390px] min-h-screen bg-[#FFFFFF] flex flex-col">
+    <div className="min-h-screen bg-white">
+      <div className="w-full min-h-screen bg-[#FFFFFF] flex flex-col">
         <header className="sticky top-0 z-40 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between h-14 px-4">
             <div className="w-8 h-8 bg-gray-200 rounded-full animate-pulse" />
@@ -335,8 +335,8 @@ export default function ChatRoomPage() {
   // 에러 발생
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-100 flex justify-center">
-        <div className="w-full max-w-[390px] min-h-screen bg-[#FFFFFF] flex flex-col items-center justify-center p-4">
+      <div className="min-h-screen bg-white">
+        <div className="w-full min-h-screen bg-[#FFFFFF] flex flex-col items-center justify-center p-4">
           <p className="text-red-500 mb-4">{error}</p>
           <button
             onClick={() => router.back()}
@@ -350,8 +350,8 @@ export default function ChatRoomPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center">
-      <div className="w-full max-w-[390px] min-h-screen bg-[#FFFFFF] flex flex-col relative overflow-hidden">
+    <div className="min-h-screen bg-white">
+      <div className="w-full min-h-screen bg-[#FFFFFF] flex flex-col relative overflow-hidden">
         {/* 헤더 */}
         <header className="sticky top-0 z-40 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between h-14 px-4">
@@ -579,7 +579,7 @@ export default function ChatRoomPage() {
             onClick={() => setShowMoreMenu(false)}
           >
             <div
-              className="w-full max-w-[390px] bg-white rounded-t-2xl overflow-hidden animate-slide-up"
+              className="w-full bg-white rounded-t-2xl overflow-hidden animate-slide-up"
               onClick={(e) => e.stopPropagation()}
             >
               {/* 핸들 바 */}
@@ -677,7 +677,7 @@ export default function ChatRoomPage() {
             }}
           >
             <div
-              className="w-full max-w-[390px] bg-white rounded-t-2xl overflow-hidden animate-slide-up max-h-[80vh] overflow-y-auto"
+              className="w-full bg-white rounded-t-2xl overflow-hidden animate-slide-up max-h-[80vh] overflow-y-auto"
               onClick={(e) => e.stopPropagation()}
             >
               {/* 헤더 */}
