@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "scheme": "acnh-trading",
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -45,12 +45,14 @@
           "kotlinVersion": "2.0.21"
         }
       ],
-      "./plugins/withKakaoMaven"
+      "./plugins/withKakaoMaven",
+      "@react-native-google-signin/google-signin"
     ],
     "extra": {
       "eas": {
         "projectId": "5f202b10-28ae-41b1-80db-f9273916c55d"
       }
-    }
+    },
+    "owner": "mycindy0710"
   }
 }
