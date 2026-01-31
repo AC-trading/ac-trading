@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.format.DateTimeParseException;
 import java.util.Map;
 
 /**
@@ -49,21 +50,35 @@ public class TransactionController {
         log.info("거래 내역 조회 요청 - visitorId: {}, startDate: {}, endDate: {}, type: {}",
                 visitorId, startDate, endDate, type);
 
-        if (visitorId == null) {
+        // CodeRabbit 리뷰 반영: anonymousUser 처리 추가
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
+        // CodeRabbit 리뷰 반영: 페이징 파라미터 검증
+        if (page < 0 || size <= 0) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "INVALID_PAGING",
+                    "message", "page는 0 이상, size는 1 이상이어야 합니다"
+            ));
+        }
+
         try {
-            // 날짜 파싱
-            LocalDateTime start = startDate != null
-                    ? LocalDate.parse(startDate).atStartOfDay()
-                    : null;
-            LocalDateTime end = endDate != null
-                    ? LocalDate.parse(endDate).atTime(LocalTime.MAX)
-                    : null;
+            // CodeRabbit 리뷰 반영: 날짜 파싱 예외 처리
+            LocalDateTime start = null;
+            LocalDateTime end = null;
+            try {
+                if (startDate != null) start = LocalDate.parse(startDate).atStartOfDay();
+                if (endDate != null) end = LocalDate.parse(endDate).atTime(LocalTime.MAX);
+            } catch (DateTimeParseException e) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "INVALID_DATE",
+                        "message", "날짜 형식은 YYYY-MM-DD 이어야 합니다"
+                ));
+            }
 
             // 거래 유형 파싱
             TransactionType transactionType = null;
@@ -103,7 +118,8 @@ public class TransactionController {
         log.info("거래 통계 조회 요청 - visitorId: {}, startDate: {}, endDate: {}",
                 visitorId, startDate, endDate);
 
-        if (visitorId == null) {
+        // CodeRabbit 리뷰 반영: anonymousUser 처리 추가
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
@@ -111,13 +127,18 @@ public class TransactionController {
         }
 
         try {
-            // 날짜 파싱
-            LocalDateTime start = startDate != null
-                    ? LocalDate.parse(startDate).atStartOfDay()
-                    : null;
-            LocalDateTime end = endDate != null
-                    ? LocalDate.parse(endDate).atTime(LocalTime.MAX)
-                    : null;
+            // CodeRabbit 리뷰 반영: 날짜 파싱 예외 처리
+            LocalDateTime start = null;
+            LocalDateTime end = null;
+            try {
+                if (startDate != null) start = LocalDate.parse(startDate).atStartOfDay();
+                if (endDate != null) end = LocalDate.parse(endDate).atTime(LocalTime.MAX);
+            } catch (DateTimeParseException e) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "INVALID_DATE",
+                        "message", "날짜 형식은 YYYY-MM-DD 이어야 합니다"
+                ));
+            }
 
             TransactionSummaryResponse response = transactionService.getSummary(visitorId, start, end);
             return ResponseEntity.ok(response);
@@ -141,7 +162,8 @@ public class TransactionController {
         log.info("거래 내역 생성 요청 - visitorId: {}, type: {}, amount: {}",
                 visitorId, request.getType(), request.getAmount());
 
-        if (visitorId == null) {
+        // CodeRabbit 리뷰 반영: anonymousUser 처리 추가
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
@@ -170,7 +192,8 @@ public class TransactionController {
 
         log.info("거래 내역 삭제 요청 - visitorId: {}, transactionId: {}", visitorId, id);
 
-        if (visitorId == null) {
+        // CodeRabbit 리뷰 반영: anonymousUser 처리 추가
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"

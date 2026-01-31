@@ -18,9 +18,11 @@ public class KeywordAlarmListResponse {
     private int totalCount;
 
     public static KeywordAlarmListResponse of(List<KeywordAlarmResponse> keywords) {
+        // null 방어 코드 추가 (CodeRabbit 리뷰 반영)
+        List<KeywordAlarmResponse> safeKeywords = keywords != null ? keywords : List.of();
         return KeywordAlarmListResponse.builder()
-                .keywords(keywords)
-                .totalCount(keywords.size())
+                .keywords(safeKeywords)
+                .totalCount(safeKeywords.size())
                 .build();
     }
 }
