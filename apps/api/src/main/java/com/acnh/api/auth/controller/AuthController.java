@@ -426,13 +426,19 @@ public class AuthController {
     /**
      * 로그아웃
      * - Refresh Token 쿠키 삭제
+     * - OAuth State 쿠키 삭제 (다음 로그인 시 깨끗한 상태 보장)
      */
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
 
         // Refresh Token 쿠키 삭제
-        ResponseCookie deleteCookie = cookieUtil.deleteRefreshTokenCookie();
-        cookieUtil.addCookie(response, deleteCookie);
+        ResponseCookie deleteRefreshCookie = cookieUtil.deleteRefreshTokenCookie();
+        cookieUtil.addCookie(response, deleteRefreshCookie);
+
+        // Before: OAuth State 쿠키 미삭제 - 다음 로그인 시 잠재적 충돌
+        // After: OAuth State 쿠키 삭제 - 깨끗한 로그인 상태 보장
+        ResponseCookie deleteStateCookie = cookieUtil.deleteOAuthStateCookie();
+        cookieUtil.addCookie(response, deleteStateCookie);
 
         log.info("로그아웃 처리 완료");
 
