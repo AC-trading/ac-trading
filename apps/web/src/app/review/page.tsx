@@ -31,8 +31,8 @@ export default function ReviewPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center">
-      <div className="w-full max-w-[390px] min-h-screen bg-white flex flex-col">
+    <div className="min-h-screen bg-white">
+      <div className="w-full min-h-screen bg-white flex flex-col">
         {/* 헤더 */}
         <header className="sticky top-0 z-40 bg-white border-b border-gray-100">
           <div className="flex items-center justify-between h-14 px-4">
