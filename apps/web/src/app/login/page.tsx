@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, Suspense } from "react";
 import { HomeOutlineIcon } from "@/components/icons";
 import { useAuth } from "@/context/AuthContext";
+import { isWebView, requestNativeLogin } from "@/lib/nativeBridge";
 
 // Before: 프론트에서 Cognito로 직접 리다이렉트 - 백엔드 state 쿠키 미설정
 // After: 백엔드 /api/auth/login/{provider}로 리다이렉트 - state 쿠키 설정됨
@@ -41,13 +42,25 @@ function LoginForm() {
   const error = searchParams.get("error");
   const errorMessage = error ? getErrorMessage(error) : null;
 
-  // 구글 로그인 - 백엔드로 리다이렉트하여 state 쿠키 설정
+  // Before: 무조건 웹 OAuth 플로우 사용 - WebView에서 Invalid Request 에러 발생
+  // After: WebView에서는 네이티브 SDK 로그인 요청, 웹에서만 OAuth 플로우 사용
+  // 구글 로그인 - WebView에서는 네이티브, 웹에서는 백엔드 OAuth
   const handleGoogleLogin = () => {
+    // WebView 환경이면 네이티브 로그인 요청
+    if (isWebView() && requestNativeLogin()) {
+      return; // 네이티브 앱이 로그인 처리
+    }
+    // 웹 브라우저에서는 기존 OAuth 플로우
     window.location.href = getBackendLoginUrl("google");
   };
 
-  // 카카오 로그인 - 백엔드로 리다이렉트하여 state 쿠키 설정
+  // 카카오 로그인 - WebView에서는 네이티브, 웹에서는 백엔드 OAuth
   const handleKakaoLogin = () => {
+    // WebView 환경이면 네이티브 로그인 요청
+    if (isWebView() && requestNativeLogin()) {
+      return; // 네이티브 앱이 로그인 처리
+    }
+    // 웹 브라우저에서는 기존 OAuth 플로우
     window.location.href = getBackendLoginUrl("kakao");
   };
 

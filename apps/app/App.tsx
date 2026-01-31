@@ -58,6 +58,11 @@ export default function App() {
     setIsAuthenticated(true);
   }
 
+  // WebView에서 로그인 요청 핸들러 (로그아웃 상태로 전환하여 LoginScreen 표시)
+  function handleLoginRequest() {
+    setIsAuthenticated(false);
+  }
+
   // 로딩 중
   if (isLoading) {
     return (
@@ -74,7 +79,7 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         {isAuthenticated ? (
-          <HomeScreen />
+          <HomeScreen onLoginRequest={handleLoginRequest} />
         ) : (
           <LoginScreen onLoginSuccess={handleLoginSuccess} />
         )}

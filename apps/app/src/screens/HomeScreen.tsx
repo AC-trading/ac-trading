@@ -2,10 +2,20 @@
 
 import React from 'react';
 import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
-import { WebView } from 'react-native-webview';
-import { getAccessToken } from '../auth';
+import { WebView, WebViewMessageEvent } from 'react-native-webview';
+import { getAccessToken, removeAccessToken } from '../auth';
 
-export default function HomeScreen() {
+// WebView에서 전달받는 메시지 타입
+interface NativeMessage {
+  type: 'REQUEST_LOGIN' | 'REQUEST_LOGOUT';
+  payload?: Record<string, unknown>;
+}
+
+interface HomeScreenProps {
+  onLoginRequest: () => void;
+}
+
+export default function HomeScreen({ onLoginRequest }: HomeScreenProps) {
   const [token, setToken] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -64,9 +74,29 @@ export default function HomeScreen() {
         source={{ uri: WEB_URL }}
         style={styles.webview}
         injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContentLoaded}
-        onMessage={(event) => {
+        onMessage={(event: WebViewMessageEvent) => {
           // 웹에서 앱으로 메시지 전달 처리
-          console.log('Message from web:', event.nativeEvent.data);
+          try {
+            const message: NativeMessage = JSON.parse(event.nativeEvent.data);
+            if (__DEV__) console.log('Message from web:', message);
+
+            switch (message.type) {
+              case 'REQUEST_LOGIN':
+                // WebView에서 로그인 요청 - 네이티브 로그인 화면으로 전환
+                if (__DEV__) console.log('로그인 요청 수신, LoginScreen으로 전환');
+                onLoginRequest();
+                break;
+              case 'REQUEST_LOGOUT':
+                // WebView에서 로그아웃 요청 - 토큰 제거 후 로그인 화면으로
+                if (__DEV__) console.log('로그아웃 요청 수신');
+                removeAccessToken().then(() => onLoginRequest());
+                break;
+              default:
+                if (__DEV__) console.log('알 수 없는 메시지 타입:', message.type);
+            }
+          } catch (error) {
+            if (__DEV__) console.error('메시지 파싱 실패:', error);
+          }
         }}
         javaScriptEnabled={true}
         domStorageEnabled={true}
