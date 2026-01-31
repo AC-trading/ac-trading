@@ -180,12 +180,19 @@ public class TransactionService {
 
     /**
      * UUID로 회원 조회
+     * - CodeRabbit 리뷰 반영: UUID 파싱 예외 처리 추가
      */
     private Member findMemberByUuid(String visitorId) {
         if (visitorId == null || "anonymousUser".equals(visitorId)) {
             throw new IllegalArgumentException("로그인이 필요합니다");
         }
-        return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(visitorId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("유효하지 않은 인증 정보입니다");
+        }
+        return memberRepository.findByUuidAndDeletedAtIsNull(uuid)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
     }
 }

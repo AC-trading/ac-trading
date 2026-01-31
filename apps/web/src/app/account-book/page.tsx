@@ -156,6 +156,19 @@ function AddTransactionModal({
   const [memo, setMemo] = useState("");
   const [error, setError] = useState<string | null>(null);
 
+  // CodeRabbit 리뷰 반영: 모달이 열릴 때 폼 상태 초기화
+  useEffect(() => {
+    if (isOpen) {
+      setType("SALE");
+      setCurrencyType("BELL");
+      setItemName("");
+      setAmount("");
+      setPartnerNickname("");
+      setMemo("");
+      setError(null);
+    }
+  }, [isOpen]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);

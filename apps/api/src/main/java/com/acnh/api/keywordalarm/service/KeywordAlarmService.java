@@ -48,6 +48,7 @@ public class KeywordAlarmService {
 
     /**
      * 키워드 추가
+     * - 삭제된 동일 키워드가 있으면 복구 (CodeRabbit 리뷰 반영: soft delete와 unique 제약 조건 충돌 해결)
      */
     @Transactional
     public KeywordAlarmResponse createKeyword(String visitorId, KeywordAlarmCreateRequest request) {
@@ -66,14 +67,23 @@ public class KeywordAlarmService {
             throw new IllegalStateException("이미 등록된 키워드입니다");
         }
 
-        KeywordAlarm keywordAlarm = KeywordAlarm.builder()
-                .userId(member.getId())
-                .keyword(keyword)
-                .build();
-
-        keywordAlarmRepository.save(keywordAlarm);
-
-        log.info("키워드 등록 완료 - userId: {}, keyword: {}", member.getId(), keyword);
+        // 삭제된 동일 키워드가 있으면 복구 (soft delete + unique 제약 조건 충돌 해결)
+        KeywordAlarm keywordAlarm = keywordAlarmRepository
+                .findDeletedByUserIdAndKeywordIgnoreCase(member.getId(), keyword)
+                .map(existing -> {
+                    existing.restore();
+                    log.info("키워드 복구 완료 - userId: {}, keywordId: {}", member.getId(), existing.getId());
+                    return existing;
+                })
+                .orElseGet(() -> {
+                    KeywordAlarm newKeyword = KeywordAlarm.builder()
+                            .userId(member.getId())
+                            .keyword(keyword)
+                            .build();
+                    keywordAlarmRepository.save(newKeyword);
+                    log.info("키워드 등록 완료 - userId: {}, keywordId: {}", member.getId(), newKeyword.getId());
+                    return newKeyword;
+                });
 
         return KeywordAlarmResponse.from(keywordAlarm);
     }
@@ -106,12 +116,19 @@ public class KeywordAlarmService {
 
     /**
      * UUID로 회원 조회
+     * - CodeRabbit 리뷰 반영: UUID 파싱 예외 처리 추가
      */
     private Member findMemberByUuid(String visitorId) {
         if (visitorId == null || "anonymousUser".equals(visitorId)) {
             throw new IllegalArgumentException("로그인이 필요합니다");
         }
-        return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(visitorId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("유효하지 않은 인증 정보입니다");
+        }
+        return memberRepository.findByUuidAndDeletedAtIsNull(uuid)
                 .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
     }
 }

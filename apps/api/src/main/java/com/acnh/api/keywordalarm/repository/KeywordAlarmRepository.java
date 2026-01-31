@@ -50,4 +50,15 @@ public interface KeywordAlarmRepository extends JpaRepository<KeywordAlarm, Long
      * 사용자의 키워드 개수 조회
      */
     long countByUserIdAndDeletedAtIsNull(Long userId);
+
+    /**
+     * 삭제된 키워드 조회 (복구용)
+     * - soft delete된 키워드를 찾아서 복구할 때 사용
+     * - CodeRabbit 리뷰 반영: soft delete와 unique 제약 조건 충돌 해결
+     */
+    @Query("SELECT k FROM KeywordAlarm k WHERE k.userId = :userId " +
+           "AND LOWER(k.keyword) = LOWER(:keyword) AND k.deletedAt IS NOT NULL")
+    Optional<KeywordAlarm> findDeletedByUserIdAndKeywordIgnoreCase(
+            @Param("userId") Long userId,
+            @Param("keyword") String keyword);
 }
