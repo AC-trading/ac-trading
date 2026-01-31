@@ -15,6 +15,7 @@ export default function ProfileEditPage() {
   const { user, accessToken, isLoading } = useAuth();
   const [formData, setFormData] = useState({
     islandName: "",
+    islandSuffix: "섬" as "섬" | "도",
     name: "",
     hemisphere: "NORTH",
     dreamAddress: "",
@@ -26,13 +27,25 @@ export default function ProfileEditPage() {
   // 기존 프로필 정보 불러오기
   useEffect(() => {
     if (user) {
+      // 섬 이름에서 접미사(섬/도) 분리
+      let baseName = user.islandName || "";
+      let suffix: "섬" | "도" = "섬";
+      if (baseName.endsWith("도")) {
+        suffix = "도";
+        baseName = baseName.slice(0, -1);
+      } else if (baseName.endsWith("섬")) {
+        suffix = "섬";
+        baseName = baseName.slice(0, -1);
+      }
+
       setFormData({
-        islandName: user.islandName || "",
+        islandName: baseName,
+        islandSuffix: suffix,
         name: user.nickname || "",
         hemisphere: user.hemisphere || "NORTH",
         dreamAddress: user.dreamCode || "",
       });
-      setIsIslandNameValid((user.islandName?.length || 0) >= 2);
+      setIsIslandNameValid(baseName.length >= 1);
     }
   }, [user]);
 
@@ -47,9 +60,9 @@ export default function ProfileEditPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
 
-    // 섬 이름 유효성 검사
+    // 섬 이름 유효성 검사 (접미사 제외 1자 이상)
     if (name === "islandName") {
-      setIsIslandNameValid(value.length >= 2);
+      setIsIslandNameValid(value.length >= 1);
     }
   };
 
@@ -63,6 +76,9 @@ export default function ProfileEditPage() {
       const isNewUser = !user?.isProfileComplete;
       const endpoint = isNewUser ? "/api/users/me/profile-setup" : "/api/users/me/update";
 
+      // 섬 이름 + 접미사(섬/도) 결합
+      const fullIslandName = formData.islandName + formData.islandSuffix;
+
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
         headers: {
@@ -71,7 +87,7 @@ export default function ProfileEditPage() {
         },
         body: JSON.stringify({
           nickname: formData.name,
-          islandName: formData.islandName,
+          islandName: fullIslandName,
           dreamAddress: formData.dreamAddress || null,
           ...(isNewUser && { hemisphere: formData.hemisphere }),
         }),
@@ -127,17 +143,49 @@ export default function ProfileEditPage() {
           {/* 섬 이름 */}
           <div>
             <label className="block text-gray-800 font-medium mb-1">섬 이름</label>
-            <input
-              type="text"
-              name="islandName"
-              value={formData.islandName}
-              onChange={handleChange}
-              placeholder="섬 이름을 입력하세요"
-              className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-            />
+            <div className="flex gap-2">
+              <input
+                type="text"
+                name="islandName"
+                value={formData.islandName}
+                onChange={handleChange}
+                placeholder="섬 이름"
+                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+              />
+              {/* 섬/도 선택 */}
+              <div className="flex">
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, islandSuffix: "섬" }))}
+                  className={`px-4 py-3 rounded-l-lg text-sm font-medium border transition-colors ${
+                    formData.islandSuffix === "섬"
+                      ? "border-primary bg-primary/10 text-primary border-r-0"
+                      : "border-gray-300 text-gray-700 hover:border-gray-400 border-r-0"
+                  }`}
+                >
+                  섬
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, islandSuffix: "도" }))}
+                  className={`px-4 py-3 rounded-r-lg text-sm font-medium border transition-colors ${
+                    formData.islandSuffix === "도"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-gray-300 text-gray-700 hover:border-gray-400"
+                  }`}
+                >
+                  도
+                </button>
+              </div>
+            </div>
             {formData.islandName && !isIslandNameValid && (
               <p className="text-sm mt-1 text-red-500">
-                * 2자 이상 입력해주세요.
+                * 1자 이상 입력해주세요.
+              </p>
+            )}
+            {formData.islandName && isIslandNameValid && (
+              <p className="text-sm mt-1 text-gray-500">
+                &quot;{formData.islandName}{formData.islandSuffix}&quot;(으)로 저장됩니다.
               </p>
             )}
           </div>
