@@ -32,7 +32,7 @@ html, body {
 body {
   width: 100%;
   color: var(--foreground);
-  background: #ffffff;
+  background: var(--background);
   font-family: "Pretendard", Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
