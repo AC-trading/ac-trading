@@ -36,10 +36,9 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 모바일 앱 스타일 컨테이너 */
+/* 모바일 앱 스타일 컨테이너 - 전체 너비 사용 */
 .mobile-container {
-  max-width: 390px;
-  margin: 0 auto;
+  width: 100%;
   min-height: 100vh;
   background: white;
   position: relative;

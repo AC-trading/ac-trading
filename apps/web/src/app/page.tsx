@@ -145,7 +145,6 @@ export default function HomePage() {
       <Link
         href="/post/new"
         className="fixed bottom-24 right-4 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg hover:bg-primary-dark transition-colors z-40"
-        style={{ right: "calc(50% - 195px + 16px)" }}
       >
         <PlusIcon className="text-white" />
       </Link>
