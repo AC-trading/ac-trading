@@ -9,6 +9,7 @@ import com.acnh.api.member.entity.Member;
 import com.acnh.api.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -68,24 +69,31 @@ public class KeywordAlarmService {
         }
 
         // 삭제된 동일 키워드가 있으면 복구 (soft delete + unique 제약 조건 충돌 해결)
-        KeywordAlarm keywordAlarm = keywordAlarmRepository
-                .findDeletedByUserIdAndKeywordIgnoreCase(member.getId(), keyword)
-                .map(existing -> {
-                    existing.restore();
-                    log.info("키워드 복구 완료 - userId: {}, keywordId: {}", member.getId(), existing.getId());
-                    return existing;
-                })
-                .orElseGet(() -> {
-                    KeywordAlarm newKeyword = KeywordAlarm.builder()
-                            .userId(member.getId())
-                            .keyword(keyword)
-                            .build();
-                    keywordAlarmRepository.save(newKeyword);
-                    log.info("키워드 등록 완료 - userId: {}, keywordId: {}", member.getId(), newKeyword.getId());
-                    return newKeyword;
-                });
+        // CodeRabbit 리뷰 반영: 동시 요청 시 DB 제약 예외를 사용자 오류로 변환
+        try {
+            KeywordAlarm keywordAlarm = keywordAlarmRepository
+                    .findDeletedByUserIdAndKeywordIgnoreCase(member.getId(), keyword)
+                    .map(existing -> {
+                        existing.restore();
+                        log.info("키워드 복구 완료 - userId: {}, keywordId: {}", member.getId(), existing.getId());
+                        return existing;
+                    })
+                    .orElseGet(() -> {
+                        KeywordAlarm newKeyword = KeywordAlarm.builder()
+                                .userId(member.getId())
+                                .keyword(keyword)
+                                .build();
+                        keywordAlarmRepository.save(newKeyword);
+                        log.info("키워드 등록 완료 - userId: {}, keywordId: {}", member.getId(), newKeyword.getId());
+                        return newKeyword;
+                    });
 
-        return KeywordAlarmResponse.from(keywordAlarm);
+            return KeywordAlarmResponse.from(keywordAlarm);
+        } catch (DataIntegrityViolationException e) {
+            // 동시 요청으로 인한 중복 또는 제한 초과
+            log.warn("키워드 등록 실패 (동시 요청) - userId: {}", member.getId());
+            throw new IllegalStateException("이미 등록된 키워드이거나 등록 한도를 초과했습니다");
+        }
     }
 
     /**
