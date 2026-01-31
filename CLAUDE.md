@@ -11,6 +11,26 @@ MVP 기능: 로그인, 거래글 CRUD, 이미지 업로드, 검색/필터, 실�
  Controller-Service-Repository 레이어, 도메인별 패키지 분리, DTO/Entity 분리, URL 환경변수 처리, 커밋 prefix 사용
 앱 디버그 로그: __DEV__ 가드 사용 (프로덕션 빌드에서 자동 제거)
 
+[OAuth 설정 - 검증 완료]
+Google Cloud Console:
+- OAuth 동의 화면: 테스트 모드, 테스트 사용자 등록 완료
+- Web 클라이언트 ID: 641164748452-dibnrej3oi01v4e8ho0of4dlk8bqos7c.apps.googleusercontent.com (webClientId로 사용)
+- Android 클라이언트: com.actrading.app + SHA-1 등록됨
+- EAS 빌드용 SHA-1: EAS 관리 keystore (프로덕션) - 정상 작동
+- 로컬 빌드용 SHA-1: 5E:8F:16:06:2E:A3:CD:2C:4A:0D:54:78:76:BA:A6:F3:8C:AB:F6:25 (debug.keystore) - 등록했으나 작동 안함 (원인 미확인)
+
+Kakao Developer Console:
+- 네이티브 앱 키: 7fb89541b99776947d88908473b47ad0
+- 키 해시 (EAS): QjUEu2gLbCxoJtmLKFqgXGd1K30=
+- 키 해시 (로컬): Xo8WBi6jzSxKDVR4drqm84yr9iU=
+- 패키지명: com.actrading.app
+- SDK: @react-native-seoul/kakao-login (네이티브 SDK)
+
+[알려진 이슈]
+- 로컬 빌드(npx expo run:android --variant release)에서 Google OAuth 실패
+- EAS 클라우드 빌드에서는 정상 작동
+- SHA-1, 패키지명, 테스트 사용자 모두 검증했으나 원인 미확인
+
 프로젝트 구조/
 ├── acnh-web/          # Next.js (웹 프론트엔드)
 │   └── Vercel 배포

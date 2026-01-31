@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { SafeAreaView, StyleSheet, ActivityIndicator, View } from 'react-native';
+import { StyleSheet, ActivityIndicator, View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import { LoginScreen, HomeScreen } from './src/screens';
 import { getAccessToken, saveAccessToken, removeAccessToken } from './src/auth';
 import { getCurrentUser, refreshToken } from './src/api/auth';
@@ -31,20 +32,20 @@ export default function App() {
         setIsAuthenticated(true);
       } catch (error) {
         // 토큰이 만료/무효한 경우 갱신 시도
-        console.log('토큰 검증 실패, 갱신 시도...');
+        if (__DEV__) console.log('토큰 검증 실패, 갱신 시도...');
         try {
           const tokenResponse = await refreshToken();
           await saveAccessToken(tokenResponse.accessToken);
           setIsAuthenticated(true);
         } catch (refreshError) {
           // 갱신도 실패하면 로그아웃 처리
-          console.log('토큰 갱신 실패, 로그아웃 처리');
+          if (__DEV__) console.log('토큰 갱신 실패, 로그아웃 처리');
           await removeAccessToken();
           setIsAuthenticated(false);
         }
       }
     } catch (error) {
-      console.error('인증 상태 확인 실패:', error);
+      if (__DEV__) console.error('인증 상태 확인 실패:', error);
       await removeAccessToken();
       setIsAuthenticated(false);
     } finally {
@@ -60,22 +61,26 @@ export default function App() {
   // 로딩 중
   if (isLoading) {
     return (
-      <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#7ECEC5" />
-        <StatusBar style="auto" />
-      </View>
+      <SafeAreaProvider>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#7ECEC5" />
+          <StatusBar style="dark" backgroundColor="#7ECEC5" />
+        </View>
+      </SafeAreaProvider>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {isAuthenticated ? (
-        <HomeScreen />
-      ) : (
-        <LoginScreen onLoginSuccess={handleLoginSuccess} />
-      )}
-      <StatusBar style="auto" />
-    </SafeAreaView>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container}>
+        {isAuthenticated ? (
+          <HomeScreen />
+        ) : (
+          <LoginScreen onLoginSuccess={handleLoginSuccess} />
+        )}
+        <StatusBar style="dark" backgroundColor="#7ECEC5" />
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 
