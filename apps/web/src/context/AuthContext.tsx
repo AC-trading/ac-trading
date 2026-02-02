@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { isWebView } from '@/lib/nativeBridge';
 
 // 사용자 정보 타입
 interface User {
@@ -121,18 +122,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, [checkAuth]);
 
-  // WebView 환경인지 확인 (앱 내 WebView에서 실행 중인지)
-  const isWebView = useCallback(() => {
-    if (typeof window === 'undefined') return false;
-    const userAgent = window.navigator.userAgent.toLowerCase();
-    // React Native WebView 감지
-    return userAgent.includes('wv') ||
-           userAgent.includes('webview') ||
-           // 앱에서 주입한 플래그 확인
-           (window as unknown as { ReactNativeWebView?: unknown }).ReactNativeWebView !== undefined;
-  }, []);
-
   // 로그아웃 처리
+  // Before: isWebView 함수 중복 정의
+  // After: nativeBridge.ts에서 import하여 사용
   const logout = useCallback(async () => {
     try {
       // 백엔드 로그아웃 API 호출 (쿠키 삭제)
@@ -171,7 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Cognito 설정이 없으면 홈으로 이동
       window.location.href = '/';
     }
-  }, [isWebView]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{
