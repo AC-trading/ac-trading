@@ -53,7 +53,8 @@
       ],
       "./plugins/withKakaoMaven",
       "@react-native-google-signin/google-signin",
-      "expo-web-browser"
+      "expo-web-browser",
+      "./plugins/withFixKotlinVersion"
     ],
     "extra": {
       "eas": {
