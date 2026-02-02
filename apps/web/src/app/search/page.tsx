@@ -187,7 +187,7 @@ function CheckboxFilterModal({
       />
 
       {/* 바텀시트 */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-w-[390px] mx-auto animate-slide-up">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl w-full mx-auto animate-slide-up">
         {/* 핸들 */}
         <div className="flex justify-center pt-3 pb-2">
           <div className="w-10 h-1 bg-gray-300 rounded-full" />
@@ -313,7 +313,7 @@ function PriceFilterModal({
       />
 
       {/* 바텀시트 */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl max-w-[390px] mx-auto animate-slide-up">
+      <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl w-full mx-auto animate-slide-up">
         {/* 핸들 */}
         <div className="flex justify-center pt-3 pb-2">
           <div className="w-10 h-1 bg-gray-300 rounded-full" />

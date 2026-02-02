@@ -18,6 +18,7 @@ import {
   createReport,
   ReportReasonCode,
 } from "@/lib/postApi";
+import { addRecentViewedPost } from "@/lib/recentPosts";
 
 // 신고 사유 옵션
 const REPORT_REASONS: { code: ReportReasonCode; label: string }[] = [
@@ -88,6 +89,8 @@ export default function PostDetailPage() {
         if (data.currencyType) {
           setOfferCurrencyType(data.currencyType);
         }
+        // 최근 본 글에 기록
+        addRecentViewedPost(postNum);
       } catch (err) {
         console.error("게시글 로드 실패:", err);
         setError(err instanceof Error ? err.message : "게시글을 불러오는데 실패했습니다");
@@ -321,7 +324,7 @@ export default function PostDetailPage() {
 
       {/* 하단 고정 바 */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50">
-        <div className="max-w-[390px] mx-auto flex items-center justify-between p-4">
+        <div className="w-full mx-auto flex items-center justify-between p-4">
           {/* 좋아요 버튼 */}
           <button
             onClick={handleLikeToggle}
@@ -358,7 +361,7 @@ export default function PostDetailPage() {
       {/* 가격 제안 모달 */}
       {showPriceOfferModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
-          <div className="w-full max-w-[390px] bg-white rounded-t-2xl p-4 space-y-4 animate-slide-up">
+          <div className="w-full w-full bg-white rounded-t-2xl p-4 space-y-4 animate-slide-up">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">가격 제안하기</h3>
               <button
@@ -459,7 +462,7 @@ export default function PostDetailPage() {
           onClick={() => setShowMoreMenu(false)}
         >
           <div
-            className="w-full max-w-[390px] bg-white rounded-t-2xl overflow-hidden animate-slide-up"
+            className="w-full w-full bg-white rounded-t-2xl overflow-hidden animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 핸들 바 */}
@@ -515,7 +518,7 @@ export default function PostDetailPage() {
           }}
         >
           <div
-            className="w-full max-w-[390px] bg-white rounded-t-2xl overflow-hidden animate-slide-up max-h-[80vh] overflow-y-auto"
+            className="w-full w-full bg-white rounded-t-2xl overflow-hidden animate-slide-up max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 헤더 */}

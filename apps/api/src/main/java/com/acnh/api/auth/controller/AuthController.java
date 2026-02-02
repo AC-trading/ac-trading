@@ -276,12 +276,13 @@ public class AuthController {
     }
 
     /**
-     * 회원 조회 또는 생성
-     * - cognitoSub로 기존 회원 조회
-     * - 없으면 새로 생성
+     * 회원 조회 또는 생성 (웹 Cognito 로그인용)
+     * - Before: cognitoSub로 조회 - 앱 SDK 로그인과 회원 불일치 문제
+     * - After: provider + providerId로 조회 - 웹/앱 동일 회원 인식
      */
     private Member findOrCreateMember(CognitoUserInfo userInfo) {
-        return memberRepository.findByCognitoSubAndDeletedAtIsNull(userInfo.getSub())
+        return memberRepository.findByProviderAndProviderIdAndDeletedAtIsNull(
+                        userInfo.getProvider(), userInfo.getProviderId())
                 .orElseGet(() -> {
                     // 새 회원 생성
                     Member newMember = Member.builder()
@@ -425,13 +426,19 @@ public class AuthController {
     /**
      * 로그아웃
      * - Refresh Token 쿠키 삭제
+     * - OAuth State 쿠키 삭제 (다음 로그인 시 깨끗한 상태 보장)
      */
     @PostMapping("/logout")
     public ResponseEntity<?> logout(HttpServletResponse response) {
 
         // Refresh Token 쿠키 삭제
-        ResponseCookie deleteCookie = cookieUtil.deleteRefreshTokenCookie();
-        cookieUtil.addCookie(response, deleteCookie);
+        ResponseCookie deleteRefreshCookie = cookieUtil.deleteRefreshTokenCookie();
+        cookieUtil.addCookie(response, deleteRefreshCookie);
+
+        // Before: OAuth State 쿠키 미삭제 - 다음 로그인 시 잠재적 충돌
+        // After: OAuth State 쿠키 삭제 - 깨끗한 로그인 상태 보장
+        ResponseCookie deleteStateCookie = cookieUtil.deleteOAuthStateCookie();
+        cookieUtil.addCookie(response, deleteStateCookie);
 
         log.info("로그아웃 처리 완료");
 
@@ -508,15 +515,16 @@ public class AuthController {
 
     /**
      * 소셜 로그인 회원 조회 또는 생성 (네이티브 앱용)
+     * - Before: cognitoSubFormat으로 조회 - 웹 Cognito 로그인과 회원 불일치 문제
+     * - After: provider + providerId로 조회 - 웹/앱 동일 회원 인식
      */
     private Member findOrCreateMemberFromSocial(SocialUserInfo userInfo) {
-        String cognitoSubFormat = userInfo.toCognitoSubFormat();
-
-        return memberRepository.findByCognitoSubAndDeletedAtIsNull(cognitoSubFormat)
+        return memberRepository.findByProviderAndProviderIdAndDeletedAtIsNull(
+                        userInfo.getProvider(), userInfo.getProviderId())
                 .orElseGet(() -> {
                     Member newMember = Member.builder()
                             .uuid(UUID.randomUUID())
-                            .cognitoSub(cognitoSubFormat)
+                            .cognitoSub(userInfo.toCognitoSubFormat())
                             .email(userInfo.getEmail())
                             .provider(userInfo.getProvider())
                             .providerId(userInfo.getProviderId())

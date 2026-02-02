@@ -7,14 +7,13 @@ interface MobileLayoutProps {
   hideNav?: boolean;
 }
 
-// 모바일 앱 레이아웃 - 390px 고정 너비, 중앙 정렬
+// 반응형 웹 레이아웃
+// - 전체 너비 사용 (웹 페이지처럼 보이도록)
 export default function MobileLayout({ children, hideNav = false }: MobileLayoutProps) {
   return (
-    <div className="min-h-screen bg-gray-100 flex justify-center">
-      <div className="w-full max-w-[390px] min-h-screen bg-white relative shadow-lg">
-        <main className={`${hideNav ? "" : "pb-20"}`}>{children}</main>
-        {!hideNav && <BottomNav />}
-      </div>
+    <div className="w-full min-h-screen bg-white">
+      <main className={`w-full ${hideNav ? "" : "pb-20"}`}>{children}</main>
+      {!hideNav && <BottomNav />}
     </div>
   );
 }

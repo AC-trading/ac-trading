@@ -1,0 +1,103 @@
+// 모동숲 거래장터 앱 진입점
+
+import React, { useState, useEffect } from 'react';
+import { StatusBar } from 'expo-status-bar';
+import { StyleSheet, ActivityIndicator, View } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { LoginScreen, HomeScreen } from './src/screens';
+import { getAccessToken, saveAccessToken, removeAccessToken } from './src/auth';
+import { getCurrentUser, refreshToken } from './src/api/auth';
+
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    checkAuthStatus();
+  }, []);
+
+  // 앱 시작 시 로그인 상태 확인 및 토큰 유효성 검증
+  async function checkAuthStatus() {
+    try {
+      const token = await getAccessToken();
+
+      if (!token) {
+        setIsAuthenticated(false);
+        return;
+      }
+
+      // 토큰 유효성 검증: 사용자 정보 조회 시도
+      try {
+        await getCurrentUser(token);
+        setIsAuthenticated(true);
+      } catch (error) {
+        // 토큰이 만료/무효한 경우 갱신 시도
+        if (__DEV__) console.log('토큰 검증 실패, 갱신 시도...');
+        try {
+          const tokenResponse = await refreshToken();
+          await saveAccessToken(tokenResponse.accessToken);
+          setIsAuthenticated(true);
+        } catch (refreshError) {
+          // 갱신도 실패하면 로그아웃 처리
+          if (__DEV__) console.log('토큰 갱신 실패, 로그아웃 처리');
+          await removeAccessToken();
+          setIsAuthenticated(false);
+        }
+      }
+    } catch (error) {
+      if (__DEV__) console.error('인증 상태 확인 실패:', error);
+      await removeAccessToken();
+      setIsAuthenticated(false);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // 로그인 성공 핸들러
+  function handleLoginSuccess() {
+    setIsAuthenticated(true);
+  }
+
+  // WebView에서 로그인 요청 핸들러 (로그아웃 상태로 전환하여 LoginScreen 표시)
+  function handleLoginRequest() {
+    setIsAuthenticated(false);
+  }
+
+  // 로딩 중
+  if (isLoading) {
+    return (
+      <SafeAreaProvider>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#7ECEC5" />
+          <StatusBar style="dark" backgroundColor="#FFFFFF" />
+        </View>
+      </SafeAreaProvider>
+    );
+  }
+
+  return (
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
+        {isAuthenticated ? (
+          <HomeScreen onLoginRequest={handleLoginRequest} />
+        ) : (
+          <LoginScreen onLoginSuccess={handleLoginSuccess} />
+        )}
+        <StatusBar style="dark" backgroundColor="#FFFFFF" />
+      </SafeAreaView>
+    </SafeAreaProvider>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+  },
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});

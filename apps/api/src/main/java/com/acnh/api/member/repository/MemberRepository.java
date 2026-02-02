@@ -29,6 +29,12 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     Optional<Member> findByCognitoSubAndDeletedAtIsNull(String cognitoSub);
 
     /**
+     * Provider + ProviderId로 삭제되지 않은 회원 조회
+     * - 웹/앱 통합 회원 식별용 (동일 소셜 계정은 동일 회원으로 인식)
+     */
+    Optional<Member> findByProviderAndProviderIdAndDeletedAtIsNull(String provider, String providerId);
+
+    /**
      * 이메일로 삭제되지 않은 회원 조회
      */
     Optional<Member> findByEmailAndDeletedAtIsNull(String email);

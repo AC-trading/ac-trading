@@ -3,6 +3,9 @@
 *.iml
 .vscode/
 
+# Claude local settings
+.claude/settings.local.json
+
 # Backend (Spring Boot)
 apps/api/build/
 apps/api/.gradle/

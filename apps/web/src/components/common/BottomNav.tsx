@@ -20,7 +20,7 @@ export default function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[390px] bg-white border-t border-gray-200 z-50">
+    <nav className="fixed bottom-0 left-0 right-0 w-full bg-white border-t border-gray-200 z-50">
       <div className="flex justify-around items-center h-16 px-2">
         {navItems.map((item) => {
           const isActive = pathname === item.href ||
@@ -45,8 +45,8 @@ export default function BottomNav() {
           );
         })}
       </div>
-      {/* 아이폰 하단 홈인디케이터 영역 */}
-      <div className="h-1 w-32 bg-black rounded-full mx-auto mb-2" />
+      {/* 아이폰 하단 safe area 여백 - 모바일에서만 표시 */}
+      <div className="h-2 md:h-0" />
     </nav>
   );
 }

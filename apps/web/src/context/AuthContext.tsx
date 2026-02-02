@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
+import { isWebView } from '@/lib/nativeBridge';
 
 // 사용자 정보 타입
 interface User {
@@ -122,6 +123,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [checkAuth]);
 
   // 로그아웃 처리
+  // Before: isWebView 함수 중복 정의
+  // After: nativeBridge.ts에서 import하여 사용
   const logout = useCallback(async () => {
     try {
       // 백엔드 로그아웃 API 호출 (쿠키 삭제)
@@ -139,13 +142,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
     setUser(null);
 
-    // Cognito 로그아웃
+    // Before: 무조건 Cognito 로그아웃 리다이렉트 - WebView에서 Invalid Request 에러 발생
+    // After: WebView에서는 Cognito 로그아웃 스킵 (앱이 자체 세션 관리)
+    // WebView 환경에서는 Cognito 로그아웃 스킵
+    // 앱은 네이티브 SDK로 세션을 관리하므로 웹 Cognito 세션 정리 불필요
+    if (isWebView()) {
+      // WebView에서는 홈으로 이동만 수행
+      window.location.href = '/';
+      return;
+    }
+
+    // 브라우저 환경에서만 Cognito 로그아웃 수행
     const cognitoDomain = process.env.NEXT_PUBLIC_COGNITO_DOMAIN;
     const clientId = process.env.NEXT_PUBLIC_COGNITO_CLIENT_ID;
     const logoutUri = window.location.origin;
 
     if (cognitoDomain && clientId) {
       window.location.href = `https://${cognitoDomain}/logout?client_id=${clientId}&logout_uri=${encodeURIComponent(logoutUri)}`;
+    } else {
+      // Cognito 설정이 없으면 홈으로 이동
+      window.location.href = '/';
     }
   }, []);
 

@@ -785,3 +785,163 @@ export async function unblockUser(blockedUserId: string): Promise<{ message: str
     method: 'DELETE',
   });
 }
+
+// ========== 키워드 알림 타입 정의 ==========
+
+// 키워드 알림 응답 타입
+export interface KeywordAlarm {
+  id: number;
+  keyword: string;
+  createdAt: string;
+}
+
+// 키워드 알림 목록 응답 타입
+export interface KeywordAlarmListResponse {
+  keywords: KeywordAlarm[];
+  totalCount: number;
+}
+
+// ========== 키워드 알림 API 함수 ==========
+
+/**
+ * 내 키워드 목록 조회
+ * GET /api/keyword-alarms
+ */
+export async function getKeywordAlarms(): Promise<KeywordAlarmListResponse> {
+  return fetchWithAuth<KeywordAlarmListResponse>(`${API_URL}/api/keyword-alarms`);
+}
+
+/**
+ * 키워드 추가
+ * POST /api/keyword-alarms
+ */
+export async function createKeywordAlarm(keyword: string): Promise<KeywordAlarm> {
+  return fetchWithAuth<KeywordAlarm>(`${API_URL}/api/keyword-alarms`, {
+    method: 'POST',
+    body: JSON.stringify({ keyword }),
+  });
+}
+
+/**
+ * 키워드 삭제
+ * DELETE /api/keyword-alarms/{id}
+ */
+export async function deleteKeywordAlarm(id: number): Promise<{ message: string }> {
+  return fetchWithAuth<{ message: string }>(`${API_URL}/api/keyword-alarms/${id}`, {
+    method: 'DELETE',
+  });
+}
+
+// ========== 가계부(거래 내역) 타입 정의 ==========
+
+// 거래 내역 응답 타입
+export interface Transaction {
+  id: number;
+  postId: number | null;
+  postItemName: string | null;
+  type: 'SALE' | 'PURCHASE';
+  currencyType: 'BELL' | 'MILE_TICKET';
+  amount: number;
+  partnerId: number | null;
+  partnerNickname: string | null;
+  memo: string | null;
+  tradedAt: string;
+  createdAt: string;
+}
+
+// 거래 내역 목록 응답 타입
+export interface TransactionListResponse {
+  transactions: Transaction[];
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  hasNext: boolean;
+}
+
+// 거래 통계 응답 타입
+export interface TransactionSummary {
+  totalSales: number;
+  totalPurchases: number;
+  netProfit: number;
+  salesCount: number;
+  purchaseCount: number;
+}
+
+// 거래 내역 생성 요청 타입
+export interface TransactionCreateRequest {
+  postId?: number;
+  type: 'SALE' | 'PURCHASE';
+  currencyType: 'BELL' | 'MILE_TICKET';
+  amount: number;
+  itemName: string;
+  partnerNickname?: string;
+  memo?: string;
+  tradedAt?: string;
+}
+
+// ========== 가계부 API 함수 ==========
+
+/**
+ * 거래 내역 목록 조회
+ * GET /api/transactions
+ */
+export async function getTransactions(params?: {
+  startDate?: string;
+  endDate?: string;
+  type?: 'SALE' | 'PURCHASE';
+  page?: number;
+  size?: number;
+}): Promise<TransactionListResponse> {
+  const searchParams = new URLSearchParams();
+
+  if (params?.startDate) searchParams.set('startDate', params.startDate);
+  if (params?.endDate) searchParams.set('endDate', params.endDate);
+  if (params?.type) searchParams.set('type', params.type);
+  if (params?.page !== undefined) searchParams.set('page', String(params.page));
+  if (params?.size !== undefined) searchParams.set('size', String(params.size));
+
+  const queryString = searchParams.toString();
+  const url = `${API_URL}/api/transactions${queryString ? `?${queryString}` : ''}`;
+
+  return fetchWithAuth<TransactionListResponse>(url);
+}
+
+/**
+ * 거래 통계 조회
+ * GET /api/transactions/summary
+ */
+export async function getTransactionSummary(params?: {
+  startDate?: string;
+  endDate?: string;
+}): Promise<TransactionSummary> {
+  const searchParams = new URLSearchParams();
+
+  if (params?.startDate) searchParams.set('startDate', params.startDate);
+  if (params?.endDate) searchParams.set('endDate', params.endDate);
+
+  const queryString = searchParams.toString();
+  const url = `${API_URL}/api/transactions/summary${queryString ? `?${queryString}` : ''}`;
+
+  return fetchWithAuth<TransactionSummary>(url);
+}
+
+/**
+ * 거래 내역 생성
+ * POST /api/transactions
+ */
+export async function createTransaction(request: TransactionCreateRequest): Promise<Transaction> {
+  return fetchWithAuth<Transaction>(`${API_URL}/api/transactions`, {
+    method: 'POST',
+    body: JSON.stringify(request),
+  });
+}
+
+/**
+ * 거래 내역 삭제
+ * DELETE /api/transactions/{id}
+ */
+export async function deleteTransaction(id: number): Promise<{ message: string }> {
+  return fetchWithAuth<{ message: string }>(`${API_URL}/api/transactions/${id}`, {
+    method: 'DELETE',
+  });
+}
