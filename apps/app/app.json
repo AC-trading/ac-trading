@@ -38,23 +38,23 @@
         "expo-build-properties",
         {
           "android": {
-            "compileSdkVersion": 34,
-            "targetSdkVersion": 34,
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
             "minSdkVersion": 24,
-            "buildToolsVersion": "34.0.0"
+            "buildToolsVersion": "35.0.0"
           }
         }
       ],
       [
         "@react-native-seoul/kakao-login",
         {
-          "kakaoAppKey": "REDACTED_KAKAO_KEY"
+          "kakaoAppKey": "REDACTED_KAKAO_KEY",
+          "kotlinVersion": "2.0.21"
         }
       ],
       "./plugins/withKakaoMaven",
       "@react-native-google-signin/google-signin",
-      "expo-web-browser",
-      "./plugins/withFixKotlinVersion"
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {
