@@ -38,7 +38,6 @@
         "expo-build-properties",
         {
           "android": {
-            "kotlinVersion": "1.9.24",
             "compileSdkVersion": 34,
             "targetSdkVersion": 34,
             "minSdkVersion": 24,
@@ -53,7 +52,8 @@
         }
       ],
       "./plugins/withKakaoMaven",
-      "@react-native-google-signin/google-signin"
+      "@react-native-google-signin/google-signin",
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {
