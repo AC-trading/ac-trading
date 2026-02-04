@@ -193,12 +193,10 @@ export default function ProfileEditPage() {
                 </div>
               )}
             </div>
-            {formData.islandName && !isIslandNameValid && (
-              <p className="text-sm mt-1 text-red-500">
-                * 1자 이상 입력해주세요.
-              </p>
-            )}
-            {formData.islandName && isIslandNameValid && (
+            {/* CodeRabbit 리뷰 반영: dead code 제거
+               Before: formData.islandName && !isIslandNameValid 조건은
+               isIslandNameValid가 length >= 1로 설정되어 절대 true가 될 수 없었음 */}
+            {formData.islandName && (
               <p className="text-sm mt-1 text-gray-500">
                 &quot;{formData.islandName}{formData.islandSuffix}&quot;(으)로 저장됩니다.
               </p>
