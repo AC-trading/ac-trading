@@ -175,8 +175,9 @@ public class TransactionController {
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
             // CodeRabbit 리뷰 반영: 예외 유형별 HTTP 상태 코드 세분화
-            String message = e.getMessage();
-            if (message != null && message.contains("존재하지 않는")) {
+            // CodeRabbit 추가 리뷰 반영: null 메시지 처리
+            String message = e.getMessage() != null ? e.getMessage() : "잘못된 요청입니다";
+            if (message.contains("존재하지 않는")) {
                 return ResponseEntity.status(404).body(Map.of(
                         "error", "NOT_FOUND",
                         "message", message
