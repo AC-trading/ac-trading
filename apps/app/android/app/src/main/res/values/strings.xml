@@ -2,5 +2,5 @@
   <string name="app_name">모동숲 거래장터</string>
   <string name="expo_splash_screen_resize_mode" translatable="false">contain</string>
   <string name="expo_splash_screen_status_bar_translucent" translatable="false">false</string>
-  <string name="kakao_app_key">REDACTED_KAKAO_KEY</string>
+  <string name="kakao_app_key" translatable="false">cdbefe8c4e6c3af0f0e3bc910290c1db</string>
 </resources>

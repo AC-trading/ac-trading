@@ -5,11 +5,12 @@ buildscript {
     google()
     mavenCentral()
   }
+  // Before: Kotlin 플러그인이 중복 선언되어 있었음 (kakao-login 플러그인 + 기본 생성)
+  // After: 버전이 명시된 하나의 선언으로 통합
   dependencies {
-          classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21'
     classpath('com.android.tools.build:gradle')
     classpath('com.facebook.react:react-native-gradle-plugin')
-    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')
+    classpath('org.jetbrains.kotlin:kotlin-gradle-plugin:2.0.21')
   }
 }
 
