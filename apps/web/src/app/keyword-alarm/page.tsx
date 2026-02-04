@@ -101,6 +101,12 @@ export default function KeywordAlarmPage() {
     const trimmedKeyword = newKeyword.trim();
     if (!trimmedKeyword) return;
 
+    // CodeRabbit 리뷰 반영: 서버 요청 전 클라이언트에서 30개 제한 선제 검증
+    if (keywords.length >= 30) {
+      setSubmitError("키워드는 최대 30개까지 등록할 수 있습니다.");
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       setSubmitError(null);
