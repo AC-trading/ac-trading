@@ -1,5 +1,6 @@
 package com.acnh.api.auth.dto;
 
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,5 +26,26 @@ public class SocialLoginRequest {
         this.provider = provider;
         this.accessToken = accessToken;
         this.idToken = idToken;
+    }
+
+    /**
+     * CodeRabbit 리뷰 반영: provider별 토큰 필드 검증
+     * - Google: idToken 필수
+     * - Kakao: accessToken 필수
+     */
+    @AssertTrue(message = "Google 로그인은 idToken이 필수입니다.")
+    private boolean isGoogleTokenValid() {
+        if (!"google".equalsIgnoreCase(provider)) {
+            return true;
+        }
+        return idToken != null && !idToken.isBlank();
+    }
+
+    @AssertTrue(message = "Kakao 로그인은 accessToken이 필수입니다.")
+    private boolean isKakaoTokenValid() {
+        if (!"kakao".equalsIgnoreCase(provider)) {
+            return true;
+        }
+        return accessToken != null && !accessToken.isBlank();
     }
 }
