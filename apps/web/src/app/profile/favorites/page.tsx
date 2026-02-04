@@ -82,7 +82,7 @@ function FavoriteItem({
 
 // 관심목록 페이지
 export default function FavoritesPage() {
-  const { isLoggedIn } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [favorites, setFavorites] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -90,7 +90,7 @@ export default function FavoritesPage() {
   // 관심목록 불러오기
   useEffect(() => {
     async function fetchFavorites() {
-      if (!isLoggedIn) {
+      if (!isAuthenticated) {
         setLoading(false);
         return;
       }
@@ -107,7 +107,7 @@ export default function FavoritesPage() {
     }
 
     fetchFavorites();
-  }, [isLoggedIn]);
+  }, [isAuthenticated]);
 
   // 찜 해제 핸들러
   const handleUnlike = async (postId: number) => {
@@ -120,7 +120,7 @@ export default function FavoritesPage() {
   };
 
   // 로그인 필요
-  if (!isLoggedIn) {
+  if (!isAuthenticated) {
     return (
       <MobileLayout>
         <Header title="관심목록" showBack onBack={() => window.history.back()} />
