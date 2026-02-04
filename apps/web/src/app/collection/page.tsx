@@ -74,7 +74,11 @@ export default function CollectionPage() {
   const [error, setError] = useState<string | null>(null);
 
   // 탭 변경 시 데이터 로드
+  // CodeRabbit 리뷰 반영: AbortController로 race condition 방지
   useEffect(() => {
+    const controller = new AbortController();
+    let isCancelled = false;
+
     async function loadPosts() {
       // 로그인 필요한 탭 체크
       if ((activeTab === "likes" || activeTab === "my") && !isAuthenticated) {
@@ -86,15 +90,17 @@ export default function CollectionPage() {
         setIsLoading(true);
         setError(null);
 
+        let loadedPosts: Post[] = [];
+
         if (activeTab === "likes") {
           // 관심목록: 서버 API 호출
           const response = await getMyLikes(0, 50);
-          setPosts(response.posts);
+          loadedPosts = response.posts;
         } else if (activeTab === "recent") {
           // 최근 본 글: localStorage에서 ID 목록 조회 후 각 게시글 정보 로드
           const recentIds = getRecentViewedPostIds();
           if (recentIds.length === 0) {
-            setPosts([]);
+            loadedPosts = [];
           } else {
             // 각 게시글 정보를 병렬로 로드 (삭제된 게시글은 제외)
             const postPromises = recentIds.map(async (id) => {
@@ -106,18 +112,31 @@ export default function CollectionPage() {
               }
             });
             const results = await Promise.all(postPromises);
-            setPosts(results.filter((p): p is Post => p !== null));
+            loadedPosts = results.filter((p): p is Post => p !== null);
           }
         } else if (activeTab === "my") {
           // 내 거래글: 서버 API 호출
           const response = await getMyPosts(0, 50);
-          setPosts(response.posts);
+          loadedPosts = response.posts;
+        }
+
+        // 요청이 취소되지 않았을 때만 상태 업데이트
+        if (!isCancelled) {
+          setPosts(loadedPosts);
         }
       } catch (err) {
-        console.error("게시글 로드 실패:", err);
-        setError(err instanceof Error ? err.message : "게시글을 불러오는데 실패했습니다");
+        // AbortError는 정상적인 취소이므로 무시
+        if (err instanceof Error && err.name === "AbortError") {
+          return;
+        }
+        if (!isCancelled) {
+          console.error("게시글 로드 실패:", err);
+          setError(err instanceof Error ? err.message : "게시글을 불러오는데 실패했습니다");
+        }
       } finally {
-        setIsLoading(false);
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
       }
     }
 
@@ -125,6 +144,12 @@ export default function CollectionPage() {
     if (!authLoading) {
       loadPosts();
     }
+
+    // cleanup: 탭 전환 시 이전 요청 취소
+    return () => {
+      isCancelled = true;
+      controller.abort();
+    };
   }, [activeTab, isAuthenticated, authLoading]);
 
   // 최근 본 글 초기화
