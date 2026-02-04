@@ -66,43 +66,37 @@ public class TransactionController {
             ));
         }
 
+        // CodeRabbit 리뷰 반영: 날짜 파싱 예외 처리
+        LocalDateTime start = null;
+        LocalDateTime end = null;
         try {
-            // CodeRabbit 리뷰 반영: 날짜 파싱 예외 처리
-            LocalDateTime start = null;
-            LocalDateTime end = null;
-            try {
-                if (startDate != null) start = LocalDate.parse(startDate).atStartOfDay();
-                if (endDate != null) end = LocalDate.parse(endDate).atTime(LocalTime.MAX);
-            } catch (DateTimeParseException e) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "error", "INVALID_DATE",
-                        "message", "날짜 형식은 YYYY-MM-DD 이어야 합니다"
-                ));
-            }
-
-            // 거래 유형 파싱
-            TransactionType transactionType = null;
-            if (type != null && !type.isEmpty()) {
-                try {
-                    transactionType = TransactionType.valueOf(type);
-                } catch (IllegalArgumentException e) {
-                    return ResponseEntity.badRequest().body(Map.of(
-                            "error", "INVALID_TYPE",
-                            "message", "유효하지 않은 거래 유형입니다"
-                    ));
-                }
-            }
-
-            Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
-            TransactionListResponse response = transactionService.getTransactions(
-                    visitorId, start, end, transactionType, pageable);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(404).body(Map.of(
-                    "error", "NOT_FOUND",
-                    "message", e.getMessage()
+            if (startDate != null) start = LocalDate.parse(startDate).atStartOfDay();
+            if (endDate != null) end = LocalDate.parse(endDate).atTime(LocalTime.MAX);
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "INVALID_DATE",
+                    "message", "날짜 형식은 YYYY-MM-DD 이어야 합니다"
             ));
         }
+
+        // 거래 유형 파싱
+        TransactionType transactionType = null;
+        if (type != null && !type.isEmpty()) {
+            try {
+                transactionType = TransactionType.valueOf(type);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "INVALID_TYPE",
+                        "message", "유효하지 않은 거래 유형입니다"
+                ));
+            }
+        }
+
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
+        TransactionListResponse response = transactionService.getTransactions(
+                visitorId, start, end, transactionType, pageable);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -126,28 +120,22 @@ public class TransactionController {
             ));
         }
 
+        // CodeRabbit 리뷰 반영: 날짜 파싱 예외 처리
+        LocalDateTime start = null;
+        LocalDateTime end = null;
         try {
-            // CodeRabbit 리뷰 반영: 날짜 파싱 예외 처리
-            LocalDateTime start = null;
-            LocalDateTime end = null;
-            try {
-                if (startDate != null) start = LocalDate.parse(startDate).atStartOfDay();
-                if (endDate != null) end = LocalDate.parse(endDate).atTime(LocalTime.MAX);
-            } catch (DateTimeParseException e) {
-                return ResponseEntity.badRequest().body(Map.of(
-                        "error", "INVALID_DATE",
-                        "message", "날짜 형식은 YYYY-MM-DD 이어야 합니다"
-                ));
-            }
-
-            TransactionSummaryResponse response = transactionService.getSummary(visitorId, start, end);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(404).body(Map.of(
-                    "error", "NOT_FOUND",
-                    "message", e.getMessage()
+            if (startDate != null) start = LocalDate.parse(startDate).atStartOfDay();
+            if (endDate != null) end = LocalDate.parse(endDate).atTime(LocalTime.MAX);
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", "INVALID_DATE",
+                    "message", "날짜 형식은 YYYY-MM-DD 이어야 합니다"
             ));
         }
+
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        TransactionSummaryResponse response = transactionService.getSummary(visitorId, start, end);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -170,24 +158,9 @@ public class TransactionController {
             ));
         }
 
-        try {
-            TransactionResponse response = transactionService.createTransaction(visitorId, request);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            // CodeRabbit 리뷰 반영: 예외 유형별 HTTP 상태 코드 세분화
-            // CodeRabbit 추가 리뷰 반영: null 메시지 처리
-            String message = e.getMessage() != null ? e.getMessage() : "잘못된 요청입니다";
-            if (message.contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", message
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", message
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        TransactionResponse response = transactionService.createTransaction(visitorId, request);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -209,14 +182,8 @@ public class TransactionController {
             ));
         }
 
-        try {
-            transactionService.deleteTransaction(visitorId, id);
-            return ResponseEntity.ok(Map.of("message", "거래 내역이 삭제되었습니다"));
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(404).body(Map.of(
-                    "error", "NOT_FOUND",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        transactionService.deleteTransaction(visitorId, id);
+        return ResponseEntity.ok(Map.of("message", "거래 내역이 삭제되었습니다"));
     }
 }
