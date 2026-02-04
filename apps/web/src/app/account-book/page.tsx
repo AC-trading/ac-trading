@@ -41,10 +41,14 @@ function getDateRange(period: PeriodFilter): { startDate?: string; endDate?: str
       startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       break;
     case "month":
-      startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+      // CodeRabbit 리뷰 반영: 1일로 고정하여 월말 경계 오버플로우 방지
+      // Before: new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
+      // 예: 3월 31일 → 2월 31일 → 3월 3일로 오버플로우
+      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       break;
     case "3months":
-      startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+      // CodeRabbit 리뷰 반영: 1일로 고정하여 월말 경계 오버플로우 방지
+      startDate = new Date(now.getFullYear(), now.getMonth() - 3, 1);
       break;
     default:
       return {};
@@ -103,7 +107,7 @@ function TransactionItem({
           }`}>
             {isSale ? "판매" : "구매"}
           </span>
-          <span className="font-medium text-gray-900">{transaction.postItemName}</span>
+          <span className="font-medium text-gray-900">{transaction.postItemName || '삭제된 게시글'}</span>
         </div>
         <div className="flex items-center gap-2 mt-1">
           <p className="text-xs text-gray-400">
