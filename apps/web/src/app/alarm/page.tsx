@@ -114,7 +114,7 @@ function AlarmItem({ alarm }: { alarm: (typeof mockAlarms)[0] }) {
 
       {/* 상품 카테고리 아이콘 */}
       <img
-        src={alarm.product?.image || "/icons/raccoon_bill.svg"}
+        src={alarm.product?.image || process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
         alt="알림 아이콘"
         className="w-12 h-12 rounded-lg flex-shrink-0 object-cover bg-gray-100"
       />

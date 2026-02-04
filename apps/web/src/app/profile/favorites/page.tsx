@@ -48,7 +48,7 @@ function FavoriteItem({
       {/* 상품 이미지 */}
       <Link href={`/posts/${post.id}`} className="flex-shrink-0">
         <Image
-          src="/icons/island.png"
+          src={process.env.NEXT_PUBLIC_ICON_ISLAND || "/icons/island.png"}
           alt={post.itemName}
           width={80}
           height={80}
@@ -126,7 +126,7 @@ export default function FavoritesPage() {
         <Header title="관심목록" showBack onBack={() => window.history.back()} />
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
           <Image
-            src="/icons/island.png"
+            src={process.env.NEXT_PUBLIC_ICON_ISLAND || "/icons/island.png"}
             alt="로그인 필요"
             width={120}
             height={120}
@@ -179,7 +179,7 @@ export default function FavoritesPage() {
       {!loading && !error && favorites.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
           <Image
-            src="/icons/island.png"
+            src={process.env.NEXT_PUBLIC_ICON_ISLAND || "/icons/island.png"}
             alt="빈 관심목록"
             width={120}
             height={120}

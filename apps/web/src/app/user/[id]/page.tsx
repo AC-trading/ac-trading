@@ -150,7 +150,7 @@ export default function UserProfilePage() {
       <div className="flex items-center gap-4 p-4">
         {/* 프로필 이미지 */}
         <Image
-          src={process.env.NEXT_PUBLIC_DEFAULT_PROFILE_IMAGE || "/icons/raccoon_bill.svg"}
+          src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
           alt="프로필 이미지"
           width={56}
           height={56}
@@ -182,7 +182,7 @@ export default function UserProfilePage() {
               {userProfile.mannerScore != null ? `${userProfile.mannerScore.toFixed(1)}` : "-"}
             </span>
             <Image
-              src={process.env.NEXT_PUBLIC_ICON_BASE ? `${process.env.NEXT_PUBLIC_ICON_BASE}/carrot.svg` : "/icons/carrot.svg"}
+              src={process.env.NEXT_PUBLIC_ICON_CARROT || "/icons/carrot.svg"}
               alt="당근 아이콘"
               title="매너 점수"
               width={40}
