@@ -12,10 +12,37 @@ import java.util.Map;
 
 /**
  * 전역 예외 처리
+ * CodeRabbit 리뷰 반영: 커스텀 예외를 사용한 중앙화된 예외 처리
  */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    /**
+     * 리소스를 찾을 수 없음 예외 처리 (404)
+     */
+    @ExceptionHandler(NotFoundException.class)
+    public ResponseEntity<Map<String, String>> handleNotFoundException(NotFoundException e) {
+        log.warn("리소스 없음: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(Map.of(
+                        "error", "NOT_FOUND",
+                        "message", e.getMessage() != null ? e.getMessage() : "리소스를 찾을 수 없습니다"
+                ));
+    }
+
+    /**
+     * 잘못된 요청 예외 처리 (400)
+     */
+    @ExceptionHandler(InvalidRequestException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidRequestException(InvalidRequestException e) {
+        log.warn("잘못된 요청: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(Map.of(
+                        "error", "INVALID_REQUEST",
+                        "message", e.getMessage() != null ? e.getMessage() : "잘못된 요청입니다"
+                ));
+    }
 
     /**
      * 파일 크기 초과 예외 처리
@@ -28,13 +55,13 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * 잘못된 인자 예외 처리
+     * 잘못된 인자 예외 처리 (하위 호환성 유지)
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleIllegalArgumentException(IllegalArgumentException e) {
         log.warn("잘못된 요청: {}", e.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(Map.of("error", e.getMessage()));
+                .body(Map.of("error", e.getMessage() != null ? e.getMessage() : "잘못된 요청입니다"));
     }
 
     /**
