@@ -174,9 +174,17 @@ public class TransactionController {
             TransactionResponse response = transactionService.createTransaction(visitorId, request);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
+            // CodeRabbit 리뷰 반영: 예외 유형별 HTTP 상태 코드 세분화
+            String message = e.getMessage();
+            if (message != null && message.contains("존재하지 않는")) {
+                return ResponseEntity.status(404).body(Map.of(
+                        "error", "NOT_FOUND",
+                        "message", message
+                ));
+            }
             return ResponseEntity.badRequest().body(Map.of(
                     "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
+                    "message", message
             ));
         }
     }
