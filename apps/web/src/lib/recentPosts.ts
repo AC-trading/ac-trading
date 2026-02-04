@@ -10,14 +10,36 @@ export interface RecentViewedPost {
 }
 
 /**
+ * RecentViewedPost 타입 가드
+ * CodeRabbit 리뷰 반영: localStorage 데이터 스키마 검증
+ */
+function isValidRecentViewedPost(item: unknown): item is RecentViewedPost {
+  return (
+    typeof item === 'object' &&
+    item !== null &&
+    typeof (item as RecentViewedPost).postId === 'number' &&
+    typeof (item as RecentViewedPost).viewedAt === 'string'
+  );
+}
+
+/**
  * 최근 본 거래글 목록 조회
+ * CodeRabbit 리뷰 반영: 타입 가드로 데이터 스키마 검증
  */
 export function getRecentViewedPosts(): RecentViewedPost[] {
   if (typeof window === 'undefined') return [];
 
   try {
     const data = localStorage.getItem(STORAGE_KEY);
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+
+    const parsed = JSON.parse(data);
+
+    // 배열인지 확인
+    if (!Array.isArray(parsed)) return [];
+
+    // 각 항목이 올바른 스키마인지 검증
+    return parsed.filter(isValidRecentViewedPost);
   } catch {
     return [];
   }
