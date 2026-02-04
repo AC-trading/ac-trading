@@ -48,8 +48,8 @@ function FavoriteItem({
       {/* 상품 이미지 */}
       <Link href={`/posts/${post.id}`} className="flex-shrink-0">
         <Image
-          src={post.thumbnailUrl || "/icons/island.png"}
-          alt={post.title}
+          src="/icons/island.png"
+          alt={post.itemName}
           width={80}
           height={80}
           className="w-20 h-20 rounded-lg object-cover bg-gray-100"
@@ -62,7 +62,7 @@ function FavoriteItem({
           {getStatusBadge(post.status)}
           <span className="text-sm text-gray-400">{post.categoryName}</span>
         </div>
-        <h3 className="font-medium text-gray-900 truncate mt-1">{post.title}</h3>
+        <h3 className="font-medium text-gray-900 truncate mt-1">{post.itemName}</h3>
         <p className="text-primary font-semibold mt-1">
           {formatPrice(post.price, post.currencyType)}
         </p>
