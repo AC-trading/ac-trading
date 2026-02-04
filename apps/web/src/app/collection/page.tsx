@@ -35,7 +35,7 @@ function PostItem({ post }: { post: Post }) {
       {/* 상품 카테고리 아이콘 */}
       <div className="w-28 h-28 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
         <img
-          src="/icons/DIY.png"
+          src="/icons/raccoon_bill.svg"
           alt="상품 카테고리"
           className="w-full h-full object-cover"
         />
