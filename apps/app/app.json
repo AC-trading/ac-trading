@@ -48,13 +48,14 @@
       [
         "@react-native-seoul/kakao-login",
         {
-          "kakaoAppKey": "REDACTED_KAKAO_KEY",
+          "kakaoAppKey": "cdbefe8c4e6c3af0f0e3bc910290c1db",
           "kotlinVersion": "2.0.21"
         }
       ],
       "./plugins/withKakaoMaven",
       "@react-native-google-signin/google-signin",
-      "expo-web-browser"
+      "expo-web-browser",
+      "expo-asset"
     ],
     "extra": {
       "eas": {

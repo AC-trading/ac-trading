@@ -136,6 +136,19 @@ function LoginForm() {
         >
           둘러보기
         </Link>
+
+        {/* 약관 동의 안내 */}
+        <p className="text-center text-white/60 text-xs mt-6">
+          로그인 시{" "}
+          <Link href="/terms" className="underline hover:text-white/80">
+            이용약관
+          </Link>
+          {" "}및{" "}
+          <Link href="/privacy" className="underline hover:text-white/80">
+            개인정보처리방침
+          </Link>
+          에 동의하게 됩니다.
+        </p>
       </div>
     </>
   );
