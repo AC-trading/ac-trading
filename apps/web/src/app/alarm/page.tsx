@@ -67,7 +67,7 @@ const mockAlarms = [
     title: "가격 인하",
     message: "관심 상품 '바이레도 블랑쉬'의 가격이 내려갔어요.",
     time: "1주 전",
-    product: { image: "/icons/radish.png" },
+    product: { image: "/icons/carrot.svg" },
     read: true,
   },
   {
