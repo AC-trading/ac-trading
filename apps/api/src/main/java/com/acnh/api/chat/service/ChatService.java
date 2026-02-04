@@ -5,6 +5,8 @@ import com.acnh.api.chat.entity.ChatMessage;
 import com.acnh.api.chat.entity.ChatRoom;
 import com.acnh.api.chat.repository.ChatMessageRepository;
 import com.acnh.api.chat.repository.ChatRoomRepository;
+import com.acnh.api.common.exception.InvalidRequestException;
+import com.acnh.api.common.exception.NotFoundException;
 import com.acnh.api.filter.ProfanityFilter;
 import com.acnh.api.member.entity.Member;
 import com.acnh.api.member.repository.MemberRepository;
@@ -49,7 +51,7 @@ public class ChatService {
 
         // 자기 게시글에는 채팅방 생성 불가
         if (post.getUserId().equals(member.getId())) {
-            throw new IllegalArgumentException("본인 게시글에는 채팅을 시작할 수 없습니다");
+            throw new InvalidRequestException("본인 게시글에는 채팅을 시작할 수 없습니다");
         }
 
         // 기존 채팅방이 있으면 반환
@@ -283,7 +285,7 @@ public class ChatService {
      */
     public Member findMemberById(Long memberId) {
         return memberRepository.findByIdAndDeletedAtIsNull(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
+                .orElseThrow(() -> new NotFoundException("사용자", memberId));
     }
 
     /**
@@ -305,12 +307,12 @@ public class ChatService {
 
         // 게시글 작성자만 예약 가능
         if (!chatRoom.getPostOwnerId().equals(member.getId())) {
-            throw new IllegalArgumentException("게시글 작성자만 예약자를 지정할 수 있습니다");
+            throw new InvalidRequestException("게시글 작성자만 예약자를 지정할 수 있습니다");
         }
 
         // 이미 예약된 경우
         if (chatRoom.getReservedUserId() != null) {
-            throw new IllegalArgumentException("이미 예약된 채팅방입니다");
+            throw new InvalidRequestException("이미 예약된 채팅방입니다");
         }
 
         // 채팅방의 신청자를 예약자로 지정
@@ -333,12 +335,12 @@ public class ChatService {
 
         // 게시글 작성자만 예약 해제 가능
         if (!chatRoom.getPostOwnerId().equals(member.getId())) {
-            throw new IllegalArgumentException("게시글 작성자만 예약을 해제할 수 있습니다");
+            throw new InvalidRequestException("게시글 작성자만 예약을 해제할 수 있습니다");
         }
 
         // 예약되지 않은 경우
         if (chatRoom.getReservedUserId() == null) {
-            throw new IllegalArgumentException("예약되지 않은 채팅방입니다");
+            throw new InvalidRequestException("예약되지 않은 채팅방입니다");
         }
 
         chatRoom.cancelReservation();
@@ -361,12 +363,12 @@ public class ChatService {
 
         // 게시글 작성자만 거래 완료 가능
         if (!chatRoom.getPostOwnerId().equals(member.getId())) {
-            throw new IllegalArgumentException("게시글 작성자만 거래 완료 처리할 수 있습니다");
+            throw new InvalidRequestException("게시글 작성자만 거래 완료 처리할 수 있습니다");
         }
 
         // 예약된 채팅방만 거래 완료 가능
         if (chatRoom.getReservedUserId() == null) {
-            throw new IllegalArgumentException("예약된 채팅방만 거래 완료 처리할 수 있습니다");
+            throw new InvalidRequestException("예약된 채팅방만 거래 완료 처리할 수 있습니다");
         }
 
         chatRoom.updateStatus("COMPLETED");
@@ -408,7 +410,7 @@ public class ChatService {
 
         // 게시글 작성자만 조회 가능
         if (!post.getUserId().equals(member.getId())) {
-            throw new IllegalArgumentException("게시글 작성자만 조회할 수 있습니다");
+            throw new InvalidRequestException("게시글 작성자만 조회할 수 있습니다");
         }
 
         List<ChatRoom> chatRooms = chatRoomRepository.findByPostIdAndDeletedAtIsNull(postId);
@@ -427,10 +429,19 @@ public class ChatService {
      */
     private Member findMemberByUuid(String visitorId) {
         if (visitorId == null || "anonymousUser".equals(visitorId)) {
-            throw new IllegalArgumentException("로그인이 필요합니다");
+            throw new InvalidRequestException("로그인이 필요합니다");
         }
-        return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
+
+        // UUID 파싱 실패 시 원본 예외 메시지 노출 방지
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(visitorId);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidRequestException("로그인이 필요합니다");
+        }
+
+        return memberRepository.findByUuidAndDeletedAtIsNull(uuid)
+                .orElseThrow(() -> new NotFoundException("사용자", visitorId));
     }
 
     /**
@@ -438,7 +449,7 @@ public class ChatService {
      */
     private Post findPostById(Long postId) {
         return postRepository.findByIdAndDeletedAtIsNull(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다"));
+                .orElseThrow(() -> new NotFoundException("게시글", postId));
     }
 
     /**
@@ -446,7 +457,7 @@ public class ChatService {
      */
     private ChatRoom findChatRoomById(Long roomId) {
         return chatRoomRepository.findByIdAndDeletedAtIsNull(roomId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 채팅방입니다"));
+                .orElseThrow(() -> new NotFoundException("채팅방", roomId));
     }
 
     /**
@@ -454,7 +465,7 @@ public class ChatService {
      */
     private void validateParticipant(ChatRoom chatRoom, Long userId) {
         if (!chatRoom.getPostOwnerId().equals(userId) && !chatRoom.getApplicantId().equals(userId)) {
-            throw new IllegalArgumentException("채팅방에 접근 권한이 없습니다");
+            throw new InvalidRequestException("채팅방에 접근 권한이 없습니다");
         }
     }
 

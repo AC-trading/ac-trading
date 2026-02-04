@@ -43,21 +43,9 @@ public class PriceOfferController {
             ));
         }
 
-        try {
-            PriceOfferResponse response = priceOfferService.createPriceOffer(postId, request, visitorId);
-            return ResponseEntity.status(201).body(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        PriceOfferResponse response = priceOfferService.createPriceOffer(postId, request, visitorId);
+        return ResponseEntity.status(201).body(response);
     }
 
     /**
@@ -80,26 +68,8 @@ public class PriceOfferController {
             ));
         }
 
-        try {
-            PriceOfferAcceptResponse response = priceOfferService.acceptPriceOffer(offerId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        } catch (IllegalStateException e) {
-            // 이미 처리된 제안
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_STATE",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        PriceOfferAcceptResponse response = priceOfferService.acceptPriceOffer(offerId, visitorId);
+        return ResponseEntity.ok(response);
     }
 }

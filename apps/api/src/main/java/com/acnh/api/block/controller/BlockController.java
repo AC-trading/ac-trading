@@ -43,21 +43,9 @@ public class BlockController {
             ));
         }
 
-        try {
-            BlockResponse response = blockService.blockUser(request, visitorId);
-            return ResponseEntity.status(201).body(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        BlockResponse response = blockService.blockUser(request, visitorId);
+        return ResponseEntity.status(201).body(response);
     }
 
     /**
@@ -78,23 +66,11 @@ public class BlockController {
             ));
         }
 
-        try {
-            blockService.unblockUser(blockedUserId, visitorId);
-            return ResponseEntity.ok(Map.of(
-                    "message", "차단이 해제되었습니다"
-            ));
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는") || e.getMessage().contains("차단 내역")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        blockService.unblockUser(blockedUserId, visitorId);
+        return ResponseEntity.ok(Map.of(
+                "message", "차단이 해제되었습니다"
+        ));
     }
 
     /**
@@ -114,14 +90,8 @@ public class BlockController {
             ));
         }
 
-        try {
-            BlockListResponse response = blockService.getBlockedUsers(visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(404).body(Map.of(
-                    "error", "NOT_FOUND",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        BlockListResponse response = blockService.getBlockedUsers(visitorId);
+        return ResponseEntity.ok(response);
     }
 }

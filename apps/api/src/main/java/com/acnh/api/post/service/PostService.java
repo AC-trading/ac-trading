@@ -2,6 +2,8 @@ package com.acnh.api.post.service;
 
 import com.acnh.api.category.entity.Category;
 import com.acnh.api.category.repository.CategoryRepository;
+import com.acnh.api.common.exception.InvalidRequestException;
+import com.acnh.api.common.exception.NotFoundException;
 import com.acnh.api.member.entity.Member;
 import com.acnh.api.member.repository.MemberRepository;
 import com.acnh.api.post.dto.*;
@@ -70,7 +72,7 @@ public class PostService {
                                         String status, String currencyType, Integer minPrice, Integer maxPrice,
                                         String visitorId, Pageable pageable) {
         if (keyword == null || keyword.isBlank()) {
-            throw new IllegalArgumentException("검색어를 입력해주세요");
+            throw new InvalidRequestException("검색어를 입력해주세요");
         }
 
         String validPostType = validatePostType(postType);
@@ -116,7 +118,7 @@ public class PostService {
 
         // 카테고리 존재 확인
         categoryRepository.findByIdAndDeletedAtIsNull(request.getCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다"));
+                .orElseThrow(() -> new NotFoundException("카테고리", request.getCategoryId()));
 
         // Enum 유효성 검증
         validatePostTypeRequired(request.getPostType());
@@ -155,7 +157,7 @@ public class PostService {
 
         // 카테고리 존재 확인
         categoryRepository.findByIdAndDeletedAtIsNull(request.getCategoryId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 카테고리입니다"));
+                .orElseThrow(() -> new NotFoundException("카테고리", request.getCategoryId()));
 
         // Enum 유효성 검증
         validatePostTypeRequired(request.getPostType());
@@ -250,10 +252,10 @@ public class PostService {
      */
     private Member findMemberByUuid(String visitorId) {
         if (visitorId == null || "anonymousUser".equals(visitorId)) {
-            throw new IllegalArgumentException("로그인이 필요합니다");
+            throw new InvalidRequestException("로그인이 필요합니다");
         }
         return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
+                .orElseThrow(() -> new NotFoundException("사용자", visitorId));
     }
 
     /**
@@ -261,7 +263,7 @@ public class PostService {
      */
     private Post findPostById(Long postId) {
         return postRepository.findByIdAndDeletedAtIsNull(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다"));
+                .orElseThrow(() -> new NotFoundException("게시글", postId));
     }
 
     /**
@@ -283,7 +285,7 @@ public class PostService {
      */
     private void validateOwnership(Post post, Long userId) {
         if (!post.getUserId().equals(userId)) {
-            throw new IllegalArgumentException("본인의 게시글만 수정/삭제할 수 있습니다");
+            throw new InvalidRequestException("본인의 게시글만 수정/삭제할 수 있습니다");
         }
     }
 
@@ -318,7 +320,7 @@ public class PostService {
         try {
             return PostType.valueOf(postType.toUpperCase()).name();
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 게시글 유형입니다: " + postType);
+            throw new InvalidRequestException("유효하지 않은 게시글 유형입니다: " + postType);
         }
     }
 
@@ -327,12 +329,12 @@ public class PostService {
      */
     private void validatePostTypeRequired(String postType) {
         if (postType == null || postType.isBlank()) {
-            throw new IllegalArgumentException("게시글 유형은 필수입니다");
+            throw new InvalidRequestException("게시글 유형은 필수입니다");
         }
         try {
             PostType.valueOf(postType.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 게시글 유형입니다: " + postType);
+            throw new InvalidRequestException("유효하지 않은 게시글 유형입니다: " + postType);
         }
     }
 
@@ -346,7 +348,7 @@ public class PostService {
         try {
             return PostStatus.valueOf(status.toUpperCase()).name();
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 상태입니다: " + status);
+            throw new InvalidRequestException("유효하지 않은 상태입니다: " + status);
         }
     }
 
@@ -355,12 +357,12 @@ public class PostService {
      */
     private String validateStatusRequired(String status) {
         if (status == null || status.isBlank()) {
-            throw new IllegalArgumentException("상태는 필수입니다");
+            throw new InvalidRequestException("상태는 필수입니다");
         }
         try {
             return PostStatus.valueOf(status.toUpperCase()).name();
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 상태입니다: " + status);
+            throw new InvalidRequestException("유효하지 않은 상태입니다: " + status);
         }
     }
 
@@ -369,12 +371,12 @@ public class PostService {
      */
     private void validateCurrencyType(String currencyType) {
         if (currencyType == null || currencyType.isBlank()) {
-            throw new IllegalArgumentException("화폐 유형은 필수입니다");
+            throw new InvalidRequestException("화폐 유형은 필수입니다");
         }
         try {
             CurrencyType.valueOf(currencyType.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 화폐 유형입니다: " + currencyType);
+            throw new InvalidRequestException("유효하지 않은 화폐 유형입니다: " + currencyType);
         }
     }
 
@@ -388,7 +390,7 @@ public class PostService {
         try {
             return CurrencyType.valueOf(currencyType.toUpperCase()).name();
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 화폐 유형입니다: " + currencyType);
+            throw new InvalidRequestException("유효하지 않은 화폐 유형입니다: " + currencyType);
         }
     }
 }

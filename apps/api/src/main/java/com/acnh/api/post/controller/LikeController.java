@@ -44,16 +44,10 @@ public class LikeController {
             ));
         }
 
-        try {
-            Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
-            PostListResponse response = likeService.getMyLikes(visitorId, pageable);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(404).body(Map.of(
-                    "error", "NOT_FOUND",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
+        PostListResponse response = likeService.getMyLikes(visitorId, pageable);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -74,27 +68,10 @@ public class LikeController {
             ));
         }
 
-        try {
-            LikeResponse response = likeService.likePost(postId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        } catch (IllegalStateException e) {
-            // 이미 찜한 경우
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "ALREADY_LIKED",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        // IllegalStateException(이미 찜한 경우)은 RuntimeException 핸들러에서 처리
+        LikeResponse response = likeService.likePost(postId, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -115,26 +92,9 @@ public class LikeController {
             ));
         }
 
-        try {
-            LikeResponse response = likeService.unlikePost(postId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        } catch (IllegalStateException e) {
-            // 찜하지 않은 경우
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "NOT_LIKED",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        // IllegalStateException(찜하지 않은 경우)은 RuntimeException 핸들러에서 처리
+        LikeResponse response = likeService.unlikePost(postId, visitorId);
+        return ResponseEntity.ok(response);
     }
 }

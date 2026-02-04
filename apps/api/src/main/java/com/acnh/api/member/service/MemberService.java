@@ -1,5 +1,7 @@
 package com.acnh.api.member.service;
 
+import com.acnh.api.common.exception.InvalidRequestException;
+import com.acnh.api.common.exception.NotFoundException;
 import com.acnh.api.member.dto.ProfileSetupRequest;
 import com.acnh.api.member.dto.ProfileUpdateRequest;
 import com.acnh.api.member.dto.MemberProfileResponse;
@@ -40,7 +42,7 @@ public class MemberService {
      */
     public MemberProfileResponse getMemberProfile(UUID targetMemberId) {
         Member member = memberRepository.findByUuidAndDeletedAtIsNull(targetMemberId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
+                .orElseThrow(() -> new NotFoundException("사용자", targetMemberId));
         Long reviewCount = reviewRepository.countByRevieweeIdAndDeletedAtIsNull(member.getId());
         return MemberProfileResponse.from(member, reviewCount);
     }
@@ -56,7 +58,7 @@ public class MemberService {
         // 24시간 제한 체크
         if (!member.canUpdateProfile()) {
             LocalDateTime nextAvailable = member.getNextProfileUpdateAvailableAt();
-            throw new IllegalStateException(
+            throw new InvalidRequestException(
                     String.format("프로필은 24시간에 한 번만 수정할 수 있습니다. 다음 수정 가능 시간: %s", nextAvailable)
             );
         }
@@ -84,7 +86,7 @@ public class MemberService {
 
         // 이미 프로필이 설정된 경우 (기본 닉네임이 아닌 경우) 거부
         if (!member.getNickname().startsWith("섬주민")) {
-            throw new IllegalStateException("이미 프로필이 설정되어 있습니다. 프로필 수정 API를 사용해주세요.");
+            throw new InvalidRequestException("이미 프로필이 설정되어 있습니다. 프로필 수정 API를 사용해주세요.");
         }
 
         member.setupProfile(
@@ -116,9 +118,18 @@ public class MemberService {
      */
     private Member findMemberByUuid(String visitorId) {
         if (visitorId == null || "anonymousUser".equals(visitorId)) {
-            throw new IllegalArgumentException("로그인이 필요합니다");
+            throw new InvalidRequestException("로그인이 필요합니다");
         }
-        return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
+
+        // UUID 파싱 실패 시 원본 예외 메시지 노출 방지
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(visitorId);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidRequestException("로그인이 필요합니다");
+        }
+
+        return memberRepository.findByUuidAndDeletedAtIsNull(uuid)
+                .orElseThrow(() -> new NotFoundException("사용자", visitorId));
     }
 }

@@ -48,21 +48,9 @@ public class ChatController {
             ));
         }
 
-        try {
-            ChatRoomResponse response = chatService.createOrGetChatRoom(request, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        ChatRoomResponse response = chatService.createOrGetChatRoom(request, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -84,16 +72,10 @@ public class ChatController {
             ));
         }
 
-        try {
-            Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
-            ChatRoomListResponse response = chatService.getMyChatRooms(visitorId, pageable);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(404).body(Map.of(
-                    "error", "NOT_FOUND",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
+        ChatRoomListResponse response = chatService.getMyChatRooms(visitorId, pageable);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -114,21 +96,9 @@ public class ChatController {
             ));
         }
 
-        try {
-            ChatRoomResponse response = chatService.getChatRoom(roomId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는") || e.getMessage().contains("접근 권한")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        ChatRoomResponse response = chatService.getChatRoom(roomId, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -149,21 +119,9 @@ public class ChatController {
             ));
         }
 
-        try {
-            List<ChatMessageResponse> response = chatService.getMessages(roomId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는") || e.getMessage().contains("접근 권한")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        List<ChatMessageResponse> response = chatService.getMessages(roomId, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -185,22 +143,10 @@ public class ChatController {
             ));
         }
 
-        try {
-            var scheduledAt = request != null ? request.getScheduledTradeAt() : null;
-            ChatRoomResponse response = chatService.reserveChatRoom(roomId, visitorId, scheduledAt);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        var scheduledAt = request != null ? request.getScheduledTradeAt() : null;
+        ChatRoomResponse response = chatService.reserveChatRoom(roomId, visitorId, scheduledAt);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -221,21 +167,9 @@ public class ChatController {
             ));
         }
 
-        try {
-            ChatRoomResponse response = chatService.unreserveChatRoom(roomId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        ChatRoomResponse response = chatService.unreserveChatRoom(roomId, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -256,21 +190,9 @@ public class ChatController {
             ));
         }
 
-        try {
-            ChatRoomResponse response = chatService.completeTrade(roomId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        ChatRoomResponse response = chatService.completeTrade(roomId, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -291,22 +213,10 @@ public class ChatController {
             ));
         }
 
-        try {
-            chatService.leaveChatRoom(roomId, visitorId);
-            return ResponseEntity.ok(Map.of(
-                    "message", "채팅방을 나갔습니다"
-            ));
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는") || e.getMessage().contains("접근 권한")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        chatService.leaveChatRoom(roomId, visitorId);
+        return ResponseEntity.ok(Map.of(
+                "message", "채팅방을 나갔습니다"
+        ));
     }
 }

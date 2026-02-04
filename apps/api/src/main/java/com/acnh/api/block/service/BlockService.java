@@ -5,6 +5,8 @@ import com.acnh.api.block.dto.BlockRequest;
 import com.acnh.api.block.dto.BlockResponse;
 import com.acnh.api.block.entity.Block;
 import com.acnh.api.block.repository.BlockRepository;
+import com.acnh.api.common.exception.InvalidRequestException;
+import com.acnh.api.common.exception.NotFoundException;
 import com.acnh.api.member.entity.Member;
 import com.acnh.api.member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -41,12 +43,12 @@ public class BlockService {
 
         // 자기 자신 차단 불가
         if (blocker.getId().equals(blocked.getId())) {
-            throw new IllegalArgumentException("자기 자신을 차단할 수 없습니다");
+            throw new InvalidRequestException("자기 자신을 차단할 수 없습니다");
         }
 
         // 이미 차단된 사용자인지 확인
         if (blockRepository.existsByBlockerIdAndBlockedIdAndDeletedAtIsNull(blocker.getId(), blocked.getId())) {
-            throw new IllegalArgumentException("이미 차단한 사용자입니다");
+            throw new InvalidRequestException("이미 차단한 사용자입니다");
         }
 
         Block block = Block.builder()
@@ -71,7 +73,7 @@ public class BlockService {
 
         // 자기 자신 차단 불가
         if (blocker.getId().equals(blocked.getId())) {
-            throw new IllegalArgumentException("자기 자신을 차단할 수 없습니다");
+            throw new InvalidRequestException("자기 자신을 차단할 수 없습니다");
         }
 
         // 이미 차단된 사용자인지 확인 - 이미 차단된 경우 그냥 반환
@@ -100,7 +102,7 @@ public class BlockService {
         Member blocker = findMemberByUuid(visitorId);
 
         Block block = blockRepository.findByBlockerIdAndBlockedIdAndDeletedAtIsNull(blocker.getId(), blockedUserId)
-                .orElseThrow(() -> new IllegalArgumentException("차단 내역이 존재하지 않습니다"));
+                .orElseThrow(() -> new NotFoundException("차단 내역", blockedUserId));
 
         block.delete();
         log.info("차단 해제 - blockerId: {}, blockedId: {}", blocker.getId(), blockedUserId);
@@ -160,14 +162,23 @@ public class BlockService {
      */
     private Member findMemberByUuid(String visitorId) {
         if (visitorId == null || "anonymousUser".equals(visitorId)) {
-            throw new IllegalArgumentException("로그인이 필요합니다");
+            throw new InvalidRequestException("로그인이 필요합니다");
         }
-        return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
+
+        // UUID 파싱 실패 시 원본 예외 메시지 노출 방지
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(visitorId);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidRequestException("로그인이 필요합니다");
+        }
+
+        return memberRepository.findByUuidAndDeletedAtIsNull(uuid)
+                .orElseThrow(() -> new NotFoundException("사용자", visitorId));
     }
 
     private Member findMemberById(Long memberId) {
         return memberRepository.findByIdAndDeletedAtIsNull(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
+                .orElseThrow(() -> new NotFoundException("사용자", memberId));
     }
 }
