@@ -32,7 +32,9 @@ public class KeywordAlarmController {
     public ResponseEntity<?> getMyKeywords(@AuthenticationPrincipal String visitorId) {
         log.info("키워드 목록 조회 요청 - visitorId: {}", visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
@@ -61,7 +63,9 @@ public class KeywordAlarmController {
 
         log.info("키워드 추가 요청 - visitorId: {}, keyword: {}", visitorId, request.getKeyword());
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
@@ -95,7 +99,9 @@ public class KeywordAlarmController {
 
         log.info("키워드 삭제 요청 - visitorId: {}, keywordId: {}", visitorId, id);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"

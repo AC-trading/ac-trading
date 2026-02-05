@@ -34,7 +34,9 @@ public class MemberController {
     public ResponseEntity<MemberProfileResponse> getMyProfile(@AuthenticationPrincipal String visitorId) {
         log.info("내 프로필 조회 요청 - visitorId: {}", visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).build();
         }
 
@@ -53,7 +55,9 @@ public class MemberController {
             @Valid @RequestBody ProfileUpdateRequest request) {
         log.info("프로필 수정 요청 - visitorId: {}", visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).build();
         }
 
@@ -74,7 +78,9 @@ public class MemberController {
             @Valid @RequestBody ProfileSetupRequest request) {
         log.info("프로필 초기 설정 요청 - visitorId: {}", visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).build();
         }
 
@@ -91,7 +97,9 @@ public class MemberController {
     public ResponseEntity<Map<String, String>> deleteAccount(@AuthenticationPrincipal String visitorId) {
         log.info("회원 탈퇴 요청 - visitorId: {}", visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).build();
         }
 
@@ -109,7 +117,9 @@ public class MemberController {
             @PathVariable UUID targetMemberId) {
         log.info("유저 프로필 조회 요청 - visitorId: {}, targetMemberId: {}", visitorId, targetMemberId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).build();
         }
 

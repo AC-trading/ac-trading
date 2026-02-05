@@ -37,7 +37,9 @@ public class LikeController {
 
         log.info("내 찜 목록 조회 요청 - visitorId: {}, page: {}, size: {}", visitorId, page, size);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
@@ -61,7 +63,9 @@ public class LikeController {
 
         log.info("게시글 찜하기 요청 - postId: {}, visitorId: {}", postId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
@@ -69,7 +73,7 @@ public class LikeController {
         }
 
         // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
-        // IllegalStateException(이미 찜한 경우)은 RuntimeException 핸들러에서 처리
+        // 이미 찜한 경우 InvalidRequestException(400) 반환
         LikeResponse response = likeService.likePost(postId, visitorId);
         return ResponseEntity.ok(response);
     }
@@ -85,7 +89,9 @@ public class LikeController {
 
         log.info("게시글 찜 취소 요청 - postId: {}, visitorId: {}", postId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
@@ -93,7 +99,7 @@ public class LikeController {
         }
 
         // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
-        // IllegalStateException(찜하지 않은 경우)은 RuntimeException 핸들러에서 처리
+        // 찜하지 않은 경우 InvalidRequestException(400) 반환
         LikeResponse response = likeService.unlikePost(postId, visitorId);
         return ResponseEntity.ok(response);
     }
