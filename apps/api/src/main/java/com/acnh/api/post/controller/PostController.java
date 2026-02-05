@@ -255,7 +255,7 @@ public class PostController {
         }
 
         // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
-        // IllegalStateException(끌어올리기 제한)은 RuntimeException 핸들러에서 처리
+        // 끌어올리기 제한 시 InvalidRequestException(400) 반환
         PostResponse response = postService.bumpPost(postId, visitorId);
         return ResponseEntity.ok(response);
     }
