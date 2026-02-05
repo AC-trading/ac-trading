@@ -75,8 +75,10 @@ public class LikeService {
         Post post = findPostById(postId);
 
         // 이미 찜한 경우 체크
+        // Before: IllegalStateException → GlobalExceptionHandler에서 500으로 처리됨
+        // After: InvalidRequestException → GlobalExceptionHandler에서 400으로 처리됨
         if (postLikeRepository.existsByPostIdAndUserIdAndDeletedAtIsNull(postId, member.getId())) {
-            throw new IllegalStateException("이미 찜한 게시글입니다");
+            throw new InvalidRequestException("이미 찜한 게시글입니다");
         }
 
         // 찜 생성
@@ -106,8 +108,10 @@ public class LikeService {
         Post post = findPostById(postId);
 
         // 찜 기록 조회
+        // Before: IllegalStateException → GlobalExceptionHandler에서 500으로 처리됨
+        // After: InvalidRequestException → GlobalExceptionHandler에서 400으로 처리됨
         PostLike like = postLikeRepository.findByPostIdAndUserIdAndDeletedAtIsNull(postId, member.getId())
-                .orElseThrow(() -> new IllegalStateException("찜하지 않은 게시글입니다"));
+                .orElseThrow(() -> new InvalidRequestException("찜하지 않은 게시글입니다"));
 
         // 찜 삭제 (soft delete)
         like.delete();

@@ -129,7 +129,9 @@ public class MemberService {
             throw new InvalidRequestException("로그인이 필요합니다");
         }
 
+        // Before: NotFoundException에 visitorId(String) 사용
+        // After: 파싱된 uuid(UUID) 변수 사용으로 일관성 유지
         return memberRepository.findByUuidAndDeletedAtIsNull(uuid)
-                .orElseThrow(() -> new NotFoundException("사용자", visitorId));
+                .orElseThrow(() -> new NotFoundException("사용자", uuid));
     }
 }

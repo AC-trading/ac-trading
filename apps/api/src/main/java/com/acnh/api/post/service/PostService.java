@@ -230,8 +230,10 @@ public class PostService {
         LocalDateTime lastBumpOrCreate = post.getBumpedAt() != null ? post.getBumpedAt() : post.getCreatedAt();
         LocalDateTime nextAvailable = lastBumpOrCreate.plusHours(BUMP_LIMIT_HOURS);
 
+        // Before: IllegalStateException → GlobalExceptionHandler에서 500으로 처리됨
+        // After: InvalidRequestException → GlobalExceptionHandler에서 400으로 처리됨
         if (LocalDateTime.now().isBefore(nextAvailable)) {
-            throw new IllegalStateException(
+            throw new InvalidRequestException(
                     String.format("끌어올리기는 %d시간에 한 번만 가능합니다. 다음 가능 시간: %s",
                             BUMP_LIMIT_HOURS, nextAvailable)
             );
