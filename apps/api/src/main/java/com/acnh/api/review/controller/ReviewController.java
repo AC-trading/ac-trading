@@ -40,22 +40,10 @@ public class ReviewController {
 
         log.info("유저 리뷰 목록 조회 요청 - userId: {}, page: {}, size: {}", userId, page, size);
 
-        try {
-            Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
-            ReviewListResponse response = reviewService.getReviewsByUserId(userId, pageable);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
+        ReviewListResponse response = reviewService.getReviewsByUserId(userId, pageable);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -70,28 +58,18 @@ public class ReviewController {
         log.info("리뷰 작성 요청 - visitorId: {}, postId: {}, revieweeId: {}",
                 visitorId, request.getPostId(), request.getRevieweeId());
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            ReviewResponse response = reviewService.createReview(request, visitorId);
-            return ResponseEntity.status(201).body(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        ReviewResponse response = reviewService.createReview(request, visitorId);
+        return ResponseEntity.status(201).body(response);
     }
 
     /**

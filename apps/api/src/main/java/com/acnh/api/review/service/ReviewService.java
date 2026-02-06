@@ -1,6 +1,8 @@
 package com.acnh.api.review.service;
 
 import com.acnh.api.chat.repository.ChatRoomRepository;
+import com.acnh.api.common.exception.InvalidRequestException;
+import com.acnh.api.common.exception.NotFoundException;
 import com.acnh.api.filter.ProfanityFilter;
 import com.acnh.api.member.entity.Member;
 import com.acnh.api.member.repository.MemberRepository;
@@ -54,7 +56,7 @@ public class ReviewService {
 
         // 자기 자신에게 리뷰 불가
         if (reviewer.getId().equals(reviewee.getId())) {
-            throw new IllegalArgumentException("자기 자신에게 리뷰를 작성할 수 없습니다");
+            throw new InvalidRequestException("자기 자신에게 리뷰를 작성할 수 없습니다");
         }
 
         // 채팅 기록 확인 (리뷰어가 해당 게시글에 채팅방이 있는지)
@@ -65,7 +67,7 @@ public class ReviewService {
 
         // 중복 리뷰 검사 (post_id + reviewer_id 기준)
         if (reviewRepository.existsByPostIdAndReviewerIdAndDeletedAtIsNull(post.getId(), reviewer.getId())) {
-            throw new IllegalArgumentException("이미 해당 게시글에 리뷰를 작성하였습니다");
+            throw new InvalidRequestException("이미 해당 게시글에 리뷰를 작성하였습니다");
         }
 
         // 금칙어 검사
@@ -86,7 +88,7 @@ public class ReviewService {
         try {
             savedReview = reviewRepository.save(review);
         } catch (DataIntegrityViolationException e) {
-            throw new IllegalArgumentException("이미 해당 게시글에 리뷰를 작성하였습니다");
+            throw new InvalidRequestException("이미 해당 게시글에 리뷰를 작성하였습니다");
         }
 
         log.info("리뷰 작성 완료 - reviewId: {}, postId: {}, reviewerId: {}, revieweeId: {}",
@@ -196,7 +198,7 @@ public class ReviewService {
      */
     private Member findMemberByUuid(String visitorId) {
         if (visitorId == null || "anonymousUser".equals(visitorId)) {
-            throw new IllegalArgumentException("로그인이 필요합니다");
+            throw new InvalidRequestException("로그인이 필요합니다");
         }
 
         // UUID 파싱 실패 시 원본 예외 메시지 노출 방지
@@ -204,11 +206,11 @@ public class ReviewService {
         try {
             uuid = UUID.fromString(visitorId);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("로그인이 필요합니다");
+            throw new InvalidRequestException("로그인이 필요합니다");
         }
 
         return memberRepository.findByUuidAndDeletedAtIsNull(uuid)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
+                .orElseThrow(() -> new NotFoundException("사용자", visitorId));
     }
 
     /**
@@ -216,7 +218,7 @@ public class ReviewService {
      */
     private Member findMemberById(Long memberId) {
         return memberRepository.findByIdAndDeletedAtIsNull(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
+                .orElseThrow(() -> new NotFoundException("사용자", memberId));
     }
 
     /**
@@ -224,7 +226,7 @@ public class ReviewService {
      */
     private Post findPostById(Long postId) {
         return postRepository.findByIdAndDeletedAtIsNull(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다"));
+                .orElseThrow(() -> new NotFoundException("게시글", postId));
     }
 
     /**
@@ -236,14 +238,14 @@ public class ReviewService {
         // 게시글 작성자인 경우
         if (post.getUserId().equals(reviewer.getId())) {
             if (chatRoomRepository.findByPostIdAndDeletedAtIsNull(post.getId()).isEmpty()) {
-                throw new IllegalArgumentException("해당 게시글에 채팅 기록이 없습니다");
+                throw new InvalidRequestException("해당 게시글에 채팅 기록이 없습니다");
             }
             return;
         }
 
         // 채팅 요청자인 경우
         if (!chatRoomRepository.existsByPostIdAndApplicantIdAndDeletedAtIsNull(post.getId(), reviewer.getId())) {
-            throw new IllegalArgumentException("해당 게시글에 채팅 기록이 없습니다");
+            throw new InvalidRequestException("해당 게시글에 채팅 기록이 없습니다");
         }
     }
 
@@ -256,14 +258,14 @@ public class ReviewService {
         // 채팅 요청자가 리뷰하는 경우: 게시글 작성자에게만 리뷰 가능
         if (!post.getUserId().equals(reviewer.getId())) {
             if (!post.getUserId().equals(reviewee.getId())) {
-                throw new IllegalArgumentException("게시글 작성자에게만 리뷰를 작성할 수 있습니다");
+                throw new InvalidRequestException("게시글 작성자에게만 리뷰를 작성할 수 있습니다");
             }
             return;
         }
 
         // 게시글 작성자가 리뷰하는 경우: 해당 게시글에 채팅을 요청한 유저에게만 리뷰 가능
         if (!chatRoomRepository.existsByPostIdAndApplicantIdAndDeletedAtIsNull(post.getId(), reviewee.getId())) {
-            throw new IllegalArgumentException("해당 게시글에 채팅을 요청한 유저에게만 리뷰를 작성할 수 있습니다");
+            throw new InvalidRequestException("해당 게시글에 채팅을 요청한 유저에게만 리뷰를 작성할 수 있습니다");
         }
     }
 

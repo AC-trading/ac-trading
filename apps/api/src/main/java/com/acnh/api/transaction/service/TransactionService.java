@@ -1,5 +1,7 @@
 package com.acnh.api.transaction.service;
 
+import com.acnh.api.common.exception.InvalidRequestException;
+import com.acnh.api.common.exception.NotFoundException;
 import com.acnh.api.member.entity.Member;
 import com.acnh.api.member.repository.MemberRepository;
 import com.acnh.api.post.enums.CurrencyType;
@@ -129,7 +131,7 @@ public class TransactionService {
         try {
             type = TransactionType.valueOf(request.getType());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 거래 유형입니다: " + request.getType());
+            throw new InvalidRequestException("유효하지 않은 거래 유형입니다: " + request.getType());
         }
 
         // 화폐 종류 파싱
@@ -137,7 +139,7 @@ public class TransactionService {
         try {
             currencyType = CurrencyType.valueOf(request.getCurrencyType());
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 화폐 종류입니다: " + request.getCurrencyType());
+            throw new InvalidRequestException("유효하지 않은 화폐 종류입니다: " + request.getCurrencyType());
         }
 
         Transaction transaction = Transaction.builder()
@@ -169,7 +171,7 @@ public class TransactionService {
 
         Transaction transaction = transactionRepository
                 .findByIdAndUserIdAndDeletedAtIsNull(transactionId, member.getId())
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 거래 내역입니다"));
+                .orElseThrow(() -> new NotFoundException("거래 내역", transactionId));
 
         transaction.delete();
 
@@ -184,15 +186,15 @@ public class TransactionService {
      */
     private Member findMemberByUuid(String visitorId) {
         if (visitorId == null || "anonymousUser".equals(visitorId)) {
-            throw new IllegalArgumentException("로그인이 필요합니다");
+            throw new InvalidRequestException("로그인이 필요합니다");
         }
         UUID uuid;
         try {
             uuid = UUID.fromString(visitorId);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("유효하지 않은 인증 정보입니다");
+            throw new InvalidRequestException("유효하지 않은 인증 정보입니다");
         }
         return memberRepository.findByUuidAndDeletedAtIsNull(uuid)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
+                .orElseThrow(() -> new NotFoundException("사용자", visitorId));
     }
 }

@@ -38,7 +38,9 @@ public class ReportController {
         log.info("신고 요청 - postId: {}, reasonCode: {}, visitorId: {}",
                 request.getPostId(), request.getReasonCode(), visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"

@@ -2,6 +2,8 @@ package com.acnh.api.post.service;
 
 import com.acnh.api.category.entity.Category;
 import com.acnh.api.category.repository.CategoryRepository;
+import com.acnh.api.common.exception.InvalidRequestException;
+import com.acnh.api.common.exception.NotFoundException;
 import com.acnh.api.member.entity.Member;
 import com.acnh.api.member.repository.MemberRepository;
 import com.acnh.api.post.dto.LikeResponse;
@@ -73,8 +75,10 @@ public class LikeService {
         Post post = findPostById(postId);
 
         // 이미 찜한 경우 체크
+        // Before: IllegalStateException → GlobalExceptionHandler에서 500으로 처리됨
+        // After: InvalidRequestException → GlobalExceptionHandler에서 400으로 처리됨
         if (postLikeRepository.existsByPostIdAndUserIdAndDeletedAtIsNull(postId, member.getId())) {
-            throw new IllegalStateException("이미 찜한 게시글입니다");
+            throw new InvalidRequestException("이미 찜한 게시글입니다");
         }
 
         // 찜 생성
@@ -104,8 +108,10 @@ public class LikeService {
         Post post = findPostById(postId);
 
         // 찜 기록 조회
+        // Before: IllegalStateException → GlobalExceptionHandler에서 500으로 처리됨
+        // After: InvalidRequestException → GlobalExceptionHandler에서 400으로 처리됨
         PostLike like = postLikeRepository.findByPostIdAndUserIdAndDeletedAtIsNull(postId, member.getId())
-                .orElseThrow(() -> new IllegalStateException("찜하지 않은 게시글입니다"));
+                .orElseThrow(() -> new InvalidRequestException("찜하지 않은 게시글입니다"));
 
         // 찜 삭제 (soft delete)
         like.delete();
@@ -130,10 +136,10 @@ public class LikeService {
      */
     private Member findMemberByUuid(String visitorId) {
         if (visitorId == null || "anonymousUser".equals(visitorId)) {
-            throw new IllegalArgumentException("로그인이 필요합니다");
+            throw new InvalidRequestException("로그인이 필요합니다");
         }
         return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
+                .orElseThrow(() -> new NotFoundException("사용자", visitorId));
     }
 
     /**
@@ -141,7 +147,7 @@ public class LikeService {
      */
     private Post findPostById(Long postId) {
         return postRepository.findByIdAndDeletedAtIsNull(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다"));
+                .orElseThrow(() -> new NotFoundException("게시글", postId));
     }
 
     /**

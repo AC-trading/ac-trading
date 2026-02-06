@@ -34,7 +34,9 @@ public class MemberController {
     public ResponseEntity<MemberProfileResponse> getMyProfile(@AuthenticationPrincipal String visitorId) {
         log.info("내 프로필 조회 요청 - visitorId: {}", visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).build();
         }
 
@@ -53,26 +55,15 @@ public class MemberController {
             @Valid @RequestBody ProfileUpdateRequest request) {
         log.info("프로필 수정 요청 - visitorId: {}", visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).build();
         }
 
-        try {
-            MemberProfileResponse response = memberService.updateProfile(visitorId, request);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            // 회원을 찾을 수 없는 경우
-            return ResponseEntity.status(404).body(Map.of(
-                    "error", "MEMBER_NOT_FOUND",
-                    "message", e.getMessage()
-            ));
-        } catch (IllegalStateException e) {
-            // 24시간 제한 에러
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "PROFILE_UPDATE_LIMIT",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        MemberProfileResponse response = memberService.updateProfile(visitorId, request);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -87,26 +78,15 @@ public class MemberController {
             @Valid @RequestBody ProfileSetupRequest request) {
         log.info("프로필 초기 설정 요청 - visitorId: {}", visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).build();
         }
 
-        try {
-            MemberProfileResponse response = memberService.setupProfile(visitorId, request);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            // 회원을 찾을 수 없는 경우
-            return ResponseEntity.status(404).body(Map.of(
-                    "error", "MEMBER_NOT_FOUND",
-                    "message", e.getMessage()
-            ));
-        } catch (IllegalStateException e) {
-            // 이미 프로필이 설정된 경우
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "PROFILE_ALREADY_SET",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        MemberProfileResponse response = memberService.setupProfile(visitorId, request);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -117,7 +97,9 @@ public class MemberController {
     public ResponseEntity<Map<String, String>> deleteAccount(@AuthenticationPrincipal String visitorId) {
         log.info("회원 탈퇴 요청 - visitorId: {}", visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).build();
         }
 
@@ -135,7 +117,9 @@ public class MemberController {
             @PathVariable UUID targetMemberId) {
         log.info("유저 프로필 조회 요청 - visitorId: {}, targetMemberId: {}", visitorId, targetMemberId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).build();
         }
 

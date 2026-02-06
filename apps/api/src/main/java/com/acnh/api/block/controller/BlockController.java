@@ -36,28 +36,18 @@ public class BlockController {
 
         log.info("차단 요청 - blockedUserId: {}, visitorId: {}", request.getBlockedUserId(), visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            BlockResponse response = blockService.blockUser(request, visitorId);
-            return ResponseEntity.status(201).body(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        BlockResponse response = blockService.blockUser(request, visitorId);
+        return ResponseEntity.status(201).body(response);
     }
 
     /**
@@ -71,30 +61,20 @@ public class BlockController {
 
         log.info("차단 해제 요청 - blockedUserId: {}, visitorId: {}", blockedUserId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            blockService.unblockUser(blockedUserId, visitorId);
-            return ResponseEntity.ok(Map.of(
-                    "message", "차단이 해제되었습니다"
-            ));
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는") || e.getMessage().contains("차단 내역")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        blockService.unblockUser(blockedUserId, visitorId);
+        return ResponseEntity.ok(Map.of(
+                "message", "차단이 해제되었습니다"
+        ));
     }
 
     /**
@@ -107,21 +87,17 @@ public class BlockController {
 
         log.info("차단 목록 조회 요청 - visitorId: {}", visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            BlockListResponse response = blockService.getBlockedUsers(visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(404).body(Map.of(
-                    "error", "NOT_FOUND",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        BlockListResponse response = blockService.getBlockedUsers(visitorId);
+        return ResponseEntity.ok(response);
     }
 }

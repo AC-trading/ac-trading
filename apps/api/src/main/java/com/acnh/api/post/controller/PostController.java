@@ -52,16 +52,10 @@ public class PostController {
         log.info("피드 조회 요청 - categoryId: {}, postType: {}, status: {}, currencyType: {}, minPrice: {}, maxPrice: {}, page: {}, size: {}",
                 categoryId, postType, status, currencyType, minPrice, maxPrice, page, size);
 
-        try {
-            Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
-            PostListResponse response = postService.getFeed(categoryId, postType, status, currencyType, minPrice, maxPrice, visitorId, pageable);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
+        PostListResponse response = postService.getFeed(categoryId, postType, status, currencyType, minPrice, maxPrice, visitorId, pageable);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -88,16 +82,10 @@ public class PostController {
         log.info("검색 요청 - keyword: {}, categoryId: {}, postType: {}, status: {}, currencyType: {}, minPrice: {}, maxPrice: {}, page: {}, size: {}",
                 keyword, categoryId, postType, status, currencyType, minPrice, maxPrice, page, size);
 
-        try {
-            Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
-            PostListResponse response = postService.searchPosts(keyword, categoryId, postType, status, currencyType, minPrice, maxPrice, visitorId, pageable);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
+        PostListResponse response = postService.searchPosts(keyword, categoryId, postType, status, currencyType, minPrice, maxPrice, visitorId, pageable);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -112,23 +100,19 @@ public class PostController {
 
         log.info("내 게시글 조회 요청 - visitorId: {}", visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
-            PostListResponse response = postService.getMyPosts(visitorId, pageable);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(404).body(Map.of(
-                    "error", "NOT_FOUND",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
+        PostListResponse response = postService.getMyPosts(visitorId, pageable);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -142,15 +126,9 @@ public class PostController {
 
         log.info("게시글 상세 조회 요청 - postId: {}", postId);
 
-        try {
-            PostResponse response = postService.getPost(postId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(404).body(Map.of(
-                    "error", "POST_NOT_FOUND",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException 처리
+        PostResponse response = postService.getPost(postId, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -164,22 +142,18 @@ public class PostController {
 
         log.info("게시글 작성 요청 - visitorId: {}", visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            PostResponse response = postService.createPost(request, visitorId);
-            return ResponseEntity.status(201).body(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        PostResponse response = postService.createPost(request, visitorId);
+        return ResponseEntity.status(201).body(response);
     }
 
     /**
@@ -194,28 +168,18 @@ public class PostController {
 
         log.info("게시글 수정 요청 - postId: {}, visitorId: {}", postId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            PostResponse response = postService.updatePost(postId, request, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        PostResponse response = postService.updatePost(postId, request, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -229,28 +193,18 @@ public class PostController {
 
         log.info("게시글 삭제 요청 - postId: {}, visitorId: {}", postId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            postService.deletePost(postId, visitorId);
-            return ResponseEntity.ok(Map.of("message", "게시글이 삭제되었습니다"));
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "POST_NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        postService.deletePost(postId, visitorId);
+        return ResponseEntity.ok(Map.of("message", "게시글이 삭제되었습니다"));
     }
 
     /**
@@ -265,28 +219,18 @@ public class PostController {
 
         log.info("게시글 상태 변경 요청 - postId: {}, status: {}, visitorId: {}", postId, request.getStatus(), visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            PostResponse response = postService.updatePostStatus(postId, request, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        PostResponse response = postService.updatePostStatus(postId, request, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -301,34 +245,19 @@ public class PostController {
 
         log.info("게시글 끌어올리기 요청 - postId: {}, visitorId: {}", postId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            PostResponse response = postService.bumpPost(postId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        } catch (IllegalStateException e) {
-            // 끌어올리기 제한 에러
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "BUMP_LIMIT_EXCEEDED",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        // 끌어올리기 제한 시 InvalidRequestException(400) 반환
+        PostResponse response = postService.bumpPost(postId, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -343,27 +272,17 @@ public class PostController {
 
         log.info("게시글별 채팅방 목록 조회 요청 - postId: {}, visitorId: {}", postId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            List<ChatRoomResponse> response = chatService.getChatRoomsByPostId(postId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        List<ChatRoomResponse> response = chatService.getChatRoomsByPostId(postId, visitorId);
+        return ResponseEntity.ok(response);
     }
 }

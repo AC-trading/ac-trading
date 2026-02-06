@@ -2,6 +2,8 @@ package com.acnh.api.priceoffer.service;
 
 import com.acnh.api.chat.entity.ChatRoom;
 import com.acnh.api.chat.repository.ChatRoomRepository;
+import com.acnh.api.common.exception.InvalidRequestException;
+import com.acnh.api.common.exception.NotFoundException;
 import com.acnh.api.member.entity.Member;
 import com.acnh.api.member.repository.MemberRepository;
 import com.acnh.api.notification.entity.Notification;
@@ -50,17 +52,17 @@ public class PriceOfferService {
 
         // 가격제안 받기 ON 체크
         if (!Boolean.TRUE.equals(post.getPriceNegotiable())) {
-            throw new IllegalArgumentException("가격 제안을 받지 않는 게시글입니다");
+            throw new InvalidRequestException("가격 제안을 받지 않는 게시글입니다");
         }
 
         // 본인 게시글 체크
         if (post.getUserId().equals(offerer.getId())) {
-            throw new IllegalArgumentException("본인 게시글에는 가격 제안을 할 수 없습니다");
+            throw new InvalidRequestException("본인 게시글에는 가격 제안을 할 수 없습니다");
         }
 
         // 거래 가능 상태 체크
         if (!"AVAILABLE".equals(post.getStatus())) {
-            throw new IllegalArgumentException("거래 가능한 게시글에만 가격 제안을 할 수 있습니다");
+            throw new InvalidRequestException("거래 가능한 게시글에만 가격 제안을 할 수 있습니다");
         }
 
         // 중복 제안 체크 (비관적 락으로 Race Condition 방지)
@@ -69,7 +71,7 @@ public class PriceOfferService {
         // After: PESSIMISTIC_WRITE 락으로 동시 요청 직렬화
         priceOfferRepository.findByPostIdAndOffererIdAndStatusWithLock(postId, offerer.getId(), "PENDING")
                 .ifPresent(existing -> {
-                    throw new IllegalArgumentException("이미 대기 중인 가격 제안이 있습니다");
+                    throw new InvalidRequestException("이미 대기 중인 가격 제안이 있습니다");
                 });
 
         // 화폐 유형 결정 및 검증 (요청에 없으면 게시글 화폐 유형 사용)
@@ -118,13 +120,13 @@ public class PriceOfferService {
 
         // 게시글 작성자 체크
         if (!priceOffer.getPostOwnerId().equals(postOwner.getId())) {
-            throw new IllegalArgumentException("게시글 작성자만 가격 제안을 수락할 수 있습니다");
+            throw new InvalidRequestException("게시글 작성자만 가격 제안을 수락할 수 있습니다");
         }
 
         // PENDING 상태 사전 검증 (명확한 에러 메시지 제공)
         if (!"PENDING".equals(priceOffer.getStatus())) {
             log.warn("가격 제안 수락 실패 - offerId: {}, currentStatus: {}", offerId, priceOffer.getStatus());
-            throw new IllegalStateException(
+            throw new InvalidRequestException(
                     String.format("대기 중인 제안만 수락할 수 있습니다 (현재 상태: %s)", priceOffer.getStatus()));
         }
 
@@ -132,7 +134,7 @@ public class PriceOfferService {
         int updatedRows = priceOfferRepository.acceptPriceOfferAtomic(offerId);
         if (updatedRows == 0) {
             log.warn("가격 제안 수락 실패 (동시 요청) - offerId: {}", offerId);
-            throw new IllegalStateException("이미 처리된 가격 제안입니다");
+            throw new InvalidRequestException("이미 처리된 가격 제안입니다");
         }
         log.info("가격 제안 수락 - offerId: {}", offerId);
 
@@ -204,19 +206,19 @@ public class PriceOfferService {
      */
     private Member findMemberByUuid(String visitorId) {
         if (visitorId == null || "anonymousUser".equals(visitorId)) {
-            throw new IllegalArgumentException("로그인이 필요합니다");
+            throw new InvalidRequestException("로그인이 필요합니다");
         }
 
-        // UUID 파싱 및 에러 메시지 정규화
+        // UUID 파싱 실패 시 원본 예외 메시지 노출 방지
         UUID uuid;
         try {
             uuid = UUID.fromString(visitorId);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("잘못된 사용자 ID 형식입니다");
+            throw new InvalidRequestException("로그인이 필요합니다");
         }
 
         return memberRepository.findByUuidAndDeletedAtIsNull(uuid)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다"));
+                .orElseThrow(() -> new NotFoundException("사용자", visitorId));
     }
 
     /**
@@ -224,7 +226,7 @@ public class PriceOfferService {
      */
     private Post findPostById(Long postId) {
         return postRepository.findByIdAndDeletedAtIsNull(postId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 게시글입니다"));
+                .orElseThrow(() -> new NotFoundException("게시글", postId));
     }
 
     /**
@@ -232,7 +234,7 @@ public class PriceOfferService {
      */
     private PriceOffer findPriceOfferById(Long offerId) {
         return priceOfferRepository.findByIdAndDeletedAtIsNull(offerId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 가격 제안입니다"));
+                .orElseThrow(() -> new NotFoundException("가격 제안", offerId));
     }
 
     /**
@@ -243,7 +245,7 @@ public class PriceOfferService {
         try {
             CurrencyType.valueOf(currencyType);
         } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("화폐 유형은 BELL 또는 MILE_TICKET만 가능합니다");
+            throw new InvalidRequestException("화폐 유형은 BELL 또는 MILE_TICKET만 가능합니다");
         }
     }
 }

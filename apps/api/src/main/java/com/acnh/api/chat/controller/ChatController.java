@@ -41,28 +41,18 @@ public class ChatController {
 
         log.info("채팅방 생성 요청 - postId: {}, visitorId: {}", request.getPostId(), visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            ChatRoomResponse response = chatService.createOrGetChatRoom(request, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        ChatRoomResponse response = chatService.createOrGetChatRoom(request, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -77,23 +67,19 @@ public class ChatController {
 
         log.info("채팅방 목록 조회 요청 - visitorId: {}, page: {}, size: {}", visitorId, page, size);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
-            ChatRoomListResponse response = chatService.getMyChatRooms(visitorId, pageable);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.status(404).body(Map.of(
-                    "error", "NOT_FOUND",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
+        ChatRoomListResponse response = chatService.getMyChatRooms(visitorId, pageable);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -107,28 +93,18 @@ public class ChatController {
 
         log.info("채팅방 상세 조회 요청 - roomId: {}, visitorId: {}", roomId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            ChatRoomResponse response = chatService.getChatRoom(roomId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는") || e.getMessage().contains("접근 권한")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        ChatRoomResponse response = chatService.getChatRoom(roomId, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -142,28 +118,18 @@ public class ChatController {
 
         log.info("메시지 목록 조회 요청 - roomId: {}, visitorId: {}", roomId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            List<ChatMessageResponse> response = chatService.getMessages(roomId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는") || e.getMessage().contains("접근 권한")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        List<ChatMessageResponse> response = chatService.getMessages(roomId, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -178,29 +144,19 @@ public class ChatController {
 
         log.info("예약자 지정 요청 - roomId: {}, visitorId: {}", roomId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            var scheduledAt = request != null ? request.getScheduledTradeAt() : null;
-            ChatRoomResponse response = chatService.reserveChatRoom(roomId, visitorId, scheduledAt);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        var scheduledAt = request != null ? request.getScheduledTradeAt() : null;
+        ChatRoomResponse response = chatService.reserveChatRoom(roomId, visitorId, scheduledAt);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -214,28 +170,18 @@ public class ChatController {
 
         log.info("예약 해제 요청 - roomId: {}, visitorId: {}", roomId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            ChatRoomResponse response = chatService.unreserveChatRoom(roomId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        ChatRoomResponse response = chatService.unreserveChatRoom(roomId, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -249,28 +195,18 @@ public class ChatController {
 
         log.info("거래 완료 요청 - roomId: {}, visitorId: {}", roomId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            ChatRoomResponse response = chatService.completeTrade(roomId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        ChatRoomResponse response = chatService.completeTrade(roomId, visitorId);
+        return ResponseEntity.ok(response);
     }
 
     /**
@@ -284,29 +220,19 @@ public class ChatController {
 
         log.info("채팅방 나가기 요청 - roomId: {}, visitorId: {}", roomId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            chatService.leaveChatRoom(roomId, visitorId);
-            return ResponseEntity.ok(Map.of(
-                    "message", "채팅방을 나갔습니다"
-            ));
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는") || e.getMessage().contains("접근 권한")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        chatService.leaveChatRoom(roomId, visitorId);
+        return ResponseEntity.ok(Map.of(
+                "message", "채팅방을 나갔습니다"
+        ));
     }
 }

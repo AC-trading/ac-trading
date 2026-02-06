@@ -36,28 +36,18 @@ public class PriceOfferController {
 
         log.info("가격 제안 요청 - postId: {}, visitorId: {}", postId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            PriceOfferResponse response = priceOfferService.createPriceOffer(postId, request, visitorId);
-            return ResponseEntity.status(201).body(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        PriceOfferResponse response = priceOfferService.createPriceOffer(postId, request, visitorId);
+        return ResponseEntity.status(201).body(response);
     }
 
     /**
@@ -73,33 +63,17 @@ public class PriceOfferController {
 
         log.info("가격 제안 수락 요청 - offerId: {}, visitorId: {}", offerId, visitorId);
 
-        if (visitorId == null) {
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return ResponseEntity.status(401).body(Map.of(
                     "error", "UNAUTHORIZED",
                     "message", "로그인이 필요합니다"
             ));
         }
 
-        try {
-            PriceOfferAcceptResponse response = priceOfferService.acceptPriceOffer(offerId, visitorId);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            if (e.getMessage().contains("존재하지 않는")) {
-                return ResponseEntity.status(404).body(Map.of(
-                        "error", "NOT_FOUND",
-                        "message", e.getMessage()
-                ));
-            }
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_REQUEST",
-                    "message", e.getMessage()
-            ));
-        } catch (IllegalStateException e) {
-            // 이미 처리된 제안
-            return ResponseEntity.badRequest().body(Map.of(
-                    "error", "INVALID_STATE",
-                    "message", e.getMessage()
-            ));
-        }
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        PriceOfferAcceptResponse response = priceOfferService.acceptPriceOffer(offerId, visitorId);
+        return ResponseEntity.ok(response);
     }
 }
