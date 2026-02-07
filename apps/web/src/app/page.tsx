@@ -36,8 +36,8 @@ function PostItem({ post }: { post: Post }) {
       {/* 상품 정보 */}
       <div className="flex-1 flex flex-col justify-between py-1">
         <div>
-          <h3 className="font-medium text-gray-900 line-clamp-2">{post.itemName}</h3>
-          <p className="text-xs text-gray-500 mt-1">
+          <h3 className="font-medium text-black line-clamp-2">{post.itemName}</h3>
+          <p className="text-xs text-black mt-1">
             {post.userIslandName || "섬 이름 없음"} · {formatRelativeTime(post.bumpedAt || post.createdAt)}
           </p>
         </div>
@@ -93,10 +93,10 @@ export default function HomePage() {
           href="/login"
           className="block mx-4 mt-3 p-4 bg-[#BAE8E7] rounded-xl"
         >
-          <p className="text-sm font-medium text-gray-800">
+          <p className="text-sm font-medium text-black">
             로그인을 통해 거래해주세요
           </p>
-          <p className="text-xs text-gray-600 mt-1">
+          <p className="text-xs text-black mt-1">
             로그인하면 채팅, 가격 제안 등 모든 기능을 이용할 수 있어요
           </p>
         </Link>

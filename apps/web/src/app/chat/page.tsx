@@ -28,20 +28,20 @@ function ChatItem({ chat }: { chat: ChatRoom }) {
       {/* 채팅 정보 */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-gray-900">{chat.otherUserNickname}</span>
+          <span className="font-medium text-black">{chat.otherUserNickname}</span>
           {chat.otherUserIslandName && (
-            <span className="text-xs text-gray-400">{chat.otherUserIslandName}</span>
+            <span className="text-xs text-black">{chat.otherUserIslandName}</span>
           )}
-          <span className="text-xs text-gray-400">· {formatChatTime(chat.lastMessageAt)}</span>
+          <span className="text-xs text-black">· {formatChatTime(chat.lastMessageAt)}</span>
         </div>
-        <p className="text-sm text-gray-600 truncate mt-0.5">
+        <p className="text-sm text-black truncate mt-0.5">
           {chat.lastMessage || "채팅을 시작해보세요!"}
         </p>
       </div>
 
       {/* 상품 정보 표시 */}
       <div className="flex flex-col items-end gap-1">
-        <span className="text-xs text-gray-500 max-w-[80px] truncate">
+        <span className="text-xs text-black max-w-[80px] truncate">
           {chat.postItemName}
         </span>
         {chat.postStatus && (
@@ -144,10 +144,10 @@ export default function ChatListPage() {
               onClick={handleRefresh}
               className="p-1 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <RefreshIcon className="w-5 h-5 text-gray-800" />
+              <RefreshIcon className="w-5 h-5 text-black" />
             </button>
             <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-              <BellIcon className="w-5 h-5 text-gray-800" />
+              <BellIcon className="w-5 h-5 text-black" />
             </button>
           </div>
         }

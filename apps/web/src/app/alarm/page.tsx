@@ -102,14 +102,14 @@ function AlarmItem({ alarm }: { alarm: (typeof mockAlarms)[0] }) {
       {/* 알림 정보 */}
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
-          <span className="font-medium text-gray-900">{alarm.title}</span>
-          <span className="text-xs text-gray-400">· {alarm.time}</span>
+          <span className="font-medium text-black">{alarm.title}</span>
+          <span className="text-xs text-black">· {alarm.time}</span>
           {/* 읽지 않은 알림 표시 */}
           {!alarm.read && (
             <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
           )}
         </div>
-        <p className="text-sm text-gray-600 truncate mt-0.5">{alarm.message}</p>
+        <p className="text-sm text-black truncate mt-0.5">{alarm.message}</p>
       </div>
 
       {/* 상품 카테고리 아이콘 */}
@@ -139,7 +139,7 @@ export default function AlarmListPage() {
         onBack={() => window.history.back()}
         rightElement={
           <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-            <RefreshIcon className="w-5 h-5 text-gray-800" />
+            <RefreshIcon className="w-5 h-5 text-black" />
           </button>
         }
       />

@@ -359,7 +359,7 @@ export default function ChatRoomPage() {
               onClick={() => router.back()}
               className="p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <ChevronLeftIcon className="text-gray-800" />
+              <ChevronLeftIcon className="text-black" />
             </button>
             <div className="flex items-center gap-2">
               <h1 className="font-semibold text-lg">{chatRoom?.otherUserNickname}</h1>
@@ -371,7 +371,7 @@ export default function ChatRoomPage() {
               onClick={() => setShowMoreMenu(true)}
               className="p-1 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <MoreVerticalIcon className="w-6 h-6 text-gray-800" />
+              <MoreVerticalIcon className="w-6 h-6 text-black" />
             </button>
           </div>
         </header>

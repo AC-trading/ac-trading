@@ -50,7 +50,7 @@ export default function ProfilePage() {
         showLocation
         rightElement={
           <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-            <SettingsIcon className="text-gray-800" />
+            <SettingsIcon className="text-black" />
           </button>
         }
       />
@@ -69,8 +69,8 @@ export default function ProfilePage() {
           className="rounded-full object-cover"
         />
         <div className="flex-1">
-          <h2 className="font-semibold text-lg text-gray-900">{user?.nickname || "닉네임 없음"}</h2>
-          <p className="text-sm text-gray-900">
+          <h2 className="font-semibold text-lg text-black">{user?.nickname || "닉네임 없음"}</h2>
+          <p className="text-sm text-black">
             {user?.islandName || "섬 이름 없음"}
           </p>
         </div>
@@ -86,7 +86,7 @@ export default function ProfilePage() {
           <div className="w-12 h-12 rounded-full bg-[#BAE8E7] flex items-center justify-center">
             <ShoppingBagIcon className="text-primary" />
           </div>
-          <span className="text-sm text-gray-700">판매내역</span>
+          <span className="text-sm text-black">판매내역</span>
         </Link>
         <Link
           href="/profile/purchases"
@@ -95,7 +95,7 @@ export default function ProfilePage() {
           <div className="w-12 h-12 rounded-full bg-[#BAE8E7] flex items-center justify-center">
             <ShoppingBagIcon className="text-primary" />
           </div>
-          <span className="text-sm text-gray-700">구매내역</span>
+          <span className="text-sm text-black">구매내역</span>
         </Link>
         <Link
           href="/profile/favorites"
@@ -104,14 +104,14 @@ export default function ProfilePage() {
           <div className="w-12 h-12 rounded-full bg-[#BAE8E7] flex items-center justify-center">
             <HeartIcon filled className="text-primary" />
           </div>
-          <span className="text-sm text-gray-700">관심목록</span>
+          <span className="text-sm text-black">관심목록</span>
         </Link>
       </div>
 
       {/* 나의 무 가격 (매너 점수) - 당근마켓 스타일 */}
       <div className="mx-4 mt-4 p-4 bg-gray-50 rounded-xl">
         <div className="flex items-center gap-1 mb-3">
-          <span className="font-semibold text-gray-800">나의 무 가격</span>
+          <span className="font-semibold text-black">나의 무 가격</span>
           <span
             className="text-xs text-gray-400"
             aria-label="무 가격은 거래 매너를 나타내는 지표입니다"
@@ -149,12 +149,12 @@ export default function ProfilePage() {
 
       {/* 약관 및 정책 링크 */}
       <div className="mt-8 px-4 py-4 border-t border-gray-100">
-        <div className="flex justify-center gap-4 text-sm text-gray-500">
-          <Link href="/terms" className="hover:text-gray-700 hover:underline">
+        <div className="flex justify-center gap-4 text-sm text-black">
+          <Link href="/terms" className="hover:text-black hover:underline">
             이용약관
           </Link>
           <span>|</span>
-          <Link href="/privacy" className="hover:text-gray-700 hover:underline">
+          <Link href="/privacy" className="hover:text-black hover:underline">
             개인정보처리방침
           </Link>
         </div>
