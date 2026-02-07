@@ -13,7 +13,7 @@ const mockAlarms = [
     title: "키워드 알림",
     message: "'자전거' 키워드로 새 글이 등록되었어요.",
     time: "방금 전",
-    product: { image: "/icons/raccoon_bill.svg" },
+    product: { image: "/icons/island.png" },
     read: false,
   },
   {
@@ -31,7 +31,7 @@ const mockAlarms = [
     title: "새 채팅",
     message: "요우님이 메시지를 보냈어요.",
     time: "3시간 전",
-    product: { image: "/icons/raccoon_bill.svg" },
+    product: { image: "/icons/island.png" },
     read: true,
   },
   {
@@ -58,7 +58,7 @@ const mockAlarms = [
     title: "공지사항",
     message: "AC-Trading 서비스 업데이트 안내",
     time: "3일 전",
-    product: { image: "/icons/raccoon_bill.svg" },
+    product: { image: "/icons/island.png" },
     read: true,
   },
   {
@@ -76,7 +76,7 @@ const mockAlarms = [
     title: "키워드 알림",
     message: "'아이폰' 키워드로 새 글이 등록되었어요.",
     time: "1주 전",
-    product: { image: "/icons/raccoon_bill.svg" },
+    product: { image: "/icons/island.png" },
     read: true,
   },
   {
@@ -114,7 +114,7 @@ function AlarmItem({ alarm }: { alarm: (typeof mockAlarms)[0] }) {
 
       {/* 상품 카테고리 아이콘 */}
       <img
-        src={alarm.product?.image || process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
+        src={alarm.product?.image || process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/island.png"}
         alt="알림 아이콘"
         className="w-12 h-12 rounded-lg flex-shrink-0 object-cover bg-gray-100"
       />

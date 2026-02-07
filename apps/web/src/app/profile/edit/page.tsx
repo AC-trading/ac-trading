@@ -143,7 +143,7 @@ export default function ProfileEditPage() {
         {/* 프로필 이미지 */}
         <div className="mb-4 flex flex-col items-center">
           <Image
-            src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
+            src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/island.png"}
             alt="프로필 이미지"
             width={112}
             height={112}

@@ -185,7 +185,7 @@ export default function LoginPage() {
         <div className="mb-8 text-center">
           {/* 너굴 아이콘 */}
           <Image
-            src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
+            src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/island.png"}
             alt="AC Trading"
             width={96}
             height={96}
