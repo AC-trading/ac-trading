@@ -147,6 +147,24 @@ export default function ProfilePage() {
         )}
       </div>
 
+      {/* 메뉴 목록 */}
+      <div className="mt-4 border-t border-gray-100">
+        <Link
+          href="/collection"
+          className="flex items-center justify-between px-4 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors"
+        >
+          <span className="text-black font-medium">모아보기</span>
+          <ChevronRightIcon className="text-black" />
+        </Link>
+        <Link
+          href="/review"
+          className="flex items-center justify-between px-4 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors"
+        >
+          <span className="text-black font-medium">나의 활동</span>
+          <ChevronRightIcon className="text-black" />
+        </Link>
+      </div>
+
       {/* 약관 및 정책 링크 */}
       <div className="mt-8 px-4 py-4 border-t border-gray-100">
         <div className="flex justify-center gap-4 text-sm text-black">
