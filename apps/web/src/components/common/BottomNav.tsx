@@ -8,7 +8,7 @@ import { HomeIcon, ChatIcon, UserIcon } from "../icons";
 const navItems = [
   { href: "/", label: "홈", icon: HomeIcon },
   { href: "/chat", label: "채팅", icon: ChatIcon },
-  { href: "/profile", label: "나의 당근", icon: UserIcon },
+  { href: "/profile", label: "내 프로필", icon: UserIcon },
 ];
 
 export default function BottomNav() {
