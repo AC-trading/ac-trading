@@ -38,8 +38,4 @@ yarn-error.*
 
 # generated native folders
 /ios
-# /android  # EAS 빌드 호환성을 위해 android 폴더는 커밋
-
-# Android build cache
-android/app/build/
-android/.gradle/
+/android
