@@ -40,16 +40,33 @@ class WebSocketClient {
   private onDisconnectCallback: (() => void) | null = null;
 
   // 연결
+  // Before: 기존 client가 연결 실패 상태일 때 정리 안 함 → 좀비 클라이언트 생성
+  // After: 기존 client를 deactivate 후 새로 생성, STOMP.js 내장 재연결 활용
   connect(accessToken: string, onConnect?: () => void, onDisconnect?: () => void): void {
+    // 이미 연결된 상태면 콜백만 업데이트 후 호출
     if (this.client?.connected) {
       console.log('WebSocket 이미 연결됨');
+      this.onConnectCallback = onConnect || null;
+      this.onDisconnectCallback = onDisconnect || null;
       onConnect?.();
       return;
+    }
+
+    // 기존 클라이언트가 있으면 정리 (연결 중이거나 실패한 상태)
+    if (this.client) {
+      console.log('기존 WebSocket 클라이언트 정리');
+      try {
+        this.client.deactivate();
+      } catch (e) {
+        console.warn('WebSocket deactivate 실패:', e);
+      }
+      this.client = null;
     }
 
     this.accessToken = accessToken;
     this.onConnectCallback = onConnect || null;
     this.onDisconnectCallback = onDisconnect || null;
+    this.reconnectAttempts = 0;
 
     this.client = new Client({
       // SockJS를 통한 연결
@@ -67,7 +84,7 @@ class WebSocketClient {
         }
       },
 
-      // 재연결 설정
+      // STOMP.js 내장 재연결 (5초 간격)
       reconnectDelay: 5000,
 
       // 연결 성공
@@ -87,30 +104,25 @@ class WebSocketClient {
       onStompError: (frame) => {
         console.error('STOMP 에러:', frame.headers['message']);
         console.error('에러 상세:', frame.body);
+        this.onDisconnectCallback?.();
       },
 
       // WebSocket 에러
       onWebSocketError: (event) => {
         console.error('WebSocket 에러:', event);
-        this.handleReconnect();
+        this.reconnectAttempts++;
+        // STOMP.js가 reconnectDelay로 자동 재연결 시도
+        this.onDisconnectCallback?.();
       },
 
       // WebSocket 종료
       onWebSocketClose: () => {
         console.log('WebSocket 종료');
-        this.handleReconnect();
+        this.onDisconnectCallback?.();
       },
     });
 
     this.client.activate();
-  }
-
-  // 재연결 처리
-  private handleReconnect(): void {
-    if (this.reconnectAttempts < this.maxReconnectAttempts && this.accessToken) {
-      this.reconnectAttempts++;
-      console.log(`WebSocket 재연결 시도 (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-    }
   }
 
   // 연결 해제

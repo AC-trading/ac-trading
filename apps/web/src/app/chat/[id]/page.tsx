@@ -235,9 +235,11 @@ export default function ChatRoomPage() {
       }
     );
 
-    // 클린업
+    // Before: 구독만 해제 → 좀비 WebSocket 연결 잔류
+    // After: 구독 해제 + WebSocket 연결 종료
     return () => {
       webSocketClient.unsubscribeFromChatRoom(roomId);
+      webSocketClient.disconnect();
     };
   }, [accessToken, roomId, isLoading, currentUserId]);
 
@@ -593,8 +595,9 @@ export default function ChatRoomPage() {
                 <button
                   onClick={() => {
                     setShowMoreMenu(false);
-                    // TODO: 매너 평가 기능 구현
-                    alert("매너 평가 기능은 준비 중입니다.");
+                    // Before: alert("매너 평가 기능은 준비 중입니다.")
+                    // After: 리뷰 페이지로 이동 (postId, revieweeId 전달)
+                    router.push(`/review?postId=${chatRoom?.postId}&revieweeId=${chatRoom?.otherUserId}`);
                   }}
                   className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors"
                 >
