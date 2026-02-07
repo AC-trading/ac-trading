@@ -276,8 +276,8 @@ export default function PostDetailPage() {
         </div>
         {post.userMannerScore != null && (
           <div className="text-right">
-            <p className="text-sm font-medium text-primary">{post.userMannerScore}°C</p>
-            <p className="text-xs text-gray-400">매너온도</p>
+            <p className="text-sm font-medium text-primary">{post.userMannerScore} 무가격</p>
+            <p className="text-xs text-gray-400">매너점수</p>
           </div>
         )}
       </Link>
