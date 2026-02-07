@@ -299,6 +299,44 @@ async function fetchWithAuth<T>(
   return response.json();
 }
 
+// ========== 이미지 업로드 API 함수 ==========
+
+// 이미지 업로드 응답 타입
+export interface ImageUploadResponse {
+  urls: string[];
+  uploadedCount: number;
+}
+
+/**
+ * 게시글 이미지 업로드
+ * POST /api/images/posts (multipart/form-data)
+ */
+export async function uploadPostImages(files: File[]): Promise<ImageUploadResponse> {
+  const accessToken = getAccessToken();
+  const formData = new FormData();
+  files.forEach((file) => formData.append('files', file));
+
+  // multipart/form-data는 Content-Type 헤더를 설정하지 않음 (브라우저가 boundary 자동 설정)
+  const response = await fetch(`${API_URL}/api/images/posts`, {
+    method: 'POST',
+    headers: {
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+    },
+    credentials: 'include',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData: ApiError = await response.json().catch(() => ({
+      error: 'UPLOAD_FAILED',
+      message: '이미지 업로드에 실패했습니다',
+    }));
+    throw new Error(errorData.message);
+  }
+
+  return response.json();
+}
+
 // ========== 카테고리 API 함수 ==========
 
 /**

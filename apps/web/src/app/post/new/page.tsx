@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { HomeOutlineIcon, PlusIcon } from "@/components/icons";
-import { createPost, getCategories, Category, PostCreateRequest } from "@/lib/postApi";
+import { createPost, getCategories, uploadPostImages, Category, PostCreateRequest } from "@/lib/postApi";
 
 // 이미지 미리보기 타입
 interface ImagePreview {
@@ -106,11 +106,25 @@ export default function NewPostPage() {
     setError(null);
 
     try {
+      // 1. 이미지가 있으면 먼저 업로드
+      let imageUrls: string[] = [];
+      if (images.length > 0) {
+        const files = images.map((img) => img.file);
+        const uploadResult = await uploadPostImages(files);
+        imageUrls = uploadResult.urls;
+      }
+
+      // 2. 게시글 생성 (이미지 URL을 설명에 포함)
+      // TODO: 백엔드 Post 엔티티에 imageUrls 필드 추가 후 별도 전달
+      const descriptionWithImages = imageUrls.length > 0
+        ? `${description.trim()}\n\n[images:${imageUrls.join(",")}]`
+        : description.trim();
+
       const request: PostCreateRequest = {
         postType,
         categoryId,
         itemName: itemName.trim(),
-        description: description.trim(),
+        description: descriptionWithImages,
         currencyType,
         price: price ? parseInt(price, 10) : undefined,
         priceNegotiable,
