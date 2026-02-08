@@ -47,11 +47,15 @@ const pricePresets = [
 const RECENT_KEYWORDS_KEY = "ac-trading-recent-keywords";
 
 // 최근 검색어 로드
+// Before: JSON.parse 결과가 배열인지 검증하지 않아, localStorage 값이 변조 시 런타임 에러 가능
+// After: Array.isArray 체크 추가
 function loadRecentKeywords(): string[] {
   if (typeof window === "undefined") return [];
   try {
     const saved = localStorage.getItem(RECENT_KEYWORDS_KEY);
-    return saved ? JSON.parse(saved) : [];
+    if (!saved) return [];
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : [];
   } catch {
     return [];
   }
@@ -436,13 +440,21 @@ export default function SearchPage() {
       }
 
       // 화폐 유형 필터: 선택된 화폐 유형 배열 전달 (다중 선택 지원)
+      // Before: 매핑 테이블에 없는 키 → undefined 포함 가능
+      // After: .filter(Boolean)로 undefined 방어
       if (currentFilters.currencyType.length > 0) {
-        params.currencyType = currentFilters.currencyType.map((ct) => CURRENCY_MAP[ct]);
+        const mapped = currentFilters.currencyType
+          .map((ct) => CURRENCY_MAP[ct])
+          .filter((v): v is "BELL" | "MILE_TICKET" => v !== undefined);
+        if (mapped.length > 0) params.currencyType = mapped;
       }
 
       // 거래 유형 필터: 선택된 거래 유형 배열 전달 (다중 선택 지원)
       if (currentFilters.tradeType.length > 0) {
-        params.postType = currentFilters.tradeType.map((tt) => TRADE_TYPE_MAP[tt]);
+        const mapped = currentFilters.tradeType
+          .map((tt) => TRADE_TYPE_MAP[tt])
+          .filter((v): v is "SELL" | "BUY" => v !== undefined);
+        if (mapped.length > 0) params.postType = mapped;
       }
 
       // 가격 필터

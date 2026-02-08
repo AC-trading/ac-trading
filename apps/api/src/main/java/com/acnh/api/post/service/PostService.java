@@ -61,7 +61,8 @@ public class PostService {
         boolean hasPostTypeFilter = validPostTypes != null && !validPostTypes.isEmpty();
         boolean hasCurrencyTypeFilter = validCurrencyTypes != null && !validCurrencyTypes.isEmpty();
 
-        // IN 절에 빈 리스트 전달 방지: dummy 값 사용 (boolean 플래그가 false면 평가되지 않음)
+        // IN 절에 빈 리스트 전달 방지: dummy 값 사용 (boolean 플래그가 false면 IN절 평가 안 됨)
+        // -1L은 auto-increment PK이므로 실제 데이터와 충돌 불가 (category_id는 항상 > 0)
         List<Long> categoryIdsParam = hasCategoryFilter ? categoryIds : List.of(-1L);
         List<String> postTypesParam = hasPostTypeFilter ? validPostTypes : List.of("");
         List<String> currencyTypesParam = hasCurrencyTypeFilter ? validCurrencyTypes : List.of("");
@@ -100,6 +101,7 @@ public class PostService {
         boolean hasPostTypeFilter = validPostTypes != null && !validPostTypes.isEmpty();
         boolean hasCurrencyTypeFilter = validCurrencyTypes != null && !validCurrencyTypes.isEmpty();
 
+        // dummy 값: boolean 플래그가 false면 IN절 평가 안 됨 (-1L은 auto-increment PK와 충돌 불가)
         List<Long> categoryIdsParam = hasCategoryFilter ? categoryIds : List.of(-1L);
         List<String> postTypesParam = hasPostTypeFilter ? validPostTypes : List.of("");
         List<String> currencyTypesParam = hasCurrencyTypeFilter ? validCurrencyTypes : List.of("");

@@ -491,7 +491,7 @@ export default function ChatRoomPage() {
                 placeholder={isConnected ? "메시지를 입력하세요" : "연결 중..."}
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyPress}
                 disabled={!isConnected}
                 className="flex-1 px-4 py-2 bg-white/90 rounded-full text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50 disabled:opacity-50"
               />

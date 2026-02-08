@@ -24,7 +24,7 @@ function PostItem({ post }: { post: Post }) {
         상품 카테고리 아이콘
         - 거래하는 아이템 카테고리에 따라 아이콘이 변경됨
         - 아이콘 위치: /public/icons/
-        - 현재 아이콘: island.png, carrot.svg
+        - 현재 아이콘: raccoon_bill.svg, island.png, carrot.svg
       */}
       <div className="w-28 h-28 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
         <Image

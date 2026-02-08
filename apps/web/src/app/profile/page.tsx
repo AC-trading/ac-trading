@@ -123,7 +123,7 @@ export default function ProfilePage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-3xl font-bold text-red-500">
-              {user?.mannerScore != null ? `${user.mannerScore.toFixed(1)} 벨` : "-"}
+              {user?.mannerScore != null && Number.isFinite(user.mannerScore) ? `${user.mannerScore.toFixed(1)} 벨` : "-"}
             </span>
             <Image
               src={process.env.NEXT_PUBLIC_ICON_CARROT || "/icons/carrot.svg"}
@@ -135,7 +135,7 @@ export default function ProfilePage() {
           </div>
         </div>
         {/* 온도 바 */}
-        {user?.mannerScore != null && (
+        {user?.mannerScore != null && Number.isFinite(user.mannerScore) && (
           <div className="mt-3">
             <div className="w-full h-2 bg-[#FFFFF0] rounded-full overflow-hidden">
               <div

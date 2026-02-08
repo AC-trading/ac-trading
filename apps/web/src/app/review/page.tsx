@@ -56,18 +56,19 @@ function ReviewForm() {
       return;
     }
 
+    // Before: NaN 검증이 setIsSubmitting(true) 이후에 위치 → 조기 return 시 isSubmitting이 true로 고정됨
+    // After: NaN 검증을 setIsSubmitting 전에 수행하여 finally 블록 누락 방지
+    const parsedPostId = parseInt(postId, 10);
+    const parsedRevieweeId = parseInt(revieweeId, 10);
+    if (isNaN(parsedPostId) || isNaN(parsedRevieweeId)) {
+      setError("잘못된 거래 정보입니다");
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
     try {
-      // Before: parseInt NaN 검증 없음
-      // After: NaN 검증 추가
-      const parsedPostId = parseInt(postId, 10);
-      const parsedRevieweeId = parseInt(revieweeId, 10);
-      if (isNaN(parsedPostId) || isNaN(parsedRevieweeId)) {
-        setError("잘못된 거래 정보입니다");
-        return;
-      }
       await createReview({
         postId: parsedPostId,
         revieweeId: parsedRevieweeId,

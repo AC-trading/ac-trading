@@ -361,7 +361,7 @@ export default function PostDetailPage() {
       {/* 가격 제안 모달 */}
       {showPriceOfferModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
-          <div className="w-full w-full bg-white rounded-t-2xl p-4 space-y-4 animate-slide-up">
+          <div className="w-full bg-white rounded-t-2xl p-4 space-y-4 animate-slide-up">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">가격 제안하기</h3>
               <button
@@ -462,7 +462,7 @@ export default function PostDetailPage() {
           onClick={() => setShowMoreMenu(false)}
         >
           <div
-            className="w-full w-full bg-white rounded-t-2xl overflow-hidden animate-slide-up"
+            className="w-full bg-white rounded-t-2xl overflow-hidden animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 핸들 바 */}
@@ -518,7 +518,7 @@ export default function PostDetailPage() {
           }}
         >
           <div
-            className="w-full w-full bg-white rounded-t-2xl overflow-hidden animate-slide-up max-h-[80vh] overflow-y-auto"
+            className="w-full bg-white rounded-t-2xl overflow-hidden animate-slide-up max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 헤더 */}

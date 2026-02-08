@@ -34,15 +34,13 @@ class WebSocketClient {
   private client: Client | null = null;
   private subscriptions: Map<string, StompSubscription> = new Map();
   private accessToken: string | null = null;
-  private reconnectAttempts = 0;
-  private maxReconnectAttempts = 5;
   private onConnectCallback: (() => void) | null = null;
   private onDisconnectCallback: (() => void) | null = null;
 
   // 연결
   // Before: 기존 client가 연결 실패 상태일 때 정리 안 함 → 좀비 클라이언트 생성
   // After: 기존 client를 deactivate 후 새로 생성, STOMP.js 내장 재연결 활용
-  connect(accessToken: string, onConnect?: () => void, onDisconnect?: () => void): void {
+  async connect(accessToken: string, onConnect?: () => void, onDisconnect?: () => void): Promise<void> {
     // 이미 연결된 상태면 콜백만 업데이트 후 호출
     if (this.client?.connected) {
       console.log('WebSocket 이미 연결됨');
@@ -52,11 +50,12 @@ class WebSocketClient {
       return;
     }
 
-    // 기존 클라이언트가 있으면 정리 (연결 중이거나 실패한 상태)
+    // Before: deactivate()가 비동기인데 await 없이 호출 → 두 개의 연결이 동시에 존재할 수 있음
+    // After: await로 이전 클라이언트 정리 완료 후 새 클라이언트 생성
     if (this.client) {
       console.log('기존 WebSocket 클라이언트 정리');
       try {
-        this.client.deactivate();
+        await this.client.deactivate();
       } catch (e) {
         console.warn('WebSocket deactivate 실패:', e);
       }
@@ -66,7 +65,6 @@ class WebSocketClient {
     this.accessToken = accessToken;
     this.onConnectCallback = onConnect || null;
     this.onDisconnectCallback = onDisconnect || null;
-    this.reconnectAttempts = 0;
 
     this.client = new Client({
       // SockJS를 통한 연결
@@ -90,7 +88,6 @@ class WebSocketClient {
       // 연결 성공
       onConnect: () => {
         console.log('WebSocket 연결 성공');
-        this.reconnectAttempts = 0;
         this.onConnectCallback?.();
       },
 
@@ -108,11 +105,9 @@ class WebSocketClient {
         console.error('에러 상세:', frame.body);
       },
 
-      // WebSocket 에러
+      // WebSocket 에러 - STOMP.js가 reconnectDelay로 자동 재연결 시도
       onWebSocketError: (event) => {
         console.error('WebSocket 에러:', event);
-        this.reconnectAttempts++;
-        // STOMP.js가 reconnectDelay로 자동 재연결 시도
         this.onDisconnectCallback?.();
       },
 
