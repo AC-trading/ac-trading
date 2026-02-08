@@ -672,11 +672,24 @@ export async function getLikedPosts(page = 0, size = 20): Promise<PostListRespon
 /**
  * description에서 [images:url1,url2,...] 패턴을 파싱하여 이미지 URL 배열 반환
  * TODO: 백엔드 Post 엔티티에 imageUrls 필드 추가 후 제거
+ *
+ * [PR Review 수정]
+ * Before: URL 프로토콜 검증 없이 반환
+ * After: http/https 프로토콜만 허용 (javascript:, data: 등 차단)
  */
 export function extractImageUrls(description: string | null | undefined): string[] {
   if (!description) return [];
   const match = description.match(/\[images:([^\]]*)\]/);
-  return match ? match[1].split(",").filter(Boolean) : [];
+  if (!match) return [];
+  return match[1].split(",").filter((url) => {
+    if (!url) return false;
+    try {
+      const protocol = new URL(url).protocol;
+      return protocol === "https:" || protocol === "http:";
+    } catch {
+      return false;
+    }
+  });
 }
 
 /**
