@@ -1,4 +1,3 @@
-import SockJS from 'sockjs-client';
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
@@ -29,29 +28,36 @@ export interface ChatReadRequest {
   chatRoomId: number;
 }
 
+// Before: SockJS 사용 → Railway 프록시에서 /ws/info, XHR 트랜스포트 실패로 연결 불가
+// After: 네이티브 WebSocket 사용 → 프록시 호환성 우수, SockJS 의존성 제거
+// + 연결 세대(generation) 추적으로 이전 연결의 콜백이 현재 연결 상태를 덮어쓰는 경합 조건 수정
+
+// WebSocket URL 생성 (http → ws, https → wss)
+function getWebSocketUrl(): string {
+  return API_URL.replace(/^http/, 'ws') + '/ws';
+}
+
 // WebSocket 클라이언트 클래스
 class WebSocketClient {
   private client: Client | null = null;
   private subscriptions: Map<string, StompSubscription> = new Map();
-  private accessToken: string | null = null;
-  private onConnectCallback: (() => void) | null = null;
-  private onDisconnectCallback: (() => void) | null = null;
+  // 연결 세대 카운터 - 이전 연결의 콜백이 현재 연결을 방해하지 않도록 추적
+  private connectionGeneration = 0;
 
   // 연결
-  // Before: 기존 client가 연결 실패 상태일 때 정리 안 함 → 좀비 클라이언트 생성
-  // After: 기존 client를 deactivate 후 새로 생성, STOMP.js 내장 재연결 활용
-  async connect(accessToken: string, onConnect?: () => void, onDisconnect?: () => void): Promise<void> {
-    // 이미 연결된 상태면 콜백만 업데이트 후 호출
+  async connect(
+    accessToken: string,
+    onConnect?: () => void,
+    onDisconnect?: () => void
+  ): Promise<void> {
+    // 이미 연결된 상태면 콜백만 호출
     if (this.client?.connected) {
       console.log('WebSocket 이미 연결됨');
-      this.onConnectCallback = onConnect || null;
-      this.onDisconnectCallback = onDisconnect || null;
       onConnect?.();
       return;
     }
 
-    // Before: deactivate()가 비동기인데 await 없이 호출 → 두 개의 연결이 동시에 존재할 수 있음
-    // After: await로 이전 클라이언트 정리 완료 후 새 클라이언트 생성
+    // 기존 클라이언트 정리
     if (this.client) {
       console.log('기존 WebSocket 클라이언트 정리');
       try {
@@ -62,13 +68,12 @@ class WebSocketClient {
       this.client = null;
     }
 
-    this.accessToken = accessToken;
-    this.onConnectCallback = onConnect || null;
-    this.onDisconnectCallback = onDisconnect || null;
+    // 새 연결 세대 - 이전 연결의 콜백 무시용
+    const generation = ++this.connectionGeneration;
 
     this.client = new Client({
-      // SockJS를 통한 연결
-      webSocketFactory: () => new SockJS(`${API_URL}/ws`) as WebSocket,
+      // 네이티브 WebSocket 사용 (SockJS 대신 - 프록시 호환성 우수)
+      brokerURL: getWebSocketUrl(),
 
       // STOMP 연결 헤더 (JWT 토큰)
       connectHeaders: {
@@ -85,36 +90,43 @@ class WebSocketClient {
       // STOMP.js 내장 재연결 (5초 간격)
       reconnectDelay: 5000,
 
+      // 하트비트 설정 (서버와 연결 유지 확인)
+      heartbeatIncoming: 10000,
+      heartbeatOutgoing: 10000,
+
       // 연결 성공
       onConnect: () => {
+        // 현재 세대가 아니면 무시 (이전 연결의 콜백)
+        if (generation !== this.connectionGeneration) return;
         console.log('WebSocket 연결 성공');
-        this.onConnectCallback?.();
+        onConnect?.();
       },
 
       // 연결 해제
       onDisconnect: () => {
+        if (generation !== this.connectionGeneration) return;
         console.log('WebSocket 연결 해제');
-        this.onDisconnectCallback?.();
+        onDisconnect?.();
       },
 
-      // STOMP 프로토콜 에러 (구독 권한 거부 등 - 연결 해제가 아닐 수 있음)
-      // Before: onDisconnectCallback 호출 → UI에 "연결 해제" 잘못 표시
-      // After: 에러 로깅만 수행, 실제 연결 해제는 onDisconnect/onWebSocketClose에서 처리
+      // STOMP 프로토콜 에러
       onStompError: (frame) => {
         console.error('STOMP 에러:', frame.headers['message']);
         console.error('에러 상세:', frame.body);
       },
 
-      // WebSocket 에러 - STOMP.js가 reconnectDelay로 자동 재연결 시도
+      // WebSocket 에러
       onWebSocketError: (event) => {
+        if (generation !== this.connectionGeneration) return;
         console.error('WebSocket 에러:', event);
-        this.onDisconnectCallback?.();
+        onDisconnect?.();
       },
 
       // WebSocket 종료
-      onWebSocketClose: () => {
-        console.log('WebSocket 종료');
-        this.onDisconnectCallback?.();
+      onWebSocketClose: (event) => {
+        if (generation !== this.connectionGeneration) return;
+        console.log('WebSocket 종료:', event);
+        onDisconnect?.();
       },
     });
 
@@ -123,6 +135,9 @@ class WebSocketClient {
 
   // 연결 해제
   disconnect(): void {
+    // 세대 증가로 이전 콜백 무효화
+    this.connectionGeneration++;
+
     if (this.client) {
       // 모든 구독 해제
       this.subscriptions.forEach((sub) => sub.unsubscribe());

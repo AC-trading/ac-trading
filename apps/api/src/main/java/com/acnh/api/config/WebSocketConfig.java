@@ -52,10 +52,16 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
-        // WebSocket 연결 엔드포인트 (환경 변수에서 읽은 Origin만 허용)
+        // Before: SockJS만 사용 → Railway 프록시에서 SockJS HTTP 트랜스포트(/ws/info 등) 실패 가능
+        // After: 네이티브 WebSocket 우선 + SockJS fallback
+        // 네이티브 WebSocket 엔드포인트 (권장 - 프록시 호환성 우수)
         registry.addEndpoint("/ws")
+                .setAllowedOriginPatterns(getAllowedOrigins());
+
+        // SockJS fallback (이전 브라우저 호환용)
+        registry.addEndpoint("/ws-sockjs")
                 .setAllowedOriginPatterns(getAllowedOrigins())
-                .withSockJS();  // SockJS fallback (Vercel 등 WebSocket 미지원 환경 대응)
+                .withSockJS();
     }
 
     @Override

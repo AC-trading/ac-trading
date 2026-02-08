@@ -63,6 +63,7 @@ public class SecurityConfig {
                     "/api/posts",         // 게시글 목록 조회 (피드)
                     "/api/posts/search",  // 게시글 검색
                     "/ws/**",             // WebSocket 연결 (STOMP 인증은 별도 처리)
+                    "/ws-sockjs/**",      // SockJS fallback 엔드포인트
                     "/health",            // 헬스체크
                     "/",                  // 루트
                     "/error",             // 에러 페이지

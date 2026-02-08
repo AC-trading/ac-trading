@@ -84,8 +84,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected boolean shouldNotFilter(HttpServletRequest request) {
         String path = request.getRequestURI();
 
-        // 인증 관련 경로는 필터 스킵
+        // 인증 관련 경로 및 WebSocket 경로는 필터 스킵 (STOMP 인증은 별도 처리)
         return path.startsWith("/api/auth/") ||
+               path.startsWith("/ws") ||
                path.equals("/health") ||
                path.equals("/");
     }
