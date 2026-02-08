@@ -393,13 +393,14 @@ export async function getPosts(params?: {
 /**
  * 게시글 검색
  * GET /api/posts/search
+ * - 다중 필터 지원: categoryId, postType, currencyType은 배열로 전달 가능
  */
 export async function searchPosts(params: {
   keyword: string;
-  categoryId?: number;
-  postType?: 'SELL' | 'BUY';
+  categoryId?: number[];
+  postType?: ('SELL' | 'BUY')[];
   status?: 'AVAILABLE' | 'RESERVED' | 'COMPLETED';
-  currencyType?: 'BELL' | 'MILE_TICKET';
+  currencyType?: ('BELL' | 'MILE_TICKET')[];
   minPrice?: number;
   maxPrice?: number;
   page?: number;
@@ -408,10 +409,11 @@ export async function searchPosts(params: {
   const searchParams = new URLSearchParams();
 
   searchParams.set('keyword', params.keyword);
-  if (params.categoryId) searchParams.set('categoryId', String(params.categoryId));
-  if (params.postType) searchParams.set('postType', params.postType);
+  // 다중 필터: 같은 키를 여러 번 append (?categoryId=1&categoryId=2)
+  if (params.categoryId) params.categoryId.forEach((id) => searchParams.append('categoryId', String(id)));
+  if (params.postType) params.postType.forEach((pt) => searchParams.append('postType', pt));
   if (params.status) searchParams.set('status', params.status);
-  if (params.currencyType) searchParams.set('currencyType', params.currencyType);
+  if (params.currencyType) params.currencyType.forEach((ct) => searchParams.append('currencyType', ct));
   if (params.minPrice !== undefined) searchParams.set('minPrice', String(params.minPrice));
   if (params.maxPrice !== undefined) searchParams.set('maxPrice', String(params.maxPrice));
   if (params.page !== undefined) searchParams.set('page', String(params.page));

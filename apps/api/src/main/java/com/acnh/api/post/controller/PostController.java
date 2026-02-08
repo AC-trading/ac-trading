@@ -33,17 +33,18 @@ public class PostController {
     /**
      * 게시글 목록 조회 (피드)
      * GET /api/posts
-     * - 필터: categoryId, postType, status, currencyType, minPrice, maxPrice
+     * - 필터: categoryId(다중), postType(다중), status, currencyType(다중), minPrice, maxPrice
+     * - 다중 필터: ?categoryId=1&categoryId=2 또는 ?categoryId=1,2
      * - 가격 필터 사용 시 currencyType 필수 (벨 500과 마일 500은 다름)
      * - 페이징: page, size
      */
     @GetMapping
     public ResponseEntity<?> getFeed(
             @AuthenticationPrincipal String visitorId,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) String postType,
+            @RequestParam(required = false) List<Long> categoryId,
+            @RequestParam(required = false) List<String> postType,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String currencyType,
+            @RequestParam(required = false) List<String> currencyType,
             @RequestParam(required = false) Integer minPrice,
             @RequestParam(required = false) Integer maxPrice,
             @RequestParam(defaultValue = "0") int page,
@@ -62,7 +63,8 @@ public class PostController {
      * 게시글 검색
      * GET /api/posts/search
      * - 필수: keyword
-     * - 필터: categoryId, postType, status, currencyType, minPrice, maxPrice
+     * - 필터: categoryId(다중), postType(다중), status, currencyType(다중), minPrice, maxPrice
+     * - 다중 필터: ?categoryId=1&categoryId=2 또는 ?categoryId=1,2
      * - 가격 필터 사용 시 currencyType 필수 (벨 500과 마일 500은 다름)
      * - 페이징: page, size
      */
@@ -70,10 +72,10 @@ public class PostController {
     public ResponseEntity<?> searchPosts(
             @AuthenticationPrincipal String visitorId,
             @RequestParam String keyword,
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) String postType,
+            @RequestParam(required = false) List<Long> categoryId,
+            @RequestParam(required = false) List<String> postType,
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String currencyType,
+            @RequestParam(required = false) List<String> currencyType,
             @RequestParam(required = false) Integer minPrice,
             @RequestParam(required = false) Integer maxPrice,
             @RequestParam(defaultValue = "0") int page,

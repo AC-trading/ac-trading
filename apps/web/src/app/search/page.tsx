@@ -427,20 +427,22 @@ export default function SearchPage() {
         size: 50,
       };
 
-      // 카테고리 필터: 1개만 선택된 경우 categoryId 전달
-      if (currentFilters.category.length === 1) {
-        const category = categories.find((c) => c.name === currentFilters.category[0]);
-        if (category) params.categoryId = category.id;
+      // 카테고리 필터: 선택된 카테고리 ID 배열 전달 (다중 선택 지원)
+      if (currentFilters.category.length > 0) {
+        const categoryIds = currentFilters.category
+          .map((name) => categories.find((c) => c.name === name)?.id)
+          .filter((id): id is number => id !== undefined);
+        if (categoryIds.length > 0) params.categoryId = categoryIds;
       }
 
-      // 화폐 유형 필터: 1개만 선택된 경우 전달
-      if (currentFilters.currencyType.length === 1) {
-        params.currencyType = CURRENCY_MAP[currentFilters.currencyType[0]];
+      // 화폐 유형 필터: 선택된 화폐 유형 배열 전달 (다중 선택 지원)
+      if (currentFilters.currencyType.length > 0) {
+        params.currencyType = currentFilters.currencyType.map((ct) => CURRENCY_MAP[ct]);
       }
 
-      // 거래 유형 필터: 1개만 선택된 경우 전달
-      if (currentFilters.tradeType.length === 1) {
-        params.postType = TRADE_TYPE_MAP[currentFilters.tradeType[0]];
+      // 거래 유형 필터: 선택된 거래 유형 배열 전달 (다중 선택 지원)
+      if (currentFilters.tradeType.length > 0) {
+        params.postType = currentFilters.tradeType.map((tt) => TRADE_TYPE_MAP[tt]);
       }
 
       // 가격 필터
