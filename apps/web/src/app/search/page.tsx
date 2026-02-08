@@ -41,16 +41,7 @@ const pricePresets = [
 ];
 
 // 인기 검색어 (동물의 숲 관련)
-const popularKeywords = [
-  "DIY 레시피",
-  "마일 티켓",
-  "무 주식",
-  "가구",
-  "화석",
-  "미술품",
-  "옷",
-  "벽지",
-];
+// 인기 검색어: 카테고리 로드 후 동적 생성 (하드코딩 제거)
 
 // localStorage 키
 const RECENT_KEYWORDS_KEY = "ac-trading-recent-keywords";
@@ -394,6 +385,9 @@ export default function SearchPage() {
   // 카테고리 목록 (API에서 로드)
   const [categories, setCategories] = useState<Category[]>([]);
   const categoryNames = categories.map((c) => c.name);
+
+  // 인기 검색어: 카테고리명 기반 동적 생성
+  const popularKeywords = categoryNames;
 
   // 필터 상태 (배열로 다중 선택 지원)
   const [filters, setFilters] = useState<FilterState>({
