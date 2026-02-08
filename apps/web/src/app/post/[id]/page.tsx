@@ -21,6 +21,7 @@ import {
   ReportReasonCode,
 } from "@/lib/postApi";
 import { addRecentViewedPost } from "@/lib/recentPosts";
+import { getMannerScoreColor } from "@/lib/mannerScore";
 
 // 신고 사유 옵션
 const REPORT_REASONS: { code: ReportReasonCode; label: string }[] = [
@@ -339,7 +340,7 @@ export default function PostDetailPage() {
           </div>
           {post.userMannerScore != null && (
             <div className="text-right">
-              <p className="text-sm font-medium text-primary">무 점수 : {post.userMannerScore} 벨</p>
+              <p className="text-sm font-medium" style={{ color: getMannerScoreColor(post.userMannerScore) }}>무 점수 : {post.userMannerScore} 벨</p>
             </div>
           )}
         </Link>
@@ -354,7 +355,7 @@ export default function PostDetailPage() {
           </div>
           {post.userMannerScore != null && (
             <div className="text-right">
-              <p className="text-sm font-medium text-primary">무 점수 : {post.userMannerScore} 벨</p>
+              <p className="text-sm font-medium" style={{ color: getMannerScoreColor(post.userMannerScore) }}>무 점수 : {post.userMannerScore} 벨</p>
             </div>
           )}
         </div>

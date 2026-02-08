@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { MobileLayout, Header } from "@/components/common";
 import { useAuth } from "@/context/AuthContext";
+import { getMannerScoreColor } from "@/lib/mannerScore";
 
 // API URL 검증 - 개발 환경에서만 localhost 폴백 허용
 const API_URL = (() => {
@@ -178,7 +179,10 @@ export default function UserProfilePage() {
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-3xl font-bold text-red-500">
+            <span
+              className="text-3xl font-bold"
+              style={{ color: userProfile.mannerScore != null && Number.isFinite(userProfile.mannerScore) ? getMannerScoreColor(userProfile.mannerScore) : "#adb5bd" }}
+            >
               {userProfile.mannerScore != null && Number.isFinite(userProfile.mannerScore) ? `${userProfile.mannerScore.toFixed(1)} 벨` : "-"}
             </span>
             <Image
