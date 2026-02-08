@@ -36,7 +36,7 @@ function AlarmItem({
   onRead: (id: number) => void;
 }) {
   const handleClick = () => {
-    if (!alarm.read) {
+    if (!alarm.isRead) {
       onRead(alarm.id);
     }
   };
@@ -46,7 +46,7 @@ function AlarmItem({
       href={getAlarmLink(alarm)}
       onClick={handleClick}
       className={`flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 ${
-        !alarm.read ? "bg-primary-light/20" : ""
+        !alarm.isRead ? "bg-primary-light/20" : ""
       }`}
     >
       {/* 알림 정보 */}
@@ -57,7 +57,7 @@ function AlarmItem({
             · {formatRelativeTime(alarm.createdAt)}
           </span>
           {/* 읽지 않은 알림 표시 */}
-          {!alarm.read && (
+          {!alarm.isRead && (
             <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
           )}
         </div>
@@ -117,7 +117,7 @@ export default function AlarmListPage() {
     try {
       await markNotificationAsRead(id);
       setAlarms((prev) =>
-        prev.map((a) => (a.id === id ? { ...a, read: true, isRead: true } : a))
+        prev.map((a) => (a.id === id ? { ...a, isRead: true } : a))
       );
       setUnreadCount((prev) => Math.max(0, prev - 1));
     } catch (err) {
@@ -131,7 +131,7 @@ export default function AlarmListPage() {
     try {
       await markAllNotificationsAsRead();
       setAlarms((prev) =>
-        prev.map((a) => ({ ...a, read: true, isRead: true }))
+        prev.map((a) => ({ ...a, isRead: true }))
       );
       setUnreadCount(0);
     } catch (err) {

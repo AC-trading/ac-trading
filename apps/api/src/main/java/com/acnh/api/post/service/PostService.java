@@ -351,7 +351,10 @@ public class PostService {
         if (postTypes == null || postTypes.isEmpty()) {
             return null;
         }
+        // Before: null/blank 원소 → NullPointerException (Spring이 빈 문자열을 리스트에 넣을 수 있음)
+        // After: null/blank 원소 필터링
         return postTypes.stream()
+                .filter(pt -> pt != null && !pt.isBlank())
                 .map(pt -> {
                     try {
                         return PostType.valueOf(pt.toUpperCase()).name();
@@ -425,7 +428,10 @@ public class PostService {
         if (currencyTypes == null || currencyTypes.isEmpty()) {
             return null;
         }
+        // Before: null/blank 원소 → NullPointerException
+        // After: null/blank 원소 필터링
         return currencyTypes.stream()
+                .filter(ct -> ct != null && !ct.isBlank())
                 .map(ct -> {
                     try {
                         return CurrencyType.valueOf(ct.toUpperCase()).name();

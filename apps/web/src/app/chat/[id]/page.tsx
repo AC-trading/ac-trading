@@ -31,7 +31,7 @@ function MessageBubble({ message }: { message: DisplayMessage }) {
     <div className={`flex ${message.isMe ? "justify-end" : "justify-start"} mb-3`}>
       {!message.isMe && (
         <Image
-          src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/island.png"}
+          src={process.env.NEXT_PUBLIC_ICON_ISLAND || "/icons/island.png"}
           alt="프로필"
           width={40}
           height={40}

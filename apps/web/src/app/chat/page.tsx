@@ -18,7 +18,7 @@ function ChatItem({ chat }: { chat: ChatRoom }) {
     >
       {/* 프로필 이미지 */}
       <Image
-        src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/island.png"}
+        src={process.env.NEXT_PUBLIC_ICON_ISLAND || "/icons/island.png"}
         alt="프로필"
         width={48}
         height={48}

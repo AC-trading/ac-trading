@@ -996,9 +996,9 @@ export interface NotificationItem {
   content: string | null;
   referenceId: number | null;
   referenceType: string | null;
+  // Before: Lombok boolean isRead → Jackson이 "read"로 직렬화
+  // After: @JsonProperty("isRead") 추가하여 "isRead"로 직렬화
   isRead: boolean;
-  // read 프로퍼티를 isRead의 별칭으로 사용 (프론트 호환)
-  read: boolean;
   createdAt: string;
 }
 
@@ -1020,15 +1020,9 @@ export interface NotificationListResponse {
  * GET /api/notifications
  */
 export async function getNotifications(page = 0, size = 20): Promise<NotificationListResponse> {
-  const data = await fetchWithAuth<NotificationListResponse>(
+  return fetchWithAuth<NotificationListResponse>(
     `${API_URL}/api/notifications?page=${page}&size=${size}`
   );
-  // isRead → read 별칭 매핑
-  data.notifications = data.notifications.map((n) => ({
-    ...n,
-    read: n.isRead ?? n.read,
-  }));
-  return data;
 }
 
 /**

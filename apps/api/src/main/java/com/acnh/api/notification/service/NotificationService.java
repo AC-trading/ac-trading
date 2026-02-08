@@ -90,7 +90,15 @@ public class NotificationService {
         if (visitorId == null || "anonymousUser".equals(visitorId)) {
             throw new InvalidRequestException("로그인이 필요합니다");
         }
-        return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
+        // Before: UUID 형식이 아닌 visitorId → IllegalArgumentException → 500
+        // After: try-catch로 400 반환
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(visitorId);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidRequestException("유효하지 않은 사용자 식별자입니다");
+        }
+        return memberRepository.findByUuidAndDeletedAtIsNull(uuid)
                 .orElseThrow(() -> new NotFoundException("사용자", visitorId));
     }
 }

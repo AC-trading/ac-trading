@@ -1,6 +1,7 @@
 package com.acnh.api.notification.dto;
 
 import com.acnh.api.notification.entity.Notification;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -19,7 +20,10 @@ public class NotificationResponse {
     private String content;
     private Long referenceId;
     private String referenceType;
-    private boolean isRead;
+    // Lombok @Getter가 boolean isRead에 대해 isRead() getter를 생성하면
+    // Jackson이 "is" 접두사를 제거하여 "read"로 직렬화함 → @JsonProperty로 명시
+    @JsonProperty("isRead")
+    private Boolean isRead;
     private LocalDateTime createdAt;
 
     /**

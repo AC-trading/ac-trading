@@ -391,7 +391,10 @@ export default function SearchPage() {
   const categoryNames = categories.map((c) => c.name);
 
   // 인기 검색어: 카테고리명 기반 동적 생성
-  const popularKeywords = categoryNames;
+  // Before: 카테고리 로드 전 빈 배열 → "인기 검색어" 섹션 비어 보임
+  // After: 카테고리 로드 전 기본 키워드 표시
+  const defaultKeywords = ["가구", "옷", "벽지", "바닥", "잡화", "레시피", "화석", "미술품"];
+  const popularKeywords = categoryNames.length > 0 ? categoryNames : defaultKeywords;
 
   // 필터 상태 (배열로 다중 선택 지원)
   const [filters, setFilters] = useState<FilterState>({
