@@ -29,6 +29,48 @@ public class ReviewController {
     private static final int DEFAULT_PAGE_SIZE = 20;
 
     /**
+     * 페이지네이션 파라미터 검증
+     * Before: page < 0 또는 size <= 0 시 PageRequest.of에서 IllegalArgumentException 발생 → 500
+     * After: 사전 검증으로 400 반환
+     */
+    private ResponseEntity<?> validatePagination(int page, int size) {
+        if (page < 0 || size <= 0) {
+            return ResponseEntity.status(400).body(Map.of(
+                    "error", "INVALID_PARAMETER",
+                    "message", "page는 0 이상, size는 1 이상이어야 합니다"
+            ));
+        }
+        return null;
+    }
+
+    /**
+     * 내가 받은 리뷰 목록 조회
+     * GET /api/users/me/reviews
+     */
+    @GetMapping("/users/me/reviews")
+    public ResponseEntity<?> getMyReviews(
+            @AuthenticationPrincipal String visitorId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        log.info("내 리뷰 목록 조회 요청 - visitorId: {}", visitorId);
+
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "UNAUTHORIZED",
+                    "message", "로그인이 필요합니다"
+            ));
+        }
+
+        ResponseEntity<?> validationError = validatePagination(page, size);
+        if (validationError != null) return validationError;
+
+        Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
+        ReviewListResponse response = reviewService.getMyReviews(visitorId, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * 유저가 받은 리뷰 목록 조회
      * GET /api/users/{userId}/reviews
      */
@@ -40,7 +82,9 @@ public class ReviewController {
 
         log.info("유저 리뷰 목록 조회 요청 - userId: {}, page: {}, size: {}", userId, page, size);
 
-        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        ResponseEntity<?> validationError = validatePagination(page, size);
+        if (validationError != null) return validationError;
+
         Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
         ReviewListResponse response = reviewService.getReviewsByUserId(userId, pageable);
         return ResponseEntity.ok(response);

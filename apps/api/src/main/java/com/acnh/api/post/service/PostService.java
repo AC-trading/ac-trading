@@ -21,7 +21,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * 게시글 관련 비즈니스 로직 서비스
@@ -43,18 +45,34 @@ public class PostService {
     /**
      * 게시글 목록 조회 (피드)
      * - bumped_at 우선 정렬
-     * - 필터: 카테고리, 게시글유형, 상태, 화폐유형, 가격범위
+     * - 필터: 카테고리(다중), 게시글유형(다중), 상태, 화폐유형(다중), 가격범위
      * - 가격 필터는 화폐유형(currencyType)과 함께 사용해야 함 (벨 500과 마일 500은 다름)
      */
-    public PostListResponse getFeed(Long categoryId, String postType, String status,
-                                    String currencyType, Integer minPrice, Integer maxPrice,
+    public PostListResponse getFeed(List<Long> categoryIds, List<String> postTypes, String status,
+                                    List<String> currencyTypes, Integer minPrice, Integer maxPrice,
                                     String visitorId, Pageable pageable) {
         // 필터 값 유효성 검증
-        String validPostType = validatePostType(postType);
+        List<String> validPostTypes = validatePostTypes(postTypes);
         String validStatus = validateStatus(status);
-        String validCurrencyType = validateCurrencyTypeOptional(currencyType);
+        List<String> validCurrencyTypes = validateCurrencyTypes(currencyTypes);
 
-        Page<Post> posts = postRepository.findFeed(categoryId, validPostType, validStatus, validCurrencyType, minPrice, maxPrice, pageable);
+        // boolean 플래그: 빈 리스트면 필터 스킵
+        boolean hasCategoryFilter = categoryIds != null && !categoryIds.isEmpty();
+        boolean hasPostTypeFilter = validPostTypes != null && !validPostTypes.isEmpty();
+        boolean hasCurrencyTypeFilter = validCurrencyTypes != null && !validCurrencyTypes.isEmpty();
+
+        // IN 절에 빈 리스트 전달 방지: dummy 값 사용 (boolean 플래그가 false면 IN절 평가 안 됨)
+        // -1L은 auto-increment PK이므로 실제 데이터와 충돌 불가 (category_id는 항상 > 0)
+        List<Long> categoryIdsParam = hasCategoryFilter ? categoryIds : List.of(-1L);
+        List<String> postTypesParam = hasPostTypeFilter ? validPostTypes : List.of("");
+        List<String> currencyTypesParam = hasCurrencyTypeFilter ? validCurrencyTypes : List.of("");
+
+        Page<Post> posts = postRepository.findFeed(
+                hasCategoryFilter, categoryIdsParam,
+                hasPostTypeFilter, postTypesParam,
+                validStatus,
+                hasCurrencyTypeFilter, currencyTypesParam,
+                minPrice, maxPrice, pageable);
 
         Long currentUserId = getCurrentUserId(visitorId);
         Page<PostResponse> responsePage = posts.map(post -> toPostResponse(post, currentUserId));
@@ -64,22 +82,36 @@ public class PostService {
 
     /**
      * 게시글 검색
-     * - 아이템명 LIKE 검색
-     * - 필터: 카테고리, 게시글유형, 상태, 화폐유형, 가격범위
+     * - 아이템명 + 설명 LIKE 검색
+     * - 필터: 카테고리(다중), 게시글유형(다중), 상태, 화폐유형(다중), 가격범위
      * - 가격 필터는 화폐유형(currencyType)과 함께 사용해야 함 (벨 500과 마일 500은 다름)
      */
-    public PostListResponse searchPosts(String keyword, Long categoryId, String postType,
-                                        String status, String currencyType, Integer minPrice, Integer maxPrice,
+    public PostListResponse searchPosts(String keyword, List<Long> categoryIds, List<String> postTypes,
+                                        String status, List<String> currencyTypes, Integer minPrice, Integer maxPrice,
                                         String visitorId, Pageable pageable) {
         if (keyword == null || keyword.isBlank()) {
             throw new InvalidRequestException("검색어를 입력해주세요");
         }
 
-        String validPostType = validatePostType(postType);
+        List<String> validPostTypes = validatePostTypes(postTypes);
         String validStatus = validateStatus(status);
-        String validCurrencyType = validateCurrencyTypeOptional(currencyType);
+        List<String> validCurrencyTypes = validateCurrencyTypes(currencyTypes);
 
-        Page<Post> posts = postRepository.searchByKeyword(keyword, categoryId, validPostType, validStatus, validCurrencyType, minPrice, maxPrice, pageable);
+        boolean hasCategoryFilter = categoryIds != null && !categoryIds.isEmpty();
+        boolean hasPostTypeFilter = validPostTypes != null && !validPostTypes.isEmpty();
+        boolean hasCurrencyTypeFilter = validCurrencyTypes != null && !validCurrencyTypes.isEmpty();
+
+        // dummy 값: boolean 플래그가 false면 IN절 평가 안 됨 (-1L은 auto-increment PK와 충돌 불가)
+        List<Long> categoryIdsParam = hasCategoryFilter ? categoryIds : List.of(-1L);
+        List<String> postTypesParam = hasPostTypeFilter ? validPostTypes : List.of("");
+        List<String> currencyTypesParam = hasCurrencyTypeFilter ? validCurrencyTypes : List.of("");
+
+        Page<Post> posts = postRepository.searchByKeyword(keyword,
+                hasCategoryFilter, categoryIdsParam,
+                hasPostTypeFilter, postTypesParam,
+                validStatus,
+                hasCurrencyTypeFilter, currencyTypesParam,
+                minPrice, maxPrice, pageable);
 
         Long currentUserId = getCurrentUserId(visitorId);
         Page<PostResponse> responsePage = posts.map(post -> toPostResponse(post, currentUserId));
@@ -256,7 +288,15 @@ public class PostService {
         if (visitorId == null || "anonymousUser".equals(visitorId)) {
             throw new InvalidRequestException("로그인이 필요합니다");
         }
-        return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
+        // Before: UUID 형식이 아닌 visitorId → IllegalArgumentException → 500
+        // After: try-catch로 400 반환
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(visitorId);
+        } catch (IllegalArgumentException e) {
+            throw new InvalidRequestException("유효하지 않은 사용자 식별자입니다");
+        }
+        return memberRepository.findByUuidAndDeletedAtIsNull(uuid)
                 .orElseThrow(() -> new NotFoundException("사용자", visitorId));
     }
 
@@ -277,7 +317,15 @@ public class PostService {
         if (visitorId == null || "anonymousUser".equals(visitorId)) {
             return null;
         }
-        return memberRepository.findByUuidAndDeletedAtIsNull(UUID.fromString(visitorId))
+        // Before: UUID 형식이 아닌 visitorId → IllegalArgumentException → 500
+        // After: 유효하지 않은 UUID는 비인증 사용자로 처리
+        UUID uuid;
+        try {
+            uuid = UUID.fromString(visitorId);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+        return memberRepository.findByUuidAndDeletedAtIsNull(uuid)
                 .map(Member::getId)
                 .orElse(null);
     }
@@ -313,17 +361,24 @@ public class PostService {
     }
 
     /**
-     * PostType 유효성 검증 (선택, null 허용)
+     * PostType 리스트 유효성 검증 (다중 필터용, null/빈 리스트 허용)
      */
-    private String validatePostType(String postType) {
-        if (postType == null || postType.isBlank()) {
+    private List<String> validatePostTypes(List<String> postTypes) {
+        if (postTypes == null || postTypes.isEmpty()) {
             return null;
         }
-        try {
-            return PostType.valueOf(postType.toUpperCase()).name();
-        } catch (IllegalArgumentException e) {
-            throw new InvalidRequestException("유효하지 않은 게시글 유형입니다: " + postType);
-        }
+        // Before: null/blank 원소 → NullPointerException (Spring이 빈 문자열을 리스트에 넣을 수 있음)
+        // After: null/blank 원소 필터링
+        return postTypes.stream()
+                .filter(pt -> pt != null && !pt.isBlank())
+                .map(pt -> {
+                    try {
+                        return PostType.valueOf(pt.toUpperCase()).name();
+                    } catch (IllegalArgumentException e) {
+                        throw new InvalidRequestException("유효하지 않은 게시글 유형입니다: " + pt);
+                    }
+                })
+                .collect(Collectors.toList());
     }
 
     /**
@@ -383,16 +438,23 @@ public class PostService {
     }
 
     /**
-     * CurrencyType 유효성 검증 (선택, 필터용 - null 허용)
+     * CurrencyType 리스트 유효성 검증 (다중 필터용, null/빈 리스트 허용)
      */
-    private String validateCurrencyTypeOptional(String currencyType) {
-        if (currencyType == null || currencyType.isBlank()) {
+    private List<String> validateCurrencyTypes(List<String> currencyTypes) {
+        if (currencyTypes == null || currencyTypes.isEmpty()) {
             return null;
         }
-        try {
-            return CurrencyType.valueOf(currencyType.toUpperCase()).name();
-        } catch (IllegalArgumentException e) {
-            throw new InvalidRequestException("유효하지 않은 화폐 유형입니다: " + currencyType);
-        }
+        // Before: null/blank 원소 → NullPointerException
+        // After: null/blank 원소 필터링
+        return currencyTypes.stream()
+                .filter(ct -> ct != null && !ct.isBlank())
+                .map(ct -> {
+                    try {
+                        return CurrencyType.valueOf(ct.toUpperCase()).name();
+                    } catch (IllegalArgumentException e) {
+                        throw new InvalidRequestException("유효하지 않은 화폐 유형입니다: " + ct);
+                    }
+                })
+                .collect(Collectors.toList());
     }
 }

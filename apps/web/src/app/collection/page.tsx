@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { MobileLayout, Header } from "@/components/common";
 import { HeartIcon } from "@/components/icons";
 import { useAuth } from "@/context/AuthContext";
@@ -34,9 +35,11 @@ function PostItem({ post }: { post: Post }) {
     >
       {/* 상품 카테고리 아이콘 */}
       <div className="w-28 h-28 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
-        <img
-          src="/icons/raccoon_bill.svg"
+        <Image
+          src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
           alt="상품 카테고리"
+          width={112}
+          height={112}
           className="w-full h-full object-cover"
         />
       </div>
@@ -74,9 +77,8 @@ export default function CollectionPage() {
   const [error, setError] = useState<string | null>(null);
 
   // 탭 변경 시 데이터 로드
-  // CodeRabbit 리뷰 반영: AbortController로 race condition 방지
+  // isCancelled 플래그로 탭 전환 시 race condition 방지
   useEffect(() => {
-    const controller = new AbortController();
     let isCancelled = false;
 
     async function loadPosts() {
@@ -125,10 +127,6 @@ export default function CollectionPage() {
           setPosts(loadedPosts);
         }
       } catch (err) {
-        // AbortError는 정상적인 취소이므로 무시
-        if (err instanceof Error && err.name === "AbortError") {
-          return;
-        }
         if (!isCancelled) {
           console.error("게시글 로드 실패:", err);
           setError(err instanceof Error ? err.message : "게시글을 불러오는데 실패했습니다");
@@ -145,10 +143,8 @@ export default function CollectionPage() {
       loadPosts();
     }
 
-    // cleanup: 탭 전환 시 이전 요청 취소
     return () => {
       isCancelled = true;
-      controller.abort();
     };
   }, [activeTab, isAuthenticated, authLoading]);
 
@@ -258,11 +254,13 @@ export default function CollectionPage() {
       )}
 
       {/* 빈 상태 */}
-      {!needsLogin && !isLoading && !error && posts.length === 0 && (
+      {!needsLogin && !isLoading && !error && posts.length === 0 && (() => {
+        const emptyMsg = getEmptyMessage();
+        return (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-          <span className="text-6xl mb-4">{getEmptyMessage().emoji}</span>
-          <p>{getEmptyMessage().title}</p>
-          <p className="text-sm mt-1">{getEmptyMessage().subtitle}</p>
+          <span className="text-6xl mb-4">{emptyMsg.emoji}</span>
+          <p>{emptyMsg.title}</p>
+          <p className="text-sm mt-1">{emptyMsg.subtitle}</p>
           {activeTab === "my" && (
             <Link
               href="/post/new"
@@ -272,7 +270,8 @@ export default function CollectionPage() {
             </Link>
           )}
         </div>
-      )}
+        );
+      })()}
 
       {/* 거래글 목록 */}
       {!needsLogin && !isLoading && !error && posts.length > 0 && (

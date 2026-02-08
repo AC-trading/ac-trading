@@ -31,7 +31,7 @@ function MessageBubble({ message }: { message: DisplayMessage }) {
     <div className={`flex ${message.isMe ? "justify-end" : "justify-start"} mb-3`}>
       {!message.isMe && (
         <Image
-          src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
+          src={process.env.NEXT_PUBLIC_ICON_ISLAND || "/icons/island.png"}
           alt="프로필"
           width={40}
           height={40}
@@ -235,9 +235,11 @@ export default function ChatRoomPage() {
       }
     );
 
-    // 클린업
+    // Before: 구독만 해제 → 좀비 WebSocket 연결 잔류
+    // After: 구독 해제 + WebSocket 연결 종료
     return () => {
       webSocketClient.unsubscribeFromChatRoom(roomId);
+      webSocketClient.disconnect();
     };
   }, [accessToken, roomId, isLoading, currentUserId]);
 
@@ -359,7 +361,7 @@ export default function ChatRoomPage() {
               onClick={() => router.back()}
               className="p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <ChevronLeftIcon className="text-gray-800" />
+              <ChevronLeftIcon className="text-black" />
             </button>
             <div className="flex items-center gap-2">
               <h1 className="font-semibold text-lg">{chatRoom?.otherUserNickname}</h1>
@@ -371,7 +373,7 @@ export default function ChatRoomPage() {
               onClick={() => setShowMoreMenu(true)}
               className="p-1 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <MoreVerticalIcon className="w-6 h-6 text-gray-800" />
+              <MoreVerticalIcon className="w-6 h-6 text-black" />
             </button>
           </div>
         </header>
@@ -489,7 +491,7 @@ export default function ChatRoomPage() {
                 placeholder={isConnected ? "메시지를 입력하세요" : "연결 중..."}
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={handleKeyPress}
+                onKeyDown={handleKeyPress}
                 disabled={!isConnected}
                 className="flex-1 px-4 py-2 bg-white/90 rounded-full text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-white/50 disabled:opacity-50"
               />
@@ -593,8 +595,10 @@ export default function ChatRoomPage() {
                 <button
                   onClick={() => {
                     setShowMoreMenu(false);
-                    // TODO: 매너 평가 기능 구현
-                    alert("매너 평가 기능은 준비 중입니다.");
+                    // Before: alert("매너 평가 기능은 준비 중입니다.")
+                    // After: 리뷰 페이지로 이동 (postId, revieweeId 전달)
+                    if (!chatRoom) return;
+                    router.push(`/review?postId=${chatRoom.postId}&revieweeId=${chatRoom.otherUserId}`);
                   }}
                   className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors"
                 >

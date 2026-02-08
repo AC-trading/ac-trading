@@ -68,56 +68,75 @@ public interface PostRepository extends JpaRepository<Post, Long> {
 
     /**
      * 피드 조회 - bumped_at 우선 정렬 (끌올 우선, 없으면 created_at)
-     * - 필터: 카테고리, 게시글유형, 상태, 화폐유형, 가격범위
+     * - 필터: 카테고리(다중), 게시글유형(다중), 상태, 화폐유형(다중), 가격범위
+     * - 다중 필터: boolean 플래그 + IN 절 조합 (빈 리스트일 때 필터 스킵)
      * - 가격 필터는 화폐유형(currencyType)과 함께 사용해야 함 (벨 500과 마일 500은 다름)
      */
-    @Query("SELECT p FROM Post p WHERE p.deletedAt IS NULL " +
-            "AND (:categoryId IS NULL OR p.categoryId = :categoryId) " +
-            "AND (:postType IS NULL OR p.postType = :postType) " +
+    @Query(value = "SELECT * FROM posts p WHERE p.deleted_at IS NULL " +
+            "AND (:hasCategoryFilter = false OR p.category_id IN (:categoryIds)) " +
+            "AND (:hasPostTypeFilter = false OR p.post_type IN (:postTypes)) " +
             "AND (:status IS NULL OR p.status = :status) " +
-            "AND (:currencyType IS NULL OR p.currencyType = :currencyType) " +
+            "AND (:hasCurrencyTypeFilter = false OR p.currency_type IN (:currencyTypes)) " +
             "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
-            "ORDER BY COALESCE(p.bumpedAt, p.createdAt) DESC")
+            "ORDER BY COALESCE(p.bumped_at, p.created_at) DESC",
+            countQuery = "SELECT COUNT(*) FROM posts p WHERE p.deleted_at IS NULL " +
+            "AND (:hasCategoryFilter = false OR p.category_id IN (:categoryIds)) " +
+            "AND (:hasPostTypeFilter = false OR p.post_type IN (:postTypes)) " +
+            "AND (:status IS NULL OR p.status = :status) " +
+            "AND (:hasCurrencyTypeFilter = false OR p.currency_type IN (:currencyTypes)) " +
+            "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
+            "AND (:maxPrice IS NULL OR p.price <= :maxPrice)",
+            nativeQuery = true)
     Page<Post> findFeed(
-            @Param("categoryId") Long categoryId,
-            @Param("postType") String postType,
+            @Param("hasCategoryFilter") boolean hasCategoryFilter,
+            @Param("categoryIds") List<Long> categoryIds,
+            @Param("hasPostTypeFilter") boolean hasPostTypeFilter,
+            @Param("postTypes") List<String> postTypes,
             @Param("status") String status,
-            @Param("currencyType") String currencyType,
+            @Param("hasCurrencyTypeFilter") boolean hasCurrencyTypeFilter,
+            @Param("currencyTypes") List<String> currencyTypes,
             @Param("minPrice") Integer minPrice,
             @Param("maxPrice") Integer maxPrice,
             Pageable pageable);
 
     /**
-     * 아이템명 검색 (LIKE 검색, 띄어쓰기 무시)
-     * - 필터: 카테고리, 게시글유형, 상태, 화폐유형, 가격범위
-     * - 검색어와 아이템명 모두 공백 제거 후 비교
+     * 아이템명 + 설명 검색 (LIKE 검색, 띄어쓰기 무시)
+     * Before: item_name만 검색 → "알바"로 검색 시 description에만 있는 키워드 누락
+     * After: item_name OR description 모두 검색
+     * - 필터: 카테고리(다중), 게시글유형(다중), 상태, 화폐유형(다중), 가격범위
+     * - 다중 필터: boolean 플래그 + IN 절 조합 (빈 리스트일 때 필터 스킵)
      * - 가격 필터는 화폐유형(currencyType)과 함께 사용해야 함 (벨 500과 마일 500은 다름)
      */
     @Query(value = "SELECT * FROM posts p WHERE p.deleted_at IS NULL " +
-            "AND LOWER(REPLACE(p.item_name, ' ', '')) LIKE LOWER(CONCAT('%', REPLACE(:keyword, ' ', ''), '%')) " +
-            "AND (:categoryId IS NULL OR p.category_id = :categoryId) " +
-            "AND (:postType IS NULL OR p.post_type = :postType) " +
+            "AND (LOWER(REPLACE(p.item_name, ' ', '')) LIKE LOWER(CONCAT('%', REPLACE(:keyword, ' ', ''), '%')) " +
+            "  OR LOWER(REPLACE(COALESCE(p.description, ''), ' ', '')) LIKE LOWER(CONCAT('%', REPLACE(:keyword, ' ', ''), '%'))) " +
+            "AND (:hasCategoryFilter = false OR p.category_id IN (:categoryIds)) " +
+            "AND (:hasPostTypeFilter = false OR p.post_type IN (:postTypes)) " +
             "AND (:status IS NULL OR p.status = :status) " +
-            "AND (:currencyType IS NULL OR p.currency_type = :currencyType) " +
+            "AND (:hasCurrencyTypeFilter = false OR p.currency_type IN (:currencyTypes)) " +
             "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
             "ORDER BY COALESCE(p.bumped_at, p.created_at) DESC",
             countQuery = "SELECT COUNT(*) FROM posts p WHERE p.deleted_at IS NULL " +
-            "AND LOWER(REPLACE(p.item_name, ' ', '')) LIKE LOWER(CONCAT('%', REPLACE(:keyword, ' ', ''), '%')) " +
-            "AND (:categoryId IS NULL OR p.category_id = :categoryId) " +
-            "AND (:postType IS NULL OR p.post_type = :postType) " +
+            "AND (LOWER(REPLACE(p.item_name, ' ', '')) LIKE LOWER(CONCAT('%', REPLACE(:keyword, ' ', ''), '%')) " +
+            "  OR LOWER(REPLACE(COALESCE(p.description, ''), ' ', '')) LIKE LOWER(CONCAT('%', REPLACE(:keyword, ' ', ''), '%'))) " +
+            "AND (:hasCategoryFilter = false OR p.category_id IN (:categoryIds)) " +
+            "AND (:hasPostTypeFilter = false OR p.post_type IN (:postTypes)) " +
             "AND (:status IS NULL OR p.status = :status) " +
-            "AND (:currencyType IS NULL OR p.currency_type = :currencyType) " +
+            "AND (:hasCurrencyTypeFilter = false OR p.currency_type IN (:currencyTypes)) " +
             "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR p.price <= :maxPrice)",
             nativeQuery = true)
     Page<Post> searchByKeyword(
             @Param("keyword") String keyword,
-            @Param("categoryId") Long categoryId,
-            @Param("postType") String postType,
+            @Param("hasCategoryFilter") boolean hasCategoryFilter,
+            @Param("categoryIds") List<Long> categoryIds,
+            @Param("hasPostTypeFilter") boolean hasPostTypeFilter,
+            @Param("postTypes") List<String> postTypes,
             @Param("status") String status,
-            @Param("currencyType") String currencyType,
+            @Param("hasCurrencyTypeFilter") boolean hasCurrencyTypeFilter,
+            @Param("currencyTypes") List<String> currencyTypes,
             @Param("minPrice") Integer minPrice,
             @Param("maxPrice") Integer maxPrice,
             Pageable pageable);

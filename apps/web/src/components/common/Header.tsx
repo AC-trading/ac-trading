@@ -40,15 +40,15 @@ export default function Header({
               onClick={onBack}
               className="p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors"
             >
-              <ChevronLeftIcon className="text-gray-800" />
+              <ChevronLeftIcon className="text-black" />
             </button>
           )}
           {showLocation ? (
-            <span className="font-semibold text-lg text-gray-900">
+            <span className="font-semibold text-lg text-black">
               {isAuthenticated && user?.islandName ? user.islandName : "내 섬"}
             </span>
           ) : (
-            title && <h1 className="font-semibold text-lg text-gray-900">{title}</h1>
+            title && <h1 className="font-semibold text-lg text-black">{title}</h1>
           )}
         </div>
 
@@ -56,17 +56,17 @@ export default function Header({
         <div className="flex items-center gap-3">
           {showSearch && (
             <Link href="/search" className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-              <SearchIcon className="text-gray-800" />
+              <SearchIcon className="text-black" />
             </Link>
           )}
           {showMenu && (
             <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-              <MenuIcon className="text-gray-800" />
+              <MenuIcon className="text-black" />
             </button>
           )}
           {showBell && (
             <Link href="/alarm" className="p-1 hover:bg-gray-100 rounded-full transition-colors">
-              <BellIcon className="text-gray-800" />
+              <BellIcon className="text-black" />
             </Link>
           )}
 
@@ -92,7 +92,7 @@ export default function Header({
                   )}
                   <button
                     onClick={logout}
-                    className="text-sm text-gray-500 hover:text-gray-700"
+                    className="text-sm text-black hover:text-black"
                   >
                     로그아웃
                   </button>

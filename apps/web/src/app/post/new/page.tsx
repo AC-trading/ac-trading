@@ -1,10 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { HomeOutlineIcon, PlusIcon } from "@/components/icons";
-import { createPost, getCategories, Category, PostCreateRequest } from "@/lib/postApi";
+import { createPost, getCategories, uploadPostImages, Category, PostCreateRequest } from "@/lib/postApi";
+
+// 이미지 미리보기 타입
+interface ImagePreview {
+  file: File;
+  previewUrl: string;
+}
 
 // 상품 등록 페이지 - Figma 디자인 기반
 export default function NewPostPage() {
@@ -18,7 +24,17 @@ export default function NewPostPage() {
   const [price, setPrice] = useState("");
   const [currencyType, setCurrencyType] = useState<"BELL" | "MILE_TICKET">("BELL");
   const [priceNegotiable, setPriceNegotiable] = useState(false);
-  const [images, setImages] = useState<string[]>([]);
+  const [images, setImages] = useState<ImagePreview[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const imagesRef = useRef<ImagePreview[]>([]);
+
+  // 컴포넌트 언마운트 시 미리보기 URL 해제 (메모리 누수 방지)
+  useEffect(() => { imagesRef.current = images; }, [images]);
+  useEffect(() => {
+    return () => {
+      imagesRef.current.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+    };
+  }, []);
 
   // 카테고리 목록
   const [categories, setCategories] = useState<Category[]>([]);
@@ -44,15 +60,39 @@ export default function NewPostPage() {
     loadCategories();
   }, []);
 
+  // 이미지 파일 선택 핸들러
   const handleImageAdd = () => {
-    // TODO: 실제 이미지 업로드 로직 (Cloudflare R2)
-    // 임시로 더미 이미지 추가
-    if (images.length < 10) {
-      setImages([...images, `image-${images.length + 1}`]);
+    if (images.length >= 10) return;
+    fileInputRef.current?.click();
+  };
+
+  // 파일 선택 후 미리보기 생성
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+
+    const newImages: ImagePreview[] = [];
+    const remainingSlots = 10 - images.length;
+
+    for (let i = 0; i < Math.min(files.length, remainingSlots); i++) {
+      const file = files[i];
+      if (file.type.startsWith("image/")) {
+        newImages.push({
+          file,
+          previewUrl: URL.createObjectURL(file),
+        });
+      }
     }
+
+    setImages((prev) => [...prev, ...newImages]);
+
+    // input 초기화 (같은 파일 재선택 가능하게)
+    e.target.value = "";
   };
 
   const handleImageRemove = (index: number) => {
+    // 미리보기 URL 해제
+    URL.revokeObjectURL(images[index].previewUrl);
     setImages(images.filter((_, i) => i !== index));
   };
 
@@ -75,11 +115,25 @@ export default function NewPostPage() {
     setError(null);
 
     try {
+      // 1. 이미지가 있으면 먼저 업로드
+      let imageUrls: string[] = [];
+      if (images.length > 0) {
+        const files = images.map((img) => img.file);
+        const uploadResult = await uploadPostImages(files);
+        imageUrls = uploadResult.urls;
+      }
+
+      // 2. 게시글 생성 (이미지 URL을 설명에 포함)
+      // TODO: 백엔드 Post 엔티티에 imageUrls 필드 추가 후 별도 전달
+      const descriptionWithImages = imageUrls.length > 0
+        ? `${description.trim()}\n\n[images:${imageUrls.join(",")}]`
+        : description.trim();
+
       const request: PostCreateRequest = {
         postType,
         categoryId,
         itemName: itemName.trim(),
-        description: description.trim(),
+        description: descriptionWithImages,
         currencyType,
         price: price ? parseInt(price, 10) : undefined,
         priceNegotiable,
@@ -260,25 +314,39 @@ export default function NewPostPage() {
           {/* 이미지 업로드 */}
           <div>
             <label className="block text-primary font-semibold mb-2">이미지</label>
+            {/* 숨겨진 파일 입력 (갤러리/카메라 트리거) */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleFileChange}
+              className="hidden"
+            />
             <div className="flex gap-3 overflow-x-auto pb-2">
               {/* 이미지 추가 버튼 */}
               <button
                 type="button"
                 onClick={handleImageAdd}
-                className="w-16 h-16 flex-shrink-0 border-2 border-primary border-dashed rounded-lg flex items-center justify-center hover:bg-primary/5 transition-colors"
+                disabled={images.length >= 10}
+                className="w-16 h-16 flex-shrink-0 border-2 border-primary border-dashed rounded-lg flex flex-col items-center justify-center hover:bg-primary/5 transition-colors disabled:opacity-50"
               >
-                <PlusIcon className="w-8 h-8 text-primary" />
+                <PlusIcon className="w-6 h-6 text-primary" />
+                <span className="text-xs text-primary mt-0.5">{images.length}/10</span>
               </button>
 
-              {/* 업로드된 이미지 미리보기 */}
+              {/* 선택된 이미지 미리보기 */}
               {images.map((image, index) => (
                 <div
                   key={index}
                   className="relative w-16 h-16 flex-shrink-0 bg-gray-200 rounded-lg overflow-hidden"
                 >
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    📷
-                  </div>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={image.previewUrl}
+                    alt={`이미지 ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
                   <button
                     type="button"
                     onClick={() => handleImageRemove(index)}

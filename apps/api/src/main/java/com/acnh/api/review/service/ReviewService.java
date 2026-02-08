@@ -98,6 +98,14 @@ public class ReviewService {
     }
 
     /**
+     * 내가 받은 리뷰 목록 조회 (visitorId 기반)
+     */
+    public ReviewListResponse getMyReviews(String visitorId, Pageable pageable) {
+        Member member = findMemberByUuid(visitorId);
+        return getReviewsByUserId(member.getId(), pageable);
+    }
+
+    /**
      * 유저가 받은 리뷰 목록 조회
      */
     public ReviewListResponse getReviewsByUserId(Long userId, Pageable pageable) {

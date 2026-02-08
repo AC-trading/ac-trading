@@ -106,9 +106,9 @@ export const ChevronRightIcon = ({ className = "" }: { className?: string }) => 
   </svg>
 );
 
-// 찜 아이콘 - 심플 나뭇잎 (저작권 무료)
-// Before: 동물의 숲 스타일 나뭇잎 (leaf_logo.svg 기반)
-// After: 심플한 나뭇잎 아이콘 (저작권 문제 없음)
+// 찜 아이콘 - 보타니컬 나뭇잎 (저작권 무료)
+// Before: 하트 아이콘
+// After: 일반 나뭇잎 아이콘 (닌텐도 관련 아님, 저작권 문제 없음)
 export const HeartIcon = ({ filled = false, className = "" }: { filled?: boolean; className?: string }) => (
   <svg
     width="20"
@@ -117,16 +117,18 @@ export const HeartIcon = ({ filled = false, className = "" }: { filled?: boolean
     xmlns="http://www.w3.org/2000/svg"
     className={className}
   >
+    {/* 나뭇잎 몸체 */}
     <path
-      d="M11 20C11 20 3 14.5 3 9C3 6 5.5 3 9 3C11.5 3 12 5 12 5C12 5 12.5 3 15 3C18.5 3 21 6 21 9C21 14.5 13 20 13 20"
+      d="M17 8C8 10 5.9 16.17 3.82 21.34L5.71 22L6.66 19.7C7.14 19.87 7.64 20 8.17 20C12.76 20 17.5 14.5 17.5 8.5L17 8Z"
       fill={filled ? "#7ECEC5" : "none"}
       stroke={filled ? "#7ECEC5" : "#9CA3AF"}
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
     />
+    {/* 나뭇잎 줄기 */}
     <path
-      d="M12 5V19"
+      d="M8 17C12 14 15 10 17 8"
       stroke={filled ? "#5BBFB3" : "#9CA3AF"}
       strokeWidth="1.5"
       strokeLinecap="round"

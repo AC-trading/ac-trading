@@ -1,8 +1,8 @@
 // 홈 화면 (WebView로 웹앱 표시)
 
-import React from 'react';
-import { StyleSheet, View, ActivityIndicator, Text } from 'react-native';
-import { WebView, WebViewMessageEvent } from 'react-native-webview';
+import React, { useRef } from 'react';
+import { StyleSheet, View, ActivityIndicator, Text, BackHandler, Platform } from 'react-native';
+import { WebView, WebViewMessageEvent, WebViewNavigation } from 'react-native-webview';
 import { getAccessToken, removeAccessToken } from '../auth';
 
 // WebView에서 전달받는 메시지 타입
@@ -18,6 +18,8 @@ interface HomeScreenProps {
 export default function HomeScreen({ onLoginRequest }: HomeScreenProps) {
   const [token, setToken] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [canGoBack, setCanGoBack] = React.useState(false);
+  const webViewRef = useRef<WebView>(null);
 
   // 환경 변수를 컴포넌트 내부에서 가져옴 (Metro 연결 후 실행됨)
   const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL;
@@ -25,6 +27,22 @@ export default function HomeScreen({ onLoginRequest }: HomeScreenProps) {
   React.useEffect(() => {
     loadToken();
   }, []);
+
+  // Android 하드웨어 뒤로가기 버튼/제스처 처리
+  React.useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    const onBackPress = () => {
+      if (canGoBack && webViewRef.current) {
+        webViewRef.current.goBack();
+        return true; // 이벤트 소비 (앱 종료 방지)
+      }
+      return false; // 기본 동작 (앱 종료)
+    };
+
+    const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => subscription.remove();
+  }, [canGoBack]);
 
   async function loadToken() {
     try {
@@ -71,9 +89,13 @@ export default function HomeScreen({ onLoginRequest }: HomeScreenProps) {
   return (
     <View style={styles.container}>
       <WebView
+        ref={webViewRef}
         source={{ uri: WEB_URL }}
         style={styles.webview}
         injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContentLoaded}
+        onNavigationStateChange={(navState: WebViewNavigation) => {
+          setCanGoBack(navState.canGoBack);
+        }}
         onMessage={(event: WebViewMessageEvent) => {
           // 웹에서 앱으로 메시지 전달 처리
           try {

@@ -147,6 +147,8 @@ export interface ReviewListResponse {
   totalElements: number;
   hasNext: boolean;
   hasPrevious: boolean;
+  averageRating: number | null;
+  reviewCount: number | null;
 }
 
 // ========== 채팅 타입 정의 ==========
@@ -299,6 +301,44 @@ async function fetchWithAuth<T>(
   return response.json();
 }
 
+// ========== 이미지 업로드 API 함수 ==========
+
+// 이미지 업로드 응답 타입
+export interface ImageUploadResponse {
+  urls: string[];
+  uploadedCount: number;
+}
+
+/**
+ * 게시글 이미지 업로드
+ * POST /api/images/posts (multipart/form-data)
+ */
+export async function uploadPostImages(files: File[]): Promise<ImageUploadResponse> {
+  const accessToken = getAccessToken();
+  const formData = new FormData();
+  files.forEach((file) => formData.append('files', file));
+
+  // multipart/form-data는 Content-Type 헤더를 설정하지 않음 (브라우저가 boundary 자동 설정)
+  const response = await fetch(`${API_URL}/api/images/posts`, {
+    method: 'POST',
+    headers: {
+      ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
+    },
+    credentials: 'include',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorData: ApiError = await response.json().catch(() => ({
+      error: 'UPLOAD_FAILED',
+      message: '이미지 업로드에 실패했습니다',
+    }));
+    throw new Error(errorData.message);
+  }
+
+  return response.json();
+}
+
 // ========== 카테고리 API 함수 ==========
 
 /**
@@ -355,13 +395,14 @@ export async function getPosts(params?: {
 /**
  * 게시글 검색
  * GET /api/posts/search
+ * - 다중 필터 지원: categoryId, postType, currencyType은 배열로 전달 가능
  */
 export async function searchPosts(params: {
   keyword: string;
-  categoryId?: number;
-  postType?: 'SELL' | 'BUY';
+  categoryId?: number[];
+  postType?: ('SELL' | 'BUY')[];
   status?: 'AVAILABLE' | 'RESERVED' | 'COMPLETED';
-  currencyType?: 'BELL' | 'MILE_TICKET';
+  currencyType?: ('BELL' | 'MILE_TICKET')[];
   minPrice?: number;
   maxPrice?: number;
   page?: number;
@@ -370,10 +411,11 @@ export async function searchPosts(params: {
   const searchParams = new URLSearchParams();
 
   searchParams.set('keyword', params.keyword);
-  if (params.categoryId) searchParams.set('categoryId', String(params.categoryId));
-  if (params.postType) searchParams.set('postType', params.postType);
+  // 다중 필터: 같은 키를 여러 번 append (?categoryId=1&categoryId=2)
+  if (params.categoryId) params.categoryId.forEach((id) => searchParams.append('categoryId', String(id)));
+  if (params.postType) params.postType.forEach((pt) => searchParams.append('postType', pt));
   if (params.status) searchParams.set('status', params.status);
-  if (params.currencyType) searchParams.set('currencyType', params.currencyType);
+  if (params.currencyType) params.currencyType.forEach((ct) => searchParams.append('currencyType', ct));
   if (params.minPrice !== undefined) searchParams.set('minPrice', String(params.minPrice));
   if (params.maxPrice !== undefined) searchParams.set('maxPrice', String(params.maxPrice));
   if (params.page !== undefined) searchParams.set('page', String(params.page));
@@ -523,6 +565,19 @@ export async function createReview(request: ReviewCreateRequest): Promise<Review
     method: 'POST',
     body: JSON.stringify(request),
   });
+}
+
+/**
+ * 내가 받은 리뷰 목록 조회
+ * GET /api/users/me/reviews
+ */
+export async function getMyReviews(
+  page = 0,
+  size = 20
+): Promise<ReviewListResponse> {
+  return fetchWithAuth<ReviewListResponse>(
+    `${API_URL}/api/users/me/reviews?page=${page}&size=${size}`
+  );
 }
 
 /**
@@ -943,5 +998,75 @@ export async function createTransaction(request: TransactionCreateRequest): Prom
 export async function deleteTransaction(id: number): Promise<{ message: string }> {
   return fetchWithAuth<{ message: string }>(`${API_URL}/api/transactions/${id}`, {
     method: 'DELETE',
+  });
+}
+
+// ========== 알림 타입 정의 ==========
+
+// 알림 응답 타입
+export interface NotificationItem {
+  id: number;
+  type: string;
+  title: string;
+  content: string | null;
+  referenceId: number | null;
+  referenceType: string | null;
+  // Before: Lombok boolean isRead → Jackson이 "read"로 직렬화
+  // After: @JsonProperty("isRead") 추가하여 "isRead"로 직렬화
+  isRead: boolean;
+  createdAt: string;
+}
+
+// 알림 목록 응답 타입
+export interface NotificationListResponse {
+  notifications: NotificationItem[];
+  unreadCount: number;
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+// ========== 알림 API 함수 ==========
+
+/**
+ * 내 알림 목록 조회
+ * GET /api/notifications
+ */
+export async function getNotifications(page = 0, size = 20): Promise<NotificationListResponse> {
+  return fetchWithAuth<NotificationListResponse>(
+    `${API_URL}/api/notifications?page=${page}&size=${size}`
+  );
+}
+
+/**
+ * 읽지 않은 알림 수 조회
+ * GET /api/notifications/unread-count
+ */
+export async function getUnreadNotificationCount(): Promise<number> {
+  const data = await fetchWithAuth<{ unreadCount: number }>(
+    `${API_URL}/api/notifications/unread-count`
+  );
+  return data.unreadCount;
+}
+
+/**
+ * 알림 읽음 처리
+ * PATCH /api/notifications/{id}/read
+ */
+export async function markNotificationAsRead(id: number): Promise<{ message: string }> {
+  return fetchWithAuth<{ message: string }>(`${API_URL}/api/notifications/${id}/read`, {
+    method: 'PATCH',
+  });
+}
+
+/**
+ * 모든 알림 읽음 처리
+ * PATCH /api/notifications/read-all
+ */
+export async function markAllNotificationsAsRead(): Promise<{ message: string; count: number }> {
+  return fetchWithAuth<{ message: string; count: number }>(`${API_URL}/api/notifications/read-all`, {
+    method: 'PATCH',
   });
 }

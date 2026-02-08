@@ -1,53 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { MobileLayout } from "@/components/common";
-import { ChevronLeftIcon, SearchIcon, HeartIcon, CommentIcon } from "@/components/icons";
+import { ChevronLeftIcon, SearchIcon, HeartIcon } from "@/components/icons";
+import {
+  searchPosts,
+  getCategories,
+  formatPrice as apiFormatPrice,
+  formatRelativeTime,
+  Post,
+  Category,
+} from "@/lib/postApi";
 
-// 더미 검색 결과 데이터
-const mockSearchResults = [
-  {
-    id: 1,
-    title: "호화로운 침대",
-    location: "군자동",
-    time: "3일 전",
-    price: 220000,
-    comments: 3,
-    likes: 11,
-    category: "가구",
-    currencyType: "벨",
-    tradeType: "팔아요",
-  },
-  {
-    id: 2,
-    title: "별무늬 벽지",
-    location: "광진구 구의제3동",
-    time: "26초 전",
-    price: 4000,
-    comments: 0,
-    likes: 2,
-    category: "바닥/벽지",
-    currencyType: "마일",
-    tradeType: "팔아요",
-  },
-  {
-    id: 3,
-    title: "왕관 DIY 레시피",
-    location: "군자동",
-    time: "1일 전",
-    price: 1000000,
-    comments: 0,
-    likes: 0,
-    category: "DIY 레시피",
-    currencyType: "벨",
-    tradeType: "구해요",
-  },
-];
+// 화폐 유형 매핑 (한국어 라벨 → API enum)
+const CURRENCY_MAP: Record<string, "BELL" | "MILE_TICKET"> = {
+  "벨": "BELL",
+  "마일": "MILE_TICKET",
+};
 
-// 카테고리 목록
-const categories = ["가구", "바닥/벽지", "옷", "재료", "DIY 레시피", "화석/미술품", "알바", "주민 사진/ 분양", "기타"];
+// 거래 유형 매핑 (한국어 라벨 → API enum)
+const TRADE_TYPE_MAP: Record<string, "SELL" | "BUY"> = {
+  "팔아요": "SELL",
+  "구해요": "BUY",
+};
 
 // 화폐 유형 목록
 const currencyTypes = ["벨", "마일"];
@@ -57,29 +35,50 @@ const tradeTypes = ["팔아요", "구해요"];
 
 // 가격 프리셋
 const pricePresets = [
-  { label: "2,000원 - 7,000원", min: 2000, max: 7000 },
-  { label: "7,000원 - 1만 2,000원", min: 7000, max: 12000 },
-  { label: "1만 2,000원 - 2만 3,000원", min: 12000, max: 23000 },
+  { label: "~10,000", min: 0, max: 10000 },
+  { label: "10,000 ~ 100,000", min: 10000, max: 100000 },
+  { label: "100,000~", min: 100000, max: 0 },  // max: 0 = 상한 없음
 ];
 
-// 인기 검색어
-const popularKeywords = [
-  "닌텐도 스위치",
-  "에어팟",
-  "아이폰",
-  "자전거",
-  "DIY 레시피",
-  "마일 티켓",
-  "무 주식",
-  "가구",
-];
+// 인기 검색어 (동물의 숲 관련)
+// 인기 검색어: 카테고리 로드 후 동적 생성 (하드코딩 제거)
 
-// 최근 검색어 초기값
-const initialRecentKeywords = ["자전거", "에어팟", "닌텐도"];
+// localStorage 키
+const RECENT_KEYWORDS_KEY = "ac-trading-recent-keywords";
 
-// 가격 포맷팅 함수
-function formatPrice(price: number): string {
-  return price.toLocaleString("ko-KR") + "원";
+// 최근 검색어 로드
+// Before: JSON.parse 결과가 배열인지 검증하지 않아, localStorage 값이 변조 시 런타임 에러 가능
+// After: Array.isArray 체크 추가
+function loadRecentKeywords(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const saved = localStorage.getItem(RECENT_KEYWORDS_KEY);
+    if (!saved) return [];
+    const parsed = JSON.parse(saved);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+// 최근 검색어 저장
+// Before: localStorage.setItem에 try/catch 없음 → Safari 개인정보 보호 모드나 용량 초과 시 예외 발생
+// After: try/catch 추가
+function saveRecentKeywords(keywords: string[]) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(RECENT_KEYWORDS_KEY, JSON.stringify(keywords));
+  } catch {
+    // Safari 개인정보 보호 모드 또는 localStorage 용량 초과 시 무시
+  }
+}
+
+// 최근 검색어에 추가 (중복 제거, 최대 10개)
+function addRecentKeyword(keywords: string[], keyword: string): string[] {
+  const filtered = keywords.filter((k) => k !== keyword);
+  const updated = [keyword, ...filtered].slice(0, 10);
+  saveRecentKeywords(updated);
+  return updated;
 }
 
 // 필터 상태 타입
@@ -91,40 +90,36 @@ interface FilterState {
   priceMax: string;
 }
 
-// 검색 결과 아이템 컴포넌트
-function SearchResultItem({ post }: { post: (typeof mockSearchResults)[0] }) {
+// 검색 결과 아이템 컴포넌트 (실제 Post 타입 사용)
+function SearchResultItem({ post }: { post: Post }) {
   return (
     <Link
       href={`/post/${post.id}`}
       className="flex gap-4 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors"
     >
       <div className="w-28 h-28 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
-        <img
-          src="/icons/raccoon_bill.svg"
+        <Image
+          src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
           alt="상품 카테고리"
+          width={112}
+          height={112}
           className="w-full h-full object-cover"
         />
       </div>
       <div className="flex-1 flex flex-col justify-between py-1">
         <div>
-          <h3 className="font-medium text-gray-900 line-clamp-2">{post.title}</h3>
-          <p className="text-xs text-gray-500 mt-1">
-            {post.location} · {post.time}
+          <h3 className="font-medium text-black line-clamp-2">{post.itemName}</h3>
+          <p className="text-xs text-black mt-1">
+            {post.userIslandName || "섬 이름 없음"} · {formatRelativeTime(post.bumpedAt || post.createdAt)}
           </p>
         </div>
         <div className="flex items-center justify-between">
-          <p className="font-bold text-primary">{formatPrice(post.price)}</p>
+          <p className="font-bold text-primary">{apiFormatPrice(post.price, post.currencyType)}</p>
           <div className="flex items-center gap-3 text-gray-400">
-            {post.comments > 0 && (
-              <span className="flex items-center gap-1">
-                <CommentIcon />
-                <span className="text-xs">{post.comments}</span>
-              </span>
-            )}
-            {post.likes > 0 && (
+            {post.likeCount > 0 && (
               <span className="flex items-center gap-1">
                 <HeartIcon />
-                <span className="text-xs">{post.likes}</span>
+                <span className="text-xs">{post.likeCount}</span>
               </span>
             )}
           </div>
@@ -276,8 +271,8 @@ function PriceFilterModal({
   }, [isOpen, priceMin, priceMax]);
 
   const handlePresetClick = (min: number, max: number) => {
-    setMinValue(min.toString());
-    setMaxValue(max.toString());
+    setMinValue(min > 0 ? min.toString() : "");
+    setMaxValue(max > 0 ? max.toString() : "");
     setPriceError("");
   };
 
@@ -354,7 +349,8 @@ function PriceFilterModal({
                 key={index}
                 onClick={() => handlePresetClick(preset.min, preset.max)}
                 className={`px-4 py-2 rounded-full border text-sm transition-colors ${
-                  minValue === preset.min.toString() && maxValue === preset.max.toString()
+                  minValue === (preset.min > 0 ? preset.min.toString() : "") &&
+                  maxValue === (preset.max > 0 ? preset.max.toString() : "")
                     ? "border-primary bg-primary/10 text-primary"
                     : "border-gray-300 text-gray-700 hover:border-gray-400"
                 }`}
@@ -390,8 +386,19 @@ export default function SearchPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
-  const [searchResults, setSearchResults] = useState<typeof mockSearchResults>([]);
-  const [recentKeywords, setRecentKeywords] = useState<string[]>(initialRecentKeywords);
+  const [isLoadingResults, setIsLoadingResults] = useState(false);
+  const [searchResults, setSearchResults] = useState<Post[]>([]);
+  const [totalResults, setTotalResults] = useState(0);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [recentKeywords, setRecentKeywords] = useState<string[]>([]);
+
+  // 카테고리 목록 (API에서 로드)
+  const [categories, setCategories] = useState<Category[]>([]);
+  const defaultCategoryNames = ["가구", "옷", "벽지", "바닥", "잡화", "레시피", "화석", "미술품"];
+  const categoryNames = categories.length > 0 ? categories.map((c) => c.name) : defaultCategoryNames;
+
+  // 인기 검색어: 카테고리명 기반 동적 생성
+  const popularKeywords = categoryNames;
 
   // 필터 상태 (배열로 다중 선택 지원)
   const [filters, setFilters] = useState<FilterState>({
@@ -408,94 +415,143 @@ export default function SearchPage() {
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
   const [isTradeTypeModalOpen, setIsTradeTypeModalOpen] = useState(false);
 
-  // 필터 적용 함수
-  const applyFilters = (results: typeof mockSearchResults, currentFilters: FilterState) => {
-    return results.filter((item) => {
-      // 카테고리 필터
-      if (currentFilters.category.length > 0 && !currentFilters.category.includes(item.category)) {
-        return false;
-      }
-      // 화폐 유형 필터
-      if (currentFilters.currencyType.length > 0 && !currentFilters.currencyType.includes(item.currencyType)) {
-        return false;
-      }
-      // 거래 유형 필터
-      if (currentFilters.tradeType.length > 0 && !currentFilters.tradeType.includes(item.tradeType)) {
-        return false;
-      }
-      // 가격 필터
-      if (currentFilters.priceMin && item.price < parseInt(currentFilters.priceMin)) {
-        return false;
-      }
-      if (currentFilters.priceMax && item.price > parseInt(currentFilters.priceMax)) {
-        return false;
-      }
-      return true;
-    });
-  };
+  // 카테고리 로드 실패 상태
+  const [categoryError, setCategoryError] = useState(false);
 
-  // 검색 실행
+  // 카테고리 로드 함수 (재시도 가능)
+  // Before: 카테고리 로드 실패 시 빈 배열 → 필터 모달에 빈 목록
+  // After: 실패 시 기본 카테고리 유지 + 재시도 경로 제공
+  const loadCategories = useCallback(async () => {
+    try {
+      setCategoryError(false);
+      const response = await getCategories();
+      setCategories(response.categories);
+    } catch (err) {
+      console.error("카테고리 로드 실패:", err);
+      setCategoryError(true);
+    }
+  }, []);
+
+  // 카테고리 로드 + 최근 검색어 로드
+  useEffect(() => {
+    loadCategories();
+    setRecentKeywords(loadRecentKeywords());
+  }, [loadCategories]);
+
+  // 필터 → API 파라미터 변환
+  const buildSearchParams = useCallback(
+    (query: string, currentFilters: FilterState) => {
+      const params: Parameters<typeof searchPosts>[0] = {
+        keyword: query,
+        page: 0,
+        size: 50,
+      };
+
+      // 카테고리 필터: API에서 로드한 카테고리가 있을 때만 ID 매핑 시도
+      // Before: categories 빈 배열(API 실패) 시 find가 항상 undefined → 선택한 필터가 무시됨
+      // After: categories가 비어있으면 카테고리 필터 스킵
+      if (currentFilters.category.length > 0 && categories.length > 0) {
+        const categoryIds = currentFilters.category
+          .map((name) => categories.find((c) => c.name === name)?.id)
+          .filter((id): id is number => id !== undefined);
+        if (categoryIds.length > 0) params.categoryId = categoryIds;
+      }
+
+      // 화폐 유형 필터: 선택된 화폐 유형 배열 전달 (다중 선택 지원)
+      // Before: 매핑 테이블에 없는 키 → undefined 포함 가능
+      // After: .filter(Boolean)로 undefined 방어
+      if (currentFilters.currencyType.length > 0) {
+        const mapped = currentFilters.currencyType
+          .map((ct) => CURRENCY_MAP[ct])
+          .filter((v): v is "BELL" | "MILE_TICKET" => v !== undefined);
+        if (mapped.length > 0) params.currencyType = mapped;
+      }
+
+      // 거래 유형 필터: 선택된 거래 유형 배열 전달 (다중 선택 지원)
+      if (currentFilters.tradeType.length > 0) {
+        const mapped = currentFilters.tradeType
+          .map((tt) => TRADE_TYPE_MAP[tt])
+          .filter((v): v is "SELL" | "BUY" => v !== undefined);
+        if (mapped.length > 0) params.postType = mapped;
+      }
+
+      // 가격 필터
+      if (currentFilters.priceMin) {
+        params.minPrice = parseInt(currentFilters.priceMin, 10);
+      }
+      if (currentFilters.priceMax) {
+        params.maxPrice = parseInt(currentFilters.priceMax, 10);
+      }
+
+      return params;
+    },
+    [categories]
+  );
+
+  // 검색 실행 (API 호출)
+  const executeSearch = useCallback(
+    async (query: string, currentFilters: FilterState) => {
+      if (!query.trim()) return;
+
+      setIsSearching(true);
+      setIsLoadingResults(true);
+      setSearchError(null);
+
+      try {
+        const params = buildSearchParams(query, currentFilters);
+        const response = await searchPosts(params);
+        setSearchResults(response.posts);
+        setTotalResults(response.totalElements);
+      } catch (err) {
+        console.error("검색 실패:", err);
+        setSearchError(err instanceof Error ? err.message : "검색에 실패했습니다");
+        setSearchResults([]);
+        setTotalResults(0);
+      } finally {
+        setIsLoadingResults(false);
+      }
+    },
+    [buildSearchParams]
+  );
+
+  // 검색 실행 핸들러
   const handleSearch = (query: string) => {
     if (!query.trim()) return;
 
-    setIsSearching(true);
-    let results = mockSearchResults.filter((item) =>
-      item.title.toLowerCase().includes(query.toLowerCase())
-    );
-    results = applyFilters(results, filters);
-    setSearchResults(results);
+    // 최근 검색어 추가
+    setRecentKeywords((prev) => addRecentKeyword(prev, query.trim()));
+    executeSearch(query, filters);
   };
+
+  // 필터 변경 시 재검색
+  const handleFilterChange = useCallback(
+    (newFilters: FilterState) => {
+      setFilters(newFilters);
+      if (isSearching && searchQuery.trim()) {
+        executeSearch(searchQuery, newFilters);
+      }
+    },
+    [isSearching, searchQuery, executeSearch]
+  );
 
   // 카테고리 필터 적용
   const handleCategoryApply = (selected: string[]) => {
-    const newFilters = { ...filters, category: selected };
-    setFilters(newFilters);
-    if (isSearching && searchQuery) {
-      let results = mockSearchResults.filter((item) =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      results = applyFilters(results, newFilters);
-      setSearchResults(results);
-    }
+    handleFilterChange({ ...filters, category: selected });
   };
 
   // 화폐 필터 적용
   const handleCurrencyApply = (selected: string[]) => {
-    const newFilters = { ...filters, currencyType: selected };
-    setFilters(newFilters);
-    if (isSearching && searchQuery) {
-      let results = mockSearchResults.filter((item) =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      results = applyFilters(results, newFilters);
-      setSearchResults(results);
-    }
+    handleFilterChange({ ...filters, currencyType: selected });
   };
 
   // 거래유형 필터 적용
   const handleTradeTypeApply = (selected: string[]) => {
-    const newFilters = { ...filters, tradeType: selected };
-    setFilters(newFilters);
-    if (isSearching && searchQuery) {
-      let results = mockSearchResults.filter((item) =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      results = applyFilters(results, newFilters);
-      setSearchResults(results);
-    }
+    handleFilterChange({ ...filters, tradeType: selected });
   };
 
   // 가격 필터 적용
   const handlePriceApply = (min: string, max: string) => {
-    const newFilters = { ...filters, priceMin: min, priceMax: max };
-    setFilters(newFilters);
-    if (isSearching && searchQuery) {
-      let results = mockSearchResults.filter((item) =>
-        item.title.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      results = applyFilters(results, newFilters);
-      setSearchResults(results);
-    }
+    handleFilterChange({ ...filters, priceMin: min, priceMax: max });
   };
 
   // 검색어 입력 핸들러 (onKeyDown 사용 - onKeyPress deprecated)
@@ -508,18 +564,25 @@ export default function SearchPage() {
   // 키워드 클릭 핸들러
   const handleKeywordClick = (keyword: string) => {
     setSearchQuery(keyword);
-    handleSearch(keyword);
+    // 최근 검색어 추가
+    setRecentKeywords((prev) => addRecentKeyword(prev, keyword));
+    executeSearch(keyword, filters);
   };
 
   // 최근 검색어 개별 삭제
   const handleRemoveKeyword = (e: React.MouseEvent, keyword: string) => {
     e.stopPropagation();
-    setRecentKeywords((prev) => prev.filter((k) => k !== keyword));
+    setRecentKeywords((prev) => {
+      const updated = prev.filter((k) => k !== keyword);
+      saveRecentKeywords(updated);
+      return updated;
+    });
   };
 
   // 최근 검색어 전체 삭제
   const handleClearAllKeywords = () => {
     setRecentKeywords([]);
+    saveRecentKeywords([]);
   };
 
   // 검색어 초기화
@@ -527,6 +590,8 @@ export default function SearchPage() {
     setSearchQuery("");
     setIsSearching(false);
     setSearchResults([]);
+    setTotalResults(0);
+    setSearchError(null);
   };
 
   // 필터 라벨 함수들
@@ -550,13 +615,13 @@ export default function SearchPage() {
 
   const getPriceLabel = () => {
     if (filters.priceMin && filters.priceMax) {
-      return `${parseInt(filters.priceMin).toLocaleString()}원 - ${parseInt(filters.priceMax).toLocaleString()}원`;
+      return `${parseInt(filters.priceMin, 10).toLocaleString()} - ${parseInt(filters.priceMax, 10).toLocaleString()}`;
     }
     if (filters.priceMin) {
-      return `${parseInt(filters.priceMin).toLocaleString()}원 이상`;
+      return `${parseInt(filters.priceMin, 10).toLocaleString()} 이상`;
     }
     if (filters.priceMax) {
-      return `${parseInt(filters.priceMax).toLocaleString()}원 이하`;
+      return `${parseInt(filters.priceMax, 10).toLocaleString()} 이하`;
     }
     return "가격";
   };
@@ -618,8 +683,7 @@ export default function SearchPage() {
                 <h2 className="font-semibold text-gray-900">최근 검색어</h2>
                 <button
                   onClick={handleClearAllKeywords}
-                  disabled={recentKeywords.length === 0}
-                  className="text-sm text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="text-sm text-gray-400 hover:text-gray-600"
                 >
                   전체 삭제
                 </button>
@@ -653,7 +717,17 @@ export default function SearchPage() {
 
           {/* 인기 검색어 */}
           <div>
-            <h2 className="font-semibold text-gray-900 mb-3">인기 검색어</h2>
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="font-semibold text-gray-900">인기 검색어</h2>
+              {categoryError && (
+                <button
+                  onClick={loadCategories}
+                  className="text-xs text-primary hover:underline"
+                >
+                  새로고침
+                </button>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               {popularKeywords.map((keyword, index) => (
                 <button
@@ -676,22 +750,25 @@ export default function SearchPage() {
           <div className="px-4 py-3 bg-gray-50 border-b border-gray-100">
             <p className="text-sm text-gray-600">
               <span className="font-semibold text-primary">&quot;{searchQuery}&quot;</span> 검색 결과{" "}
-              <span className="font-semibold">{searchResults.length}</span>건
+              <span className="font-semibold">{totalResults}</span>건
             </p>
           </div>
 
           {/* 필터 탭 */}
           <div className="flex gap-2 px-4 py-3 overflow-x-auto border-b border-gray-100 bg-white">
-            {/* 카테고리 필터 */}
+            {/* 카테고리 필터 - API 로드 실패 시 비활성화 (ID 매핑 불가) */}
             <button
-              onClick={() => setIsCategoryModalOpen(true)}
+              onClick={() => categories.length > 0 && setIsCategoryModalOpen(true)}
+              disabled={categories.length === 0}
               className={`px-3 py-1.5 rounded-full text-sm border transition-colors flex items-center gap-1 whitespace-nowrap ${
-                filters.category.length > 0
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-gray-300 text-gray-700"
+                categories.length === 0
+                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                  : filters.category.length > 0
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-gray-300 text-gray-700"
               }`}
             >
-              {getCategoryLabel()}
+              {categories.length === 0 ? "카테고리" : getCategoryLabel()}
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M6 9l6 6 6-6" />
               </svg>
@@ -743,14 +820,37 @@ export default function SearchPage() {
             </button>
           </div>
 
+          {/* 로딩 상태 */}
+          {isLoadingResults && (
+            <div className="flex items-center justify-center py-20">
+              <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+            </div>
+          )}
+
+          {/* 에러 상태 */}
+          {searchError && !isLoadingResults && (
+            <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+              <p className="text-sm">{searchError}</p>
+              <button
+                onClick={() => executeSearch(searchQuery, filters)}
+                className="mt-4 px-4 py-2 text-sm text-primary hover:underline"
+              >
+                다시 시도
+              </button>
+            </div>
+          )}
+
           {/* 결과 목록 */}
-          {searchResults.length > 0 ? (
+          {!isLoadingResults && !searchError && searchResults.length > 0 && (
             <div>
               {searchResults.map((post) => (
                 <SearchResultItem key={post.id} post={post} />
               ))}
             </div>
-          ) : (
+          )}
+
+          {/* 빈 결과 */}
+          {!isLoadingResults && !searchError && searchResults.length === 0 && (
             <div className="flex flex-col items-center justify-center py-20 text-gray-400">
               <span className="text-6xl mb-4">🔍</span>
               <p>검색 결과가 없어요</p>
@@ -764,8 +864,8 @@ export default function SearchPage() {
       <CheckboxFilterModal
         isOpen={isCategoryModalOpen}
         onClose={() => setIsCategoryModalOpen(false)}
-        title="카테고리"
-        options={categories}
+        title={categoryError ? "카테고리 (기본 목록)" : "카테고리"}
+        options={categoryNames}
         selected={filters.category}
         onApply={handleCategoryApply}
       />

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { MobileLayout, Header } from "@/components/common";
 import { HeartIcon, PlusIcon } from "@/components/icons";
 import { useAuth } from "@/context/AuthContext";
@@ -23,12 +24,14 @@ function PostItem({ post }: { post: Post }) {
         상품 카테고리 아이콘
         - 거래하는 아이템 카테고리에 따라 아이콘이 변경됨
         - 아이콘 위치: /public/icons/
-        - 현재 아이콘: island.png, carrot.svg, raccoon_bill.svg
+        - 현재 아이콘: raccoon_bill.svg, island.png, carrot.svg
       */}
       <div className="w-28 h-28 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
-        <img
-          src="/icons/raccoon_bill.svg"
+        <Image
+          src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
           alt="상품 카테고리"
+          width={112}
+          height={112}
           className="w-full h-full object-cover"
         />
       </div>
@@ -36,8 +39,8 @@ function PostItem({ post }: { post: Post }) {
       {/* 상품 정보 */}
       <div className="flex-1 flex flex-col justify-between py-1">
         <div>
-          <h3 className="font-medium text-gray-900 line-clamp-2">{post.itemName}</h3>
-          <p className="text-xs text-gray-500 mt-1">
+          <h3 className="font-medium text-black line-clamp-2">{post.itemName}</h3>
+          <p className="text-xs text-black mt-1">
             {post.userIslandName || "섬 이름 없음"} · {formatRelativeTime(post.bumpedAt || post.createdAt)}
           </p>
         </div>
@@ -93,10 +96,10 @@ export default function HomePage() {
           href="/login"
           className="block mx-4 mt-3 p-4 bg-[#BAE8E7] rounded-xl"
         >
-          <p className="text-sm font-medium text-gray-800">
+          <p className="text-sm font-medium text-black">
             로그인을 통해 거래해주세요
           </p>
-          <p className="text-xs text-gray-600 mt-1">
+          <p className="text-xs text-black mt-1">
             로그인하면 채팅, 가격 제안 등 모든 기능을 이용할 수 있어요
           </p>
         </Link>

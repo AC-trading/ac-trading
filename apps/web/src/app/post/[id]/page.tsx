@@ -276,8 +276,8 @@ export default function PostDetailPage() {
         </div>
         {post.userMannerScore != null && (
           <div className="text-right">
-            <p className="text-sm font-medium text-primary">{post.userMannerScore}°C</p>
-            <p className="text-xs text-gray-400">매너온도</p>
+            <p className="text-sm font-medium text-primary">무 가격 : {post.userMannerScore} 벨</p>
+            <p className="text-xs text-gray-400">매너 점수</p>
           </div>
         )}
       </Link>
@@ -313,9 +313,9 @@ export default function PostDetailPage() {
           {post.categoryName || "카테고리 없음"} · {formatRelativeTime(post.bumpedAt || post.createdAt)}
         </p>
 
-        {/* 내용 */}
+        {/* 내용 - [images:...] 패턴 제거 (백엔드 imageUrls 필드 추가 전 임시 처리) */}
         <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-          {post.description}
+          {post.description?.replace(/\n*\[images:[^\]]*\]/g, "").trim()}
         </p>
 
         {/* 관심/조회 정보 */}
@@ -361,7 +361,7 @@ export default function PostDetailPage() {
       {/* 가격 제안 모달 */}
       {showPriceOfferModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center">
-          <div className="w-full w-full bg-white rounded-t-2xl p-4 space-y-4 animate-slide-up">
+          <div className="w-full bg-white rounded-t-2xl p-4 space-y-4 animate-slide-up">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold">가격 제안하기</h3>
               <button
@@ -462,7 +462,7 @@ export default function PostDetailPage() {
           onClick={() => setShowMoreMenu(false)}
         >
           <div
-            className="w-full w-full bg-white rounded-t-2xl overflow-hidden animate-slide-up"
+            className="w-full bg-white rounded-t-2xl overflow-hidden animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 핸들 바 */}
@@ -518,7 +518,7 @@ export default function PostDetailPage() {
           }}
         >
           <div
-            className="w-full w-full bg-white rounded-t-2xl overflow-hidden animate-slide-up max-h-[80vh] overflow-y-auto"
+            className="w-full bg-white rounded-t-2xl overflow-hidden animate-slide-up max-h-[80vh] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             {/* 헤더 */}

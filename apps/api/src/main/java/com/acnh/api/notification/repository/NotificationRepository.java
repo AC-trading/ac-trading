@@ -33,7 +33,9 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     /**
      * 사용자 ID의 모든 알림 읽음 처리
      */
-    @Modifying
+    // Before: @Modifying만 사용 → 벌크 업데이트 후 영속성 컨텍스트에 stale 데이터 남음
+    // After: clearAutomatically = true → 벌크 업데이트 후 영속성 컨텍스트 자동 초기화
+    @Modifying(clearAutomatically = true)
     @Query("UPDATE Notification n SET n.isRead = true WHERE n.userId = :userId AND n.isRead = false AND n.deletedAt IS NULL")
     int markAllAsReadByUserId(@Param("userId") Long userId);
 }
