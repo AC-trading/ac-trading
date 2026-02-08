@@ -87,8 +87,13 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 허용할 Origin (환경 변수에서 읽음)
-        configuration.setAllowedOrigins(Arrays.asList(allowedOriginsString.split(",")));
+        /*
+         * [PR Review 수정]
+         * Before: setAllowedOrigins → 정확한 도메인만 매칭 (Vercel 프리뷰 도메인 차단)
+         * After: setAllowedOriginPatterns → 와일드카드 패턴 지원 (ac-trading-*.vercel.app)
+         * 이유: Vercel 프리뷰 배포 시 WebSocket CORS 차단 문제 해결
+         */
+        configuration.setAllowedOriginPatterns(Arrays.asList(allowedOriginsString.split(",")));
 
         // 허용할 HTTP 메서드
         configuration.setAllowedMethods(Arrays.asList(
