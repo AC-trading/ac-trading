@@ -168,11 +168,11 @@ export default function ProfilePage() {
       {/* 약관 및 정책 링크 */}
       <div className="mt-8 px-4 py-4 border-t border-gray-100">
         <div className="flex justify-center gap-4 text-sm text-black">
-          <Link href="/terms" className="hover:text-black hover:underline">
+          <Link href="/terms" className="hover:underline">
             이용약관
           </Link>
           <span>|</span>
-          <Link href="/privacy" className="hover:text-black hover:underline">
+          <Link href="/privacy" className="hover:underline">
             개인정보처리방침
           </Link>
         </div>

@@ -81,7 +81,7 @@ public class NotificationService {
         return count;
     }
 
-    // ========== Private Helper Methods ==========
+    // ========== 내부 헬퍼 메서드 ==========
 
     /**
      * UUID로 회원 조회

@@ -37,7 +37,7 @@ const tradeTypes = ["팔아요", "구해요"];
 const pricePresets = [
   { label: "~10,000", min: 0, max: 10000 },
   { label: "10,000 ~ 100,000", min: 10000, max: 100000 },
-  { label: "100,000~", min: 100000, max: 0 },
+  { label: "100,000~", min: 100000, max: 0 },  // max: 0 = 상한 없음
 ];
 
 // 인기 검색어 (동물의 숲 관련)
@@ -600,13 +600,13 @@ export default function SearchPage() {
 
   const getPriceLabel = () => {
     if (filters.priceMin && filters.priceMax) {
-      return `${parseInt(filters.priceMin).toLocaleString()} - ${parseInt(filters.priceMax).toLocaleString()}`;
+      return `${parseInt(filters.priceMin, 10).toLocaleString()} - ${parseInt(filters.priceMax, 10).toLocaleString()}`;
     }
     if (filters.priceMin) {
-      return `${parseInt(filters.priceMin).toLocaleString()} 이상`;
+      return `${parseInt(filters.priceMin, 10).toLocaleString()} 이상`;
     }
     if (filters.priceMax) {
-      return `${parseInt(filters.priceMax).toLocaleString()} 이하`;
+      return `${parseInt(filters.priceMax, 10).toLocaleString()} 이하`;
     }
     return "가격";
   };
