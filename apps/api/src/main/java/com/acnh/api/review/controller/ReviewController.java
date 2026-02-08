@@ -29,6 +29,30 @@ public class ReviewController {
     private static final int DEFAULT_PAGE_SIZE = 20;
 
     /**
+     * 내가 받은 리뷰 목록 조회
+     * GET /api/users/me/reviews
+     */
+    @GetMapping("/users/me/reviews")
+    public ResponseEntity<?> getMyReviews(
+            @AuthenticationPrincipal String visitorId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        log.info("내 리뷰 목록 조회 요청 - visitorId: {}", visitorId);
+
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "UNAUTHORIZED",
+                    "message", "로그인이 필요합니다"
+            ));
+        }
+
+        Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
+        ReviewListResponse response = reviewService.getMyReviews(visitorId, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * 유저가 받은 리뷰 목록 조회
      * GET /api/users/{userId}/reviews
      */

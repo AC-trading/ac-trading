@@ -62,9 +62,15 @@ function loadRecentKeywords(): string[] {
 }
 
 // 최근 검색어 저장
+// Before: localStorage.setItem에 try/catch 없음 → Safari 개인정보 보호 모드나 용량 초과 시 예외 발생
+// After: try/catch 추가
 function saveRecentKeywords(keywords: string[]) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(RECENT_KEYWORDS_KEY, JSON.stringify(keywords));
+  try {
+    localStorage.setItem(RECENT_KEYWORDS_KEY, JSON.stringify(keywords));
+  } catch {
+    // Safari 개인정보 보호 모드 또는 localStorage 용량 초과 시 무시
+  }
 }
 
 // 최근 검색어에 추가 (중복 제거, 최대 10개)

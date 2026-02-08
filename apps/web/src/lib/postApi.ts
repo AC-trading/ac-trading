@@ -147,6 +147,8 @@ export interface ReviewListResponse {
   totalElements: number;
   hasNext: boolean;
   hasPrevious: boolean;
+  averageRating: number | null;
+  reviewCount: number | null;
 }
 
 // ========== 채팅 타입 정의 ==========
@@ -563,6 +565,19 @@ export async function createReview(request: ReviewCreateRequest): Promise<Review
     method: 'POST',
     body: JSON.stringify(request),
   });
+}
+
+/**
+ * 내가 받은 리뷰 목록 조회
+ * GET /api/users/me/reviews
+ */
+export async function getMyReviews(
+  page = 0,
+  size = 20
+): Promise<ReviewListResponse> {
+  return fetchWithAuth<ReviewListResponse>(
+    `${API_URL}/api/users/me/reviews?page=${page}&size=${size}`
+  );
 }
 
 /**

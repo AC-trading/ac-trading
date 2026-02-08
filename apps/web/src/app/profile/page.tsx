@@ -157,10 +157,10 @@ export default function ProfilePage() {
           <ChevronRightIcon className="text-black" />
         </Link>
         <Link
-          href="/review"
+          href="/profile/reviews"
           className="flex items-center justify-between px-4 py-4 border-b border-gray-100 hover:bg-gray-50 transition-colors"
         >
-          <span className="text-black font-medium">나의 활동</span>
+          <span className="text-black font-medium">받은 매너 평가</span>
           <ChevronRightIcon className="text-black" />
         </Link>
       </div>
