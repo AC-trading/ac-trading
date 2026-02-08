@@ -109,7 +109,7 @@ export default function ChatRoomPage() {
   const params = useParams();
   const roomId = Number(params.id);
 
-  const { isAuthenticated, isLoading: authLoading, user, accessToken } = useAuth();
+  const { isAuthenticated, isLoading: authLoading, accessToken } = useAuth();
   const [chatRoom, setChatRoom] = useState<ChatRoom | null>(null);
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -119,7 +119,10 @@ export default function ChatRoomPage() {
   const [isBottomTabOpen, setIsBottomTabOpen] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const currentUserId = user?.id ? Number(user.id) : undefined;
+
+  // Before: currentUserId = Number(user.id) → user.id는 UUID 문자열이라 NaN 반환
+  // NaN !== NaN이므로 useEffect deps에서 매 렌더마다 변경 감지 → WebSocket 무한 재연결
+  // After: chatRoom.otherUserId(상대방 numeric ID)로 "내 메시지" 판별
 
   // 더보기 메뉴 상태
   const [showMoreMenu, setShowMoreMenu] = useState(false);
@@ -145,13 +148,15 @@ export default function ChatRoomPage() {
   };
 
   // 메시지 포맷 변환 (API 응답 -> 화면 표시용)
-  const formatMessage = (msg: ChatMessage, userId: number | undefined): DisplayMessage => ({
+  // Before: isMe를 Number(user.id) === senderId로 판별 → user.id가 UUID라 NaN, 항상 false
+  // After: otherUserId와 비교 → senderId !== otherUserId이면 내 메시지
+  const formatMessage = (msg: ChatMessage, otherUserId: number | undefined): DisplayMessage => ({
     id: msg.id,
     senderId: msg.senderId,
     senderNickname: msg.senderNickname,
     content: msg.content,
     imageUrl: msg.imageUrl,
-    isMe: msg.senderId === userId,
+    isMe: otherUserId !== undefined && msg.senderId !== otherUserId,
     time: formatMessageTime(msg.createdAt),
     isRead: msg.isRead,
   });
@@ -177,7 +182,7 @@ export default function ChatRoomPage() {
         // 이전 메시지 조회
         const prevMessages = await getChatMessages(roomId);
         const formattedMessages = prevMessages.map((msg) =>
-          formatMessage(msg as unknown as ChatMessage, currentUserId)
+          formatMessage(msg as unknown as ChatMessage, room.otherUserId)
         );
         setMessages(formattedMessages);
       } catch (err) {
@@ -188,7 +193,7 @@ export default function ChatRoomPage() {
     };
 
     loadChatRoom();
-  }, [isAuthenticated, authLoading, roomId, currentUserId, router]);
+  }, [isAuthenticated, authLoading, roomId, router]);
 
   // WebSocket 연결
   useEffect(() => {
@@ -205,25 +210,24 @@ export default function ChatRoomPage() {
           roomId,
           // 새 메시지 수신
           (newMessage: ChatMessage) => {
-            const formattedMessage = formatMessage(newMessage, currentUserId);
+            const otherUserId = chatRoom?.otherUserId;
+            const formattedMessage = formatMessage(newMessage, otherUserId);
             setMessages((prev) => [...prev, formattedMessage]);
             scrollToBottom();
 
-            // 상대방 메시지면 읽음 처리
-            if (newMessage.senderId !== currentUserId) {
+            // 상대방 메시지면 읽음 처리 (otherUserId와 같으면 상대방 메시지)
+            if (otherUserId !== undefined && newMessage.senderId === otherUserId) {
               webSocketClient.markAsRead(roomId);
             }
           },
           // 읽음 알림 수신
-          (userId: number) => {
-            if (userId !== currentUserId) {
-              // 내 메시지들을 읽음 처리
-              setMessages((prev) =>
-                prev.map((msg) =>
-                  msg.isMe ? { ...msg, isRead: true } : msg
-                )
-              );
-            }
+          () => {
+            // 상대방이 읽으면 내 메시지들을 읽음 처리
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.isMe ? { ...msg, isRead: true } : msg
+              )
+            );
           }
         );
 
@@ -241,7 +245,7 @@ export default function ChatRoomPage() {
       webSocketClient.unsubscribeFromChatRoom(roomId);
       webSocketClient.disconnect();
     };
-  }, [accessToken, roomId, isLoading, currentUserId]);
+  }, [accessToken, roomId, isLoading, chatRoom?.otherUserId]);
 
   // 메시지 변경 시 스크롤
   useEffect(() => {
