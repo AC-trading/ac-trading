@@ -335,7 +335,7 @@ export default function PostDetailPage() {
             🐰
           </div>
           <div className="flex-1">
-            <p className="font-semibold text-gray-900">{post.userNickname || "익명"}</p>
+            <p className="font-semibold text-[#5BBFB3]">{post.userNickname || "익명"}</p>
             <p className="text-sm text-gray-500">{post.userIslandName || "섬 이름 없음"}</p>
           </div>
           {post.userMannerScore != null && (
@@ -350,7 +350,7 @@ export default function PostDetailPage() {
             🐰
           </div>
           <div className="flex-1">
-            <p className="font-semibold text-gray-900">{post.userNickname || "익명"}</p>
+            <p className="font-semibold text-[#5BBFB3]">{post.userNickname || "익명"}</p>
             <p className="text-sm text-gray-500">{post.userIslandName || "섬 이름 없음"}</p>
           </div>
           {post.userMannerScore != null && (

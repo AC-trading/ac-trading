@@ -70,7 +70,7 @@ export default function ProfilePage() {
           className="rounded-full object-cover"
         />
         <div className="flex-1">
-          <h2 className="font-semibold text-lg text-black">{user?.nickname || "닉네임 없음"}</h2>
+          <h2 className="font-semibold text-lg text-[#5BBFB3]">{user?.nickname || "닉네임 없음"}</h2>
           <p className="text-sm text-black">
             {user?.islandName || "섬 이름 없음"}
           </p>

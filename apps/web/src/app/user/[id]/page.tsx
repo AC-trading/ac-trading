@@ -158,7 +158,7 @@ export default function UserProfilePage() {
           className="rounded-full object-cover"
         />
         <div className="flex-1">
-          <h2 className="font-semibold text-lg">{userProfile.nickname || "닉네임 없음"}</h2>
+          <h2 className="font-semibold text-lg text-[#5BBFB3]">{userProfile.nickname || "닉네임 없음"}</h2>
           <p className="text-sm text-gray-500">
             {userProfile.islandName || "섬 이름 없음"}
           </p>
