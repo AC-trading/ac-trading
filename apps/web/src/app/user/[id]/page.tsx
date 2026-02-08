@@ -164,14 +164,14 @@ export default function UserProfilePage() {
         </div>
       </div>
 
-      {/* 무 가격 (매너 점수) - 당근마켓 스타일 */}
+      {/* 무 점수 (매너 점수) - 당근마켓 스타일 */}
       <div className="mx-4 mt-2 p-4 bg-gray-50 rounded-xl">
         <div className="flex items-center gap-1 mb-3">
-          <span className="font-semibold text-gray-800">무 가격</span>
+          <span className="font-semibold text-gray-800">무 점수</span>
           <span
             className="text-xs text-gray-400"
-            aria-label="무 가격은 거래 매너를 나타내는 지표입니다"
-            title="무 가격은 거래 매너를 나타내는 지표입니다"
+            aria-label="무 점수는 거래 매너를 나타내는 지표입니다"
+            title="무 점수는 거래 매너를 나타내는 지표입니다"
           >
             ⓘ
           </span>
@@ -183,8 +183,8 @@ export default function UserProfilePage() {
             </span>
             <Image
               src={process.env.NEXT_PUBLIC_ICON_CARROT || "/icons/carrot.svg"}
-              alt="당근 아이콘"
-              title="매너 점수"
+              alt="무 아이콘"
+              title="무 점수"
               width={40}
               height={40}
             />

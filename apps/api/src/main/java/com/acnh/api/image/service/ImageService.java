@@ -70,7 +70,7 @@ public class ImageService {
     );
 
     /**
-     * 게시글용 이미지 업로드 (최대 10개)
+     * 게시글용 이미지 업로드 (최대 3개)
      */
     public List<String> uploadPostImages(List<MultipartFile> files, String visitorId) {
         Long userId = findMemberByUuid(visitorId).getId();

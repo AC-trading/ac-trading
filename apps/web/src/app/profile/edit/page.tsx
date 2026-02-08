@@ -15,43 +15,34 @@ export default function ProfileEditPage() {
   const { user, accessToken, isLoading } = useAuth();
   const [formData, setFormData] = useState({
     islandName: "",
-    islandSuffix: "섬" as "섬" | "도" | "", // 빈 문자열은 접미사 없음을 의미
+    islandSuffix: "섬" as "섬" | "도",
     name: "",
     hemisphere: "NORTH",
     dreamAddress: "",
   });
   const [isIslandNameValid, setIsIslandNameValid] = useState(false);
-  // CodeRabbit 리뷰 반영: 기존 섬 이름에 접미사가 있었는지 추적
-  const [hadOriginalSuffix, setHadOriginalSuffix] = useState(true);
+  // 섬/도 선택 버튼은 항상 표시
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // 기존 프로필 정보 불러오기
   useEffect(() => {
     if (user) {
-      // CodeRabbit 리뷰 반영: 섬 이름에서 접미사(섬/도) 분리 + 접미사 없는 경우 처리
+      // 섬 이름에서 접미사(섬/도) 분리
       let baseName = user.islandName || "";
-      let suffix: "섬" | "도" | "" = "섬";
-      let hasSuffix = false;
+      let suffix: "섬" | "도" = "섬";
 
       if (baseName.endsWith("도")) {
         suffix = "도";
         baseName = baseName.slice(0, -1);
-        hasSuffix = true;
       } else if (baseName.endsWith("섬")) {
         suffix = "섬";
         baseName = baseName.slice(0, -1);
-        hasSuffix = true;
-      } else if (baseName) {
-        // 접미사가 없는 기존 이름 (영문, 특수문자 등)
-        suffix = "";
-        hasSuffix = false;
       }
 
-      setHadOriginalSuffix(hasSuffix || !user.islandName); // 신규 유저는 접미사 사용
       setFormData({
         islandName: baseName,
-        islandSuffix: hasSuffix || !user.islandName ? (suffix || "섬") : "",
+        islandSuffix: suffix,
         name: user.nickname || "",
         hemisphere: user.hemisphere || "NORTH",
         dreamAddress: user.dreamCode || "",
@@ -87,10 +78,16 @@ export default function ProfileEditPage() {
       const isNewUser = !user?.isProfileComplete;
       const endpoint = isNewUser ? "/api/users/me/profile-setup" : "/api/users/me/update";
 
-      // 섬 이름 + 접미사(섬/도) 결합 (접미사가 있는 경우에만)
-      const fullIslandName = formData.islandSuffix
-        ? formData.islandName + formData.islandSuffix
-        : formData.islandName;
+      // 섬 이름 + 접미사(섬/도) 결합
+      // 특수문자( " #@& 등) 포함 가능 - trim만 적용
+      const trimmedName = formData.islandName.trim();
+      const fullIslandName = trimmedName + formData.islandSuffix;
+
+      if (!trimmedName) {
+        setError("섬 이름을 입력해주세요.");
+        setIsSubmitting(false);
+        return;
+      }
 
       const res = await fetch(`${API_URL}${endpoint}`, {
         method: "POST",
@@ -99,7 +96,7 @@ export default function ProfileEditPage() {
           Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          nickname: formData.name,
+          nickname: formData.name.trim(),
           islandName: fullIslandName,
           dreamAddress: formData.dreamAddress || null,
           ...(isNewUser && { hemisphere: formData.hemisphere }),
@@ -153,7 +150,7 @@ export default function ProfileEditPage() {
 
         {/* 입력 폼 */}
         <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
-          {/* 섬 이름 */}
+          {/* 섬 이름 - 특수문자( " #@& 등) 포함 가능, 별도 필터링 없음 */}
           <div>
             <label className="block text-gray-800 font-medium mb-1">섬 이름</label>
             <div className="flex gap-2">
@@ -165,33 +162,31 @@ export default function ProfileEditPage() {
                 placeholder="섬 이름"
                 className="flex-1 px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
-              {/* 섬/도 선택 - 기존에 접미사가 있거나 신규 유저인 경우에만 표시 */}
-              {hadOriginalSuffix && (
-                <div className="flex">
-                  <button
-                    type="button"
-                    onClick={() => setFormData((prev) => ({ ...prev, islandSuffix: "섬" }))}
-                    className={`px-4 py-3 rounded-l-lg text-sm font-medium border transition-colors ${
-                      formData.islandSuffix === "섬"
-                        ? "border-primary bg-primary/10 text-primary border-r-0"
-                        : "border-gray-300 text-gray-700 hover:border-gray-400 border-r-0"
-                    }`}
-                  >
-                    섬
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData((prev) => ({ ...prev, islandSuffix: "도" }))}
-                    className={`px-4 py-3 rounded-r-lg text-sm font-medium border transition-colors ${
-                      formData.islandSuffix === "도"
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-gray-300 text-gray-700 hover:border-gray-400"
-                    }`}
-                  >
-                    도
-                  </button>
-                </div>
-              )}
+              {/* 섬/도 선택 버튼 */}
+              <div className="flex">
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, islandSuffix: "섬" }))}
+                  className={`px-4 py-3 rounded-l-lg text-sm font-medium border transition-colors ${
+                    formData.islandSuffix === "섬"
+                      ? "border-primary bg-primary/10 text-primary border-r-0"
+                      : "border-gray-300 text-gray-700 hover:border-gray-400 border-r-0"
+                  }`}
+                >
+                  섬
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData((prev) => ({ ...prev, islandSuffix: "도" }))}
+                  className={`px-4 py-3 rounded-r-lg text-sm font-medium border transition-colors ${
+                    formData.islandSuffix === "도"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-gray-300 text-gray-700 hover:border-gray-400"
+                  }`}
+                >
+                  도
+                </button>
+              </div>
             </div>
             {/* CodeRabbit 리뷰 반영: dead code 제거
                Before: formData.islandName && !isIslandNameValid 조건은

@@ -348,6 +348,7 @@ public class PostService {
         String nickname = author != null ? author.getNickname() : "알 수 없음";
         String islandName = author != null ? author.getIslandName() : null;
         Integer mannerScore = author != null ? author.getMannerScore() : null;
+        java.util.UUID userUuid = author != null ? author.getUuid() : null;
 
         // 카테고리명 조회
         Category category = categoryRepository.findByIdAndDeletedAtIsNull(post.getCategoryId()).orElse(null);
@@ -357,7 +358,7 @@ public class PostService {
         Boolean isLiked = currentUserId != null
                 && postLikeRepository.existsByPostIdAndUserIdAndDeletedAtIsNull(post.getId(), currentUserId);
 
-        return PostResponse.from(post, nickname, islandName, mannerScore, categoryName, isLiked);
+        return PostResponse.from(post, nickname, islandName, mannerScore, userUuid, categoryName, isLiked);
     }
 
     /**

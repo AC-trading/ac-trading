@@ -11,6 +11,7 @@ import {
   getCategories,
   formatPrice as apiFormatPrice,
   formatRelativeTime,
+  extractImageUrls,
   Post,
   Category,
 } from "@/lib/postApi";
@@ -92,19 +93,30 @@ interface FilterState {
 
 // 검색 결과 아이템 컴포넌트 (실제 Post 타입 사용)
 function SearchResultItem({ post }: { post: Post }) {
+  const thumbnailUrl = extractImageUrls(post.description)[0];
+
   return (
     <Link
       href={`/post/${post.id}`}
       className="flex gap-4 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors"
     >
+      {/* 상품 썸네일 - 업로드된 이미지가 있으면 첫 번째 이미지, 없으면 기본 아이콘 */}
       <div className="w-28 h-28 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
-        <Image
-          src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
-          alt="상품 카테고리"
-          width={112}
-          height={112}
-          className="w-full h-full object-cover"
-        />
+        {thumbnailUrl ? (
+          <img
+            src={thumbnailUrl}
+            alt={post.itemName}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <Image
+            src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
+            alt="상품 카테고리"
+            width={112}
+            height={112}
+            className="w-full h-full object-cover"
+          />
+        )}
       </div>
       <div className="flex-1 flex flex-col justify-between py-1">
         <div>

@@ -1,0 +1,9 @@
+<svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- 잎사귀 (진한 민트 테두리) -->
+  <path d="M12 22C12 22 4 16 4 10C4 6 7 2 12 2C17 2 20 6 20 10C20 16 12 22 12 22Z"
+    fill="none" stroke="#5BBFB3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- 잎맥 (중앙 줄기) -->
+  <path d="M12 6V18" stroke="#5BBFB3" stroke-width="1.5" stroke-linecap="round"/>
+  <!-- 잎맥 (좌우) -->
+  <path d="M8 10L12 13M16 10L12 13" stroke="#5BBFB3" stroke-width="1.5" stroke-linecap="round"/>
+</svg>

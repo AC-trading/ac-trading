@@ -23,6 +23,7 @@ export interface CategoryListResponse {
 export interface Post {
   id: number;
   userId: number;
+  userUuid: string | null;  // 유저 프로필 조회용 UUID
   userNickname: string | null;
   userIslandName: string | null;
   userMannerScore: number | null;
@@ -623,8 +624,8 @@ export async function createReport(request: ReportCreateRequest): Promise<Report
  * 게시글 좋아요
  * POST /api/posts/{postId}/like
  */
-export async function likePost(postId: number): Promise<{ liked: boolean; likeCount: number }> {
-  return fetchWithAuth<{ liked: boolean; likeCount: number }>(`${API_URL}/api/posts/${postId}/like`, {
+export async function likePost(postId: number): Promise<{ isLiked: boolean; likeCount: number }> {
+  return fetchWithAuth<{ isLiked: boolean; likeCount: number }>(`${API_URL}/api/posts/${postId}/like`, {
     method: 'POST',
   });
 }
@@ -633,8 +634,8 @@ export async function likePost(postId: number): Promise<{ liked: boolean; likeCo
  * 게시글 좋아요 해제
  * POST /api/posts/{postId}/unlike
  */
-export async function unlikePost(postId: number): Promise<{ liked: boolean; likeCount: number }> {
-  return fetchWithAuth<{ liked: boolean; likeCount: number }>(`${API_URL}/api/posts/${postId}/unlike`, {
+export async function unlikePost(postId: number): Promise<{ isLiked: boolean; likeCount: number }> {
+  return fetchWithAuth<{ isLiked: boolean; likeCount: number }>(`${API_URL}/api/posts/${postId}/unlike`, {
     method: 'POST',
   });
 }
@@ -642,7 +643,7 @@ export async function unlikePost(postId: number): Promise<{ liked: boolean; like
 /**
  * 게시글 좋아요 토글 (클라이언트에서 상태에 따라 like/unlike 호출)
  */
-export async function togglePostLike(postId: number, currentlyLiked: boolean): Promise<{ liked: boolean; likeCount: number }> {
+export async function togglePostLike(postId: number, currentlyLiked: boolean): Promise<{ isLiked: boolean; likeCount: number }> {
   if (currentlyLiked) {
     return unlikePost(postId);
   } else {
@@ -667,6 +668,37 @@ export async function getLikedPosts(page = 0, size = 20): Promise<PostListRespon
 }
 
 // ========== 유틸리티 함수 ==========
+
+/**
+ * description에서 [images:url1,url2,...] 패턴을 파싱하여 이미지 URL 배열 반환
+ * TODO: 백엔드 Post 엔티티에 imageUrls 필드 추가 후 제거
+ *
+ * [PR Review 수정]
+ * Before: URL 프로토콜 검증 없이 반환
+ * After: http/https 프로토콜만 허용 (javascript:, data: 등 차단)
+ */
+export function extractImageUrls(description: string | null | undefined): string[] {
+  if (!description) return [];
+  const match = description.match(/\[images:([^\]]*)\]/);
+  if (!match) return [];
+  return match[1].split(",").filter((url) => {
+    if (!url) return false;
+    try {
+      const protocol = new URL(url).protocol;
+      return protocol === "https:" || protocol === "http:";
+    } catch {
+      return false;
+    }
+  });
+}
+
+/**
+ * description에서 [images:...] 패턴을 제거한 텍스트 반환
+ */
+export function stripImagePattern(description: string | null | undefined): string {
+  if (!description) return "";
+  return description.replace(/\n*\[images:[^\]]*\]/g, "").trim();
+}
 
 /**
  * 가격 포맷팅 (숫자 → 문자열)

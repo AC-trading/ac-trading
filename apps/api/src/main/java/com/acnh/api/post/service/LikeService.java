@@ -159,12 +159,13 @@ public class LikeService {
         String nickname = author != null ? author.getNickname() : "알 수 없음";
         String islandName = author != null ? author.getIslandName() : null;
         Integer mannerScore = author != null ? author.getMannerScore() : null;
+        java.util.UUID userUuid = author != null ? author.getUuid() : null;
 
         // 카테고리명 조회
         Category category = categoryRepository.findByIdAndDeletedAtIsNull(post.getCategoryId()).orElse(null);
         String categoryName = category != null ? category.getName() : null;
 
         // 찜 목록에서 조회한 것이므로 isLiked는 항상 true
-        return PostResponse.from(post, nickname, islandName, mannerScore, categoryName, true);
+        return PostResponse.from(post, nickname, islandName, mannerScore, userUuid, categoryName, true);
     }
 }
