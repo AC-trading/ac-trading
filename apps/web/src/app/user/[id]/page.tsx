@@ -179,7 +179,7 @@ export default function UserProfilePage() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <span className="text-3xl font-bold text-red-500">
-              {userProfile.mannerScore != null ? `${userProfile.mannerScore.toFixed(1)}` : "-"}
+              {userProfile.mannerScore != null ? `${userProfile.mannerScore.toFixed(1)} 벨` : "-"}
             </span>
             <Image
               src={process.env.NEXT_PUBLIC_ICON_CARROT || "/icons/carrot.svg"}

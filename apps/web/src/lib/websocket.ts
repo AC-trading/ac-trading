@@ -100,11 +100,12 @@ class WebSocketClient {
         this.onDisconnectCallback?.();
       },
 
-      // 에러 처리
+      // STOMP 프로토콜 에러 (구독 권한 거부 등 - 연결 해제가 아닐 수 있음)
+      // Before: onDisconnectCallback 호출 → UI에 "연결 해제" 잘못 표시
+      // After: 에러 로깅만 수행, 실제 연결 해제는 onDisconnect/onWebSocketClose에서 처리
       onStompError: (frame) => {
         console.error('STOMP 에러:', frame.headers['message']);
         console.error('에러 상세:', frame.body);
-        this.onDisconnectCallback?.();
       },
 
       // WebSocket 에러

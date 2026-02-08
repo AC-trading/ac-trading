@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { HomeOutlineIcon, PlusIcon } from "@/components/icons";
@@ -26,6 +26,15 @@ export default function NewPostPage() {
   const [priceNegotiable, setPriceNegotiable] = useState(false);
   const [images, setImages] = useState<ImagePreview[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imagesRef = useRef<ImagePreview[]>([]);
+
+  // 컴포넌트 언마운트 시 미리보기 URL 해제 (메모리 누수 방지)
+  useEffect(() => { imagesRef.current = images; }, [images]);
+  useEffect(() => {
+    return () => {
+      imagesRef.current.forEach((img) => URL.revokeObjectURL(img.previewUrl));
+    };
+  }, []);
 
   // 카테고리 목록
   const [categories, setCategories] = useState<Category[]>([]);

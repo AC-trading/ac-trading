@@ -276,8 +276,8 @@ export default function PostDetailPage() {
         </div>
         {post.userMannerScore != null && (
           <div className="text-right">
-            <p className="text-sm font-medium text-primary">{post.userMannerScore} 무가격</p>
-            <p className="text-xs text-gray-400">매너점수</p>
+            <p className="text-sm font-medium text-primary">무 가격 : {post.userMannerScore} 벨</p>
+            <p className="text-xs text-gray-400">매너 점수</p>
           </div>
         )}
       </Link>
@@ -313,9 +313,9 @@ export default function PostDetailPage() {
           {post.categoryName || "카테고리 없음"} · {formatRelativeTime(post.bumpedAt || post.createdAt)}
         </p>
 
-        {/* 내용 */}
+        {/* 내용 - [images:...] 패턴 제거 (백엔드 imageUrls 필드 추가 전 임시 처리) */}
         <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-          {post.description}
+          {post.description?.replace(/\n*\[images:[^\]]*\]/g, "").trim()}
         </p>
 
         {/* 관심/조회 정보 */}

@@ -597,7 +597,8 @@ export default function ChatRoomPage() {
                     setShowMoreMenu(false);
                     // Before: alert("매너 평가 기능은 준비 중입니다.")
                     // After: 리뷰 페이지로 이동 (postId, revieweeId 전달)
-                    router.push(`/review?postId=${chatRoom?.postId}&revieweeId=${chatRoom?.otherUserId}`);
+                    if (!chatRoom) return;
+                    router.push(`/review?postId=${chatRoom.postId}&revieweeId=${chatRoom.otherUserId}`);
                   }}
                   className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors"
                 >

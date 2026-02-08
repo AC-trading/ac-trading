@@ -3,6 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { ChevronLeftIcon, StarIcon } from "@/components/icons";
 import { getPost, createReview, Post } from "@/lib/postApi";
 
@@ -27,9 +28,16 @@ function ReviewForm() {
     if (!postId) return;
 
     async function loadPost() {
+      // Before: parseInt NaN 검증 없음
+      // After: NaN 검증 추가
+      const parsedId = parseInt(postId!, 10);
+      if (isNaN(parsedId)) {
+        console.error("잘못된 postId:", postId);
+        return;
+      }
       setIsLoadingPost(true);
       try {
-        const postData = await getPost(parseInt(postId!, 10));
+        const postData = await getPost(parsedId);
         setPost(postData);
       } catch (err) {
         console.error("게시글 로드 실패:", err);
@@ -52,9 +60,17 @@ function ReviewForm() {
     setError(null);
 
     try {
+      // Before: parseInt NaN 검증 없음
+      // After: NaN 검증 추가
+      const parsedPostId = parseInt(postId, 10);
+      const parsedRevieweeId = parseInt(revieweeId, 10);
+      if (isNaN(parsedPostId) || isNaN(parsedRevieweeId)) {
+        setError("잘못된 거래 정보입니다");
+        return;
+      }
       await createReview({
-        postId: parseInt(postId, 10),
-        revieweeId: parseInt(revieweeId, 10),
+        postId: parsedPostId,
+        revieweeId: parsedRevieweeId,
         rating,
         comment: review.trim() || undefined,
       });
@@ -107,9 +123,13 @@ function ReviewForm() {
         ) : post ? (
           <div className="flex items-center gap-3 pb-4 border-b border-gray-100">
             <div className="w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
-              <img
-                src="/icons/raccoon_bill.svg"
+              {/* Before: 하드코딩 <img> 태그
+                 After: 환경변수 + Next.js Image 컴포넌트 */}
+              <Image
+                src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
                 alt="상품"
+                width={48}
+                height={48}
                 className="w-full h-full object-cover"
               />
             </div>
