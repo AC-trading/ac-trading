@@ -1,101 +1,50 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { MobileLayout, Header } from "@/components/common";
 import { RefreshIcon } from "@/components/icons";
+import { useAuth } from "@/context/AuthContext";
+import {
+  getNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+  formatRelativeTime,
+  NotificationItem,
+} from "@/lib/postApi";
 
-// 더미 알림 목록 데이터
-const mockAlarms = [
-  {
-    id: 1,
-    type: "keyword",
-    title: "키워드 알림",
-    message: "'자전거' 키워드로 새 글이 등록되었어요.",
-    time: "방금 전",
-    product: { image: "/icons/island.png" },
-    read: false,
-  },
-  {
-    id: 2,
-    type: "price",
-    title: "가격 인하",
-    message: "관심 상품 '에어팟 프로'의 가격이 내려갔어요.",
-    time: "1시간 전",
-    product: { image: "/icons/island.png" },
-    read: false,
-  },
-  {
-    id: 3,
-    type: "chat",
-    title: "새 채팅",
-    message: "요우님이 메시지를 보냈어요.",
-    time: "3시간 전",
-    product: { image: "/icons/island.png" },
-    read: true,
-  },
-  {
-    id: 4,
-    type: "like",
-    title: "관심 상품",
-    message: "관심 등록한 '커피머신'이 판매 완료되었어요.",
-    time: "1일 전",
-    product: { image: "/icons/island.png" },
-    read: true,
-  },
-  {
-    id: 5,
-    type: "keyword",
-    title: "키워드 알림",
-    message: "'닌텐도' 키워드로 새 글이 등록되었어요.",
-    time: "2일 전",
-    product: { image: "/icons/island.png" },
-    read: true,
-  },
-  {
-    id: 6,
-    type: "system",
-    title: "공지사항",
-    message: "AC-Trading 서비스 업데이트 안내",
-    time: "3일 전",
-    product: { image: "/icons/island.png" },
-    read: true,
-  },
-  {
-    id: 7,
-    type: "price",
-    title: "가격 인하",
-    message: "관심 상품 '바이레도 블랑쉬'의 가격이 내려갔어요.",
-    time: "1주 전",
-    product: { image: "/icons/carrot.svg" },
-    read: true,
-  },
-  {
-    id: 8,
-    type: "keyword",
-    title: "키워드 알림",
-    message: "'아이폰' 키워드로 새 글이 등록되었어요.",
-    time: "1주 전",
-    product: { image: "/icons/island.png" },
-    read: true,
-  },
-  {
-    id: 9,
-    type: "system",
-    title: "이벤트",
-    message: "첫 거래 완료 시 포인트 적립 이벤트!",
-    time: "2주 전",
-    product: { image: "/icons/island.png" },
-    read: true,
-  },
-];
+// 알림 타입별 링크 생성
+function getAlarmLink(alarm: NotificationItem): string {
+  // referenceType과 referenceId로 이동할 페이지 결정
+  switch (alarm.referenceType) {
+    case "CHAT_ROOM":
+      return alarm.referenceId ? `/chat/${alarm.referenceId}` : "/chat";
+    case "POST":
+      return alarm.referenceId ? `/post/${alarm.referenceId}` : "/";
+    default:
+      return "#";
+  }
+}
 
-// 알림 아이템 컴포넌트 (채팅 리스트와 동일한 디자인, 프로필 제외)
-function AlarmItem({ alarm }: { alarm: (typeof mockAlarms)[0] }) {
+// 알림 아이템 컴포넌트
+function AlarmItem({
+  alarm,
+  onRead,
+}: {
+  alarm: NotificationItem;
+  onRead: (id: number) => void;
+}) {
+  const handleClick = () => {
+    if (!alarm.read) {
+      onRead(alarm.id);
+    }
+  };
+
   return (
     <Link
-      href={alarm.type === "chat" ? "/chat" : "#"}
+      href={getAlarmLink(alarm)}
+      onClick={handleClick}
       className={`flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100 ${
         !alarm.read ? "bg-primary-light/20" : ""
       }`}
@@ -104,18 +53,22 @@ function AlarmItem({ alarm }: { alarm: (typeof mockAlarms)[0] }) {
       <div className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           <span className="font-medium text-black">{alarm.title}</span>
-          <span className="text-xs text-black">· {alarm.time}</span>
+          <span className="text-xs text-black">
+            · {formatRelativeTime(alarm.createdAt)}
+          </span>
           {/* 읽지 않은 알림 표시 */}
           {!alarm.read && (
             <span className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
           )}
         </div>
-        <p className="text-sm text-black truncate mt-0.5">{alarm.message}</p>
+        {alarm.content && (
+          <p className="text-sm text-black truncate mt-0.5">{alarm.content}</p>
+        )}
       </div>
 
       {/* 상품 카테고리 아이콘 */}
       <Image
-        src={alarm.product?.image || process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
+        src={process.env.NEXT_PUBLIC_ICON_ISLAND || "/icons/island.png"}
         alt="알림 아이콘"
         width={48}
         height={48}
@@ -125,13 +78,66 @@ function AlarmItem({ alarm }: { alarm: (typeof mockAlarms)[0] }) {
   );
 }
 
-// 알림 목록 페이지 - 채팅 목록과 동일한 디자인 (프로필 제외)
+// 알림 목록 페이지 - 더미 데이터 제거, 실제 API 연동
 export default function AlarmListPage() {
-  // 알림 목록 상태 (추후 API 연동 시 useEffect에서 fetch)
-  const [alarms] = useState(mockAlarms);
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const [alarms, setAlarms] = useState<NotificationItem[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // 읽지 않은 알림 개수
-  const unreadCount = alarms.filter((alarm) => !alarm.read).length;
+  // 알림 목록 로드
+  const loadAlarms = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await getNotifications(0, 50);
+      setAlarms(response.notifications);
+      setUnreadCount(response.unreadCount);
+    } catch (err) {
+      console.error("알림 로드 실패:", err);
+      setError(
+        err instanceof Error ? err.message : "알림을 불러오는데 실패했습니다"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      loadAlarms();
+    } else if (!authLoading && !isAuthenticated) {
+      setIsLoading(false);
+    }
+  }, [authLoading, isAuthenticated]);
+
+  // 개별 알림 읽음 처리
+  const handleRead = async (id: number) => {
+    try {
+      await markNotificationAsRead(id);
+      setAlarms((prev) =>
+        prev.map((a) => (a.id === id ? { ...a, read: true, isRead: true } : a))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+    } catch (err) {
+      console.error("알림 읽음 처리 실패:", err);
+    }
+  };
+
+  // 모든 알림 읽음 처리
+  const handleReadAll = async () => {
+    if (unreadCount === 0) return;
+    try {
+      await markAllNotificationsAsRead();
+      setAlarms((prev) =>
+        prev.map((a) => ({ ...a, read: true, isRead: true }))
+      );
+      setUnreadCount(0);
+    } catch (err) {
+      console.error("모든 알림 읽음 처리 실패:", err);
+    }
+  };
 
   return (
     <MobileLayout>
@@ -141,28 +147,83 @@ export default function AlarmListPage() {
         showBack
         onBack={() => window.history.back()}
         rightElement={
-          <button className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+          <button
+            onClick={loadAlarms}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+          >
             <RefreshIcon className="w-5 h-5 text-black" />
           </button>
         }
       />
 
-      {/* 읽지 않은 알림 개수 표시 */}
-      {unreadCount > 0 && (
-        <div className="px-4 py-2 bg-primary-light/30 text-primary text-sm font-medium">
-          읽지 않은 알림 {unreadCount}개
+      {/* 비로그인 상태 */}
+      {!authLoading && !isAuthenticated && (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+          <span className="text-6xl mb-4">🔒</span>
+          <p>로그인이 필요합니다</p>
+          <Link
+            href="/login"
+            className="mt-4 px-4 py-2 text-sm text-primary hover:underline"
+          >
+            로그인하기
+          </Link>
+        </div>
+      )}
+
+      {/* 로딩 상태 */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+        </div>
+      )}
+
+      {/* 에러 상태 */}
+      {error && !isLoading && (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+          <p className="text-sm">{error}</p>
+          <button
+            onClick={loadAlarms}
+            className="mt-4 px-4 py-2 text-sm text-primary hover:underline"
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
+
+      {/* 읽지 않은 알림 개수 + 모두 읽기 */}
+      {!isLoading && !error && isAuthenticated && alarms.length > 0 && (
+        <div className="flex items-center justify-between px-4 py-2 bg-primary-light/30">
+          {unreadCount > 0 ? (
+            <span className="text-primary text-sm font-medium">
+              읽지 않은 알림 {unreadCount}개
+            </span>
+          ) : (
+            <span className="text-gray-500 text-sm">
+              모든 알림을 확인했습니다
+            </span>
+          )}
+          {unreadCount > 0 && (
+            <button
+              onClick={handleReadAll}
+              className="text-xs text-primary hover:underline"
+            >
+              모두 읽기
+            </button>
+          )}
         </div>
       )}
 
       {/* 알림 목록 */}
-      <div>
-        {alarms.map((alarm) => (
-          <AlarmItem key={alarm.id} alarm={alarm} />
-        ))}
-      </div>
+      {!isLoading && !error && isAuthenticated && alarms.length > 0 && (
+        <div>
+          {alarms.map((alarm) => (
+            <AlarmItem key={alarm.id} alarm={alarm} onRead={handleRead} />
+          ))}
+        </div>
+      )}
 
       {/* 알림 없을 때 빈 상태 */}
-      {alarms.length === 0 && (
+      {!isLoading && !error && isAuthenticated && alarms.length === 0 && (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
           <span className="text-6xl mb-4">🔔</span>
           <p>아직 알림이 없어요</p>

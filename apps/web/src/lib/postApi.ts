@@ -985,3 +985,79 @@ export async function deleteTransaction(id: number): Promise<{ message: string }
     method: 'DELETE',
   });
 }
+
+// ========== 알림 타입 정의 ==========
+
+// 알림 응답 타입
+export interface NotificationItem {
+  id: number;
+  type: string;
+  title: string;
+  content: string | null;
+  referenceId: number | null;
+  referenceType: string | null;
+  isRead: boolean;
+  // read 프로퍼티를 isRead의 별칭으로 사용 (프론트 호환)
+  read: boolean;
+  createdAt: string;
+}
+
+// 알림 목록 응답 타입
+export interface NotificationListResponse {
+  notifications: NotificationItem[];
+  unreadCount: number;
+  currentPage: number;
+  totalPages: number;
+  totalElements: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
+// ========== 알림 API 함수 ==========
+
+/**
+ * 내 알림 목록 조회
+ * GET /api/notifications
+ */
+export async function getNotifications(page = 0, size = 20): Promise<NotificationListResponse> {
+  const data = await fetchWithAuth<NotificationListResponse>(
+    `${API_URL}/api/notifications?page=${page}&size=${size}`
+  );
+  // isRead → read 별칭 매핑
+  data.notifications = data.notifications.map((n) => ({
+    ...n,
+    read: n.isRead ?? n.read,
+  }));
+  return data;
+}
+
+/**
+ * 읽지 않은 알림 수 조회
+ * GET /api/notifications/unread-count
+ */
+export async function getUnreadNotificationCount(): Promise<number> {
+  const data = await fetchWithAuth<{ unreadCount: number }>(
+    `${API_URL}/api/notifications/unread-count`
+  );
+  return data.unreadCount;
+}
+
+/**
+ * 알림 읽음 처리
+ * PATCH /api/notifications/{id}/read
+ */
+export async function markNotificationAsRead(id: number): Promise<{ message: string }> {
+  return fetchWithAuth<{ message: string }>(`${API_URL}/api/notifications/${id}/read`, {
+    method: 'PATCH',
+  });
+}
+
+/**
+ * 모든 알림 읽음 처리
+ * PATCH /api/notifications/read-all
+ */
+export async function markAllNotificationsAsRead(): Promise<{ message: string; count: number }> {
+  return fetchWithAuth<{ message: string; count: number }>(`${API_URL}/api/notifications/read-all`, {
+    method: 'PATCH',
+  });
+}
