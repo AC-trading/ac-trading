@@ -62,7 +62,7 @@ export default function NewPostPage() {
 
   // 이미지 파일 선택 핸들러
   const handleImageAdd = () => {
-    if (images.length >= 10) return;
+    if (images.length >= 3) return;
     fileInputRef.current?.click();
   };
 
@@ -72,7 +72,7 @@ export default function NewPostPage() {
     if (!files) return;
 
     const newImages: ImagePreview[] = [];
-    const remainingSlots = 10 - images.length;
+    const remainingSlots = 3 - images.length;
 
     for (let i = 0; i < Math.min(files.length, remainingSlots); i++) {
       const file = files[i];
@@ -328,11 +328,11 @@ export default function NewPostPage() {
               <button
                 type="button"
                 onClick={handleImageAdd}
-                disabled={images.length >= 10}
+                disabled={images.length >= 3}
                 className="w-16 h-16 flex-shrink-0 border-2 border-primary border-dashed rounded-lg flex flex-col items-center justify-center hover:bg-primary/5 transition-colors disabled:opacity-50"
               >
                 <PlusIcon className="w-6 h-6 text-primary" />
-                <span className="text-xs text-primary mt-0.5">{images.length}/10</span>
+                <span className="text-xs text-primary mt-0.5">{images.length}/3</span>
               </button>
 
               {/* 선택된 이미지 미리보기 */}
@@ -357,7 +357,7 @@ export default function NewPostPage() {
                 </div>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-1">최대 10장까지 등록 가능</p>
+            <p className="text-xs text-gray-400 mt-1">최대 3장까지 등록 가능</p>
           </div>
         </div>
 
