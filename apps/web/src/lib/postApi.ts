@@ -623,8 +623,8 @@ export async function createReport(request: ReportCreateRequest): Promise<Report
  * 게시글 좋아요
  * POST /api/posts/{postId}/like
  */
-export async function likePost(postId: number): Promise<{ liked: boolean; likeCount: number }> {
-  return fetchWithAuth<{ liked: boolean; likeCount: number }>(`${API_URL}/api/posts/${postId}/like`, {
+export async function likePost(postId: number): Promise<{ isLiked: boolean; likeCount: number }> {
+  return fetchWithAuth<{ isLiked: boolean; likeCount: number }>(`${API_URL}/api/posts/${postId}/like`, {
     method: 'POST',
   });
 }
@@ -633,8 +633,8 @@ export async function likePost(postId: number): Promise<{ liked: boolean; likeCo
  * 게시글 좋아요 해제
  * POST /api/posts/{postId}/unlike
  */
-export async function unlikePost(postId: number): Promise<{ liked: boolean; likeCount: number }> {
-  return fetchWithAuth<{ liked: boolean; likeCount: number }>(`${API_URL}/api/posts/${postId}/unlike`, {
+export async function unlikePost(postId: number): Promise<{ isLiked: boolean; likeCount: number }> {
+  return fetchWithAuth<{ isLiked: boolean; likeCount: number }>(`${API_URL}/api/posts/${postId}/unlike`, {
     method: 'POST',
   });
 }
@@ -642,7 +642,7 @@ export async function unlikePost(postId: number): Promise<{ liked: boolean; like
 /**
  * 게시글 좋아요 토글 (클라이언트에서 상태에 따라 like/unlike 호출)
  */
-export async function togglePostLike(postId: number, currentlyLiked: boolean): Promise<{ liked: boolean; likeCount: number }> {
+export async function togglePostLike(postId: number, currentlyLiked: boolean): Promise<{ isLiked: boolean; likeCount: number }> {
   if (currentlyLiked) {
     return unlikePost(postId);
   } else {

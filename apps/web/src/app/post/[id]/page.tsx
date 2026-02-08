@@ -108,7 +108,7 @@ export default function PostDetailPage() {
 
     try {
       const result = await togglePostLike(post.id, isLiked);
-      setIsLiked(result.liked);
+      setIsLiked(result.isLiked);
       setLikeCount(result.likeCount);
     } catch (err) {
       console.error("좋아요 실패:", err);
@@ -276,8 +276,7 @@ export default function PostDetailPage() {
         </div>
         {post.userMannerScore != null && (
           <div className="text-right">
-            <p className="text-sm font-medium text-primary">무 가격 : {post.userMannerScore} 벨</p>
-            <p className="text-xs text-gray-400">매너 점수</p>
+            <p className="text-sm font-medium text-primary">무 점수 : {post.userMannerScore} 벨</p>
           </div>
         )}
       </Link>
