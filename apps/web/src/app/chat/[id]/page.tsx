@@ -181,8 +181,9 @@ export default function ChatRoomPage() {
 
         // 이전 메시지 조회
         const prevMessages = await getChatMessages(roomId);
+        // getChatMessages는 ChatMessage[] 반환 (chatApi → websocket.ts 동일 타입)
         const formattedMessages = prevMessages.map((msg) =>
-          formatMessage(msg as unknown as ChatMessage, room.otherUserId)
+          formatMessage(msg, room.otherUserId)
         );
         setMessages(formattedMessages);
       } catch (err) {

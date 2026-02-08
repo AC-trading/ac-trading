@@ -322,24 +322,41 @@ export default function PostDetailPage() {
         );
       })()}
 
-      {/* 판매자 정보 */}
-      <Link
-        href={`/user/${post.userUuid}`}
-        className="flex items-center gap-3 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors"
-      >
-        <div className="w-12 h-12 rounded-full bg-primary-light flex items-center justify-center text-2xl">
-          🐰
-        </div>
-        <div className="flex-1">
-          <p className="font-semibold text-gray-900">{post.userNickname || "익명"}</p>
-          <p className="text-sm text-gray-500">{post.userIslandName || "섬 이름 없음"}</p>
-        </div>
-        {post.userMannerScore != null && (
-          <div className="text-right">
-            <p className="text-sm font-medium text-primary">무 점수 : {post.userMannerScore} 벨</p>
+      {/* 판매자 정보 - userUuid가 null이면 링크 비활성화 */}
+      {post.userUuid ? (
+        <Link
+          href={`/user/${post.userUuid}`}
+          className="flex items-center gap-3 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors"
+        >
+          <div className="w-12 h-12 rounded-full bg-primary-light flex items-center justify-center text-2xl">
+            🐰
           </div>
-        )}
-      </Link>
+          <div className="flex-1">
+            <p className="font-semibold text-gray-900">{post.userNickname || "익명"}</p>
+            <p className="text-sm text-gray-500">{post.userIslandName || "섬 이름 없음"}</p>
+          </div>
+          {post.userMannerScore != null && (
+            <div className="text-right">
+              <p className="text-sm font-medium text-primary">무 점수 : {post.userMannerScore} 벨</p>
+            </div>
+          )}
+        </Link>
+      ) : (
+        <div className="flex items-center gap-3 p-4 border-b border-gray-100">
+          <div className="w-12 h-12 rounded-full bg-primary-light flex items-center justify-center text-2xl">
+            🐰
+          </div>
+          <div className="flex-1">
+            <p className="font-semibold text-gray-900">{post.userNickname || "익명"}</p>
+            <p className="text-sm text-gray-500">{post.userIslandName || "섬 이름 없음"}</p>
+          </div>
+          {post.userMannerScore != null && (
+            <div className="text-right">
+              <p className="text-sm font-medium text-primary">무 점수 : {post.userMannerScore} 벨</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 상품 정보 */}
       <div className="p-4 space-y-4">

@@ -6,6 +6,9 @@ import Link from "next/link";
 import { HomeOutlineIcon, PlusIcon } from "@/components/icons";
 import { createPost, getCategories, uploadPostImages, Category, PostCreateRequest } from "@/lib/postApi";
 
+// 게시글 이미지 최대 업로드 수 (환경변수 또는 기본값 3)
+const MAX_POST_IMAGES = Number(process.env.NEXT_PUBLIC_MAX_POST_IMAGES) || 3;
+
 // 이미지 미리보기 타입
 interface ImagePreview {
   file: File;
@@ -62,7 +65,7 @@ export default function NewPostPage() {
 
   // 이미지 파일 선택 핸들러
   const handleImageAdd = () => {
-    if (images.length >= 3) return;
+    if (images.length >= MAX_POST_IMAGES) return;
     fileInputRef.current?.click();
   };
 
@@ -72,7 +75,7 @@ export default function NewPostPage() {
     if (!files) return;
 
     const newImages: ImagePreview[] = [];
-    const remainingSlots = 3 - images.length;
+    const remainingSlots = MAX_POST_IMAGES - images.length;
 
     for (let i = 0; i < Math.min(files.length, remainingSlots); i++) {
       const file = files[i];
@@ -328,11 +331,11 @@ export default function NewPostPage() {
               <button
                 type="button"
                 onClick={handleImageAdd}
-                disabled={images.length >= 3}
+                disabled={images.length >= MAX_POST_IMAGES}
                 className="w-16 h-16 flex-shrink-0 border-2 border-primary border-dashed rounded-lg flex flex-col items-center justify-center hover:bg-primary/5 transition-colors disabled:opacity-50"
               >
                 <PlusIcon className="w-6 h-6 text-primary" />
-                <span className="text-xs text-primary mt-0.5">{images.length}/3</span>
+                <span className="text-xs text-primary mt-0.5">{images.length}/{MAX_POST_IMAGES}</span>
               </button>
 
               {/* 선택된 이미지 미리보기 */}
@@ -357,7 +360,7 @@ export default function NewPostPage() {
                 </div>
               ))}
             </div>
-            <p className="text-xs text-gray-400 mt-1">최대 3장까지 등록 가능</p>
+            <p className="text-xs text-gray-400 mt-1">최대 {MAX_POST_IMAGES}장까지 등록 가능</p>
           </div>
         </div>
 
