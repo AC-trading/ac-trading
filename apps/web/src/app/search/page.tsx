@@ -394,13 +394,11 @@ export default function SearchPage() {
 
   // 카테고리 목록 (API에서 로드)
   const [categories, setCategories] = useState<Category[]>([]);
-  const categoryNames = categories.map((c) => c.name);
+  const defaultCategoryNames = ["가구", "옷", "벽지", "바닥", "잡화", "레시피", "화석", "미술품"];
+  const categoryNames = categories.length > 0 ? categories.map((c) => c.name) : defaultCategoryNames;
 
   // 인기 검색어: 카테고리명 기반 동적 생성
-  // Before: 카테고리 로드 전 빈 배열 → "인기 검색어" 섹션 비어 보임
-  // After: 카테고리 로드 전 기본 키워드 표시
-  const defaultKeywords = ["가구", "옷", "벽지", "바닥", "잡화", "레시피", "화석", "미술품"];
-  const popularKeywords = categoryNames.length > 0 ? categoryNames : defaultKeywords;
+  const popularKeywords = categoryNames;
 
   // 필터 상태 (배열로 다중 선택 지원)
   const [filters, setFilters] = useState<FilterState>({
@@ -417,19 +415,28 @@ export default function SearchPage() {
   const [isCurrencyModalOpen, setIsCurrencyModalOpen] = useState(false);
   const [isTradeTypeModalOpen, setIsTradeTypeModalOpen] = useState(false);
 
+  // 카테고리 로드 실패 상태
+  const [categoryError, setCategoryError] = useState(false);
+
+  // 카테고리 로드 함수 (재시도 가능)
+  // Before: 카테고리 로드 실패 시 빈 배열 → 필터 모달에 빈 목록
+  // After: 실패 시 기본 카테고리 유지 + 재시도 경로 제공
+  const loadCategories = useCallback(async () => {
+    try {
+      setCategoryError(false);
+      const response = await getCategories();
+      setCategories(response.categories);
+    } catch (err) {
+      console.error("카테고리 로드 실패:", err);
+      setCategoryError(true);
+    }
+  }, []);
+
   // 카테고리 로드 + 최근 검색어 로드
   useEffect(() => {
-    async function loadCategories() {
-      try {
-        const response = await getCategories();
-        setCategories(response.categories);
-      } catch (err) {
-        console.error("카테고리 로드 실패:", err);
-      }
-    }
     loadCategories();
     setRecentKeywords(loadRecentKeywords());
-  }, []);
+  }, [loadCategories]);
 
   // 필터 → API 파라미터 변환
   const buildSearchParams = useCallback(
@@ -708,7 +715,17 @@ export default function SearchPage() {
 
           {/* 인기 검색어 */}
           <div>
-            <h2 className="font-semibold text-gray-900 mb-3">인기 검색어</h2>
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="font-semibold text-gray-900">인기 검색어</h2>
+              {categoryError && (
+                <button
+                  onClick={loadCategories}
+                  className="text-xs text-primary hover:underline"
+                >
+                  새로고침
+                </button>
+              )}
+            </div>
             <div className="flex flex-wrap gap-2">
               {popularKeywords.map((keyword, index) => (
                 <button
@@ -838,11 +855,11 @@ export default function SearchPage() {
         </div>
       )}
 
-      {/* 카테고리 필터 모달 - API에서 로드한 카테고리 사용 */}
+      {/* 카테고리 필터 모달 */}
       <CheckboxFilterModal
         isOpen={isCategoryModalOpen}
         onClose={() => setIsCategoryModalOpen(false)}
-        title="카테고리"
+        title={categoryError ? "카테고리 (기본 목록)" : "카테고리"}
         options={categoryNames}
         selected={filters.category}
         onApply={handleCategoryApply}
