@@ -447,8 +447,10 @@ export default function SearchPage() {
         size: 50,
       };
 
-      // 카테고리 필터: 선택된 카테고리 ID 배열 전달 (다중 선택 지원)
-      if (currentFilters.category.length > 0) {
+      // 카테고리 필터: API에서 로드한 카테고리가 있을 때만 ID 매핑 시도
+      // Before: categories 빈 배열(API 실패) 시 find가 항상 undefined → 선택한 필터가 무시됨
+      // After: categories가 비어있으면 카테고리 필터 스킵
+      if (currentFilters.category.length > 0 && categories.length > 0) {
         const categoryIds = currentFilters.category
           .map((name) => categories.find((c) => c.name === name)?.id)
           .filter((id): id is number => id !== undefined);
@@ -754,16 +756,19 @@ export default function SearchPage() {
 
           {/* 필터 탭 */}
           <div className="flex gap-2 px-4 py-3 overflow-x-auto border-b border-gray-100 bg-white">
-            {/* 카테고리 필터 */}
+            {/* 카테고리 필터 - API 로드 실패 시 비활성화 (ID 매핑 불가) */}
             <button
-              onClick={() => setIsCategoryModalOpen(true)}
+              onClick={() => categories.length > 0 && setIsCategoryModalOpen(true)}
+              disabled={categories.length === 0}
               className={`px-3 py-1.5 rounded-full text-sm border transition-colors flex items-center gap-1 whitespace-nowrap ${
-                filters.category.length > 0
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-gray-300 text-gray-700"
+                categories.length === 0
+                  ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                  : filters.category.length > 0
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-gray-300 text-gray-700"
               }`}
             >
-              {getCategoryLabel()}
+              {categories.length === 0 ? "카테고리" : getCategoryLabel()}
               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M6 9l6 6 6-6" />
               </svg>
