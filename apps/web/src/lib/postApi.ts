@@ -670,6 +670,24 @@ export async function getLikedPosts(page = 0, size = 20): Promise<PostListRespon
 // ========== 유틸리티 함수 ==========
 
 /**
+ * description에서 [images:url1,url2,...] 패턴을 파싱하여 이미지 URL 배열 반환
+ * TODO: 백엔드 Post 엔티티에 imageUrls 필드 추가 후 제거
+ */
+export function extractImageUrls(description: string | null | undefined): string[] {
+  if (!description) return [];
+  const match = description.match(/\[images:([^\]]*)\]/);
+  return match ? match[1].split(",").filter(Boolean) : [];
+}
+
+/**
+ * description에서 [images:...] 패턴을 제거한 텍스트 반환
+ */
+export function stripImagePattern(description: string | null | undefined): string {
+  if (!description) return "";
+  return description.replace(/\n*\[images:[^\]]*\]/g, "").trim();
+}
+
+/**
  * 가격 포맷팅 (숫자 → 문자열)
  */
 export function formatPrice(price: number | null, currencyType: string | null): string {

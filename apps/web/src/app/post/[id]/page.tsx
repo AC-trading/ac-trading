@@ -10,6 +10,8 @@ import {
   formatPrice,
   formatRelativeTime,
   getStatusLabel,
+  extractImageUrls,
+  stripImagePattern,
   Post,
   createPriceOffer,
   togglePostLike,
@@ -43,6 +45,7 @@ export default function PostDetailPage() {
   const [post, setPost] = useState<Post | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // 가격 제안 모달 상태
   const [showPriceOfferModal, setShowPriceOfferModal] = useState(false);
@@ -257,10 +260,67 @@ export default function PostDetailPage() {
         </div>
       </header>
 
-      {/* 상품 이미지 */}
-      <div className="w-full h-72 bg-gray-100 overflow-hidden flex items-center justify-center">
-        <span className="text-6xl">📦</span>
-      </div>
+      {/* 상품 이미지 - description에서 [images:url1,url2,...] 패턴 파싱 */}
+      {(() => {
+        const imageUrls = extractImageUrls(post.description);
+
+        if (imageUrls.length === 0) {
+          return (
+            <div className="w-full h-72 bg-gray-100 overflow-hidden flex items-center justify-center">
+              <span className="text-6xl">📦</span>
+            </div>
+          );
+        }
+
+        return (
+          <div className="relative w-full h-72 bg-gray-100 overflow-hidden">
+            {/* 현재 이미지 */}
+            <img
+              src={imageUrls[currentImageIndex]}
+              alt={`${post.itemName} 이미지 ${currentImageIndex + 1}`}
+              className="w-full h-full object-contain"
+            />
+
+            {/* 이전/다음 버튼 (2장 이상일 때만) */}
+            {imageUrls.length > 1 && (
+              <>
+                <button
+                  onClick={() => setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : imageUrls.length - 1))}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white flex items-center justify-center hover:bg-black/50 transition-colors"
+                >
+                  ‹
+                </button>
+                <button
+                  onClick={() => setCurrentImageIndex((prev) => (prev < imageUrls.length - 1 ? prev + 1 : 0))}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/30 text-white flex items-center justify-center hover:bg-black/50 transition-colors"
+                >
+                  ›
+                </button>
+              </>
+            )}
+
+            {/* 이미지 인디케이터 (2장 이상일 때만) */}
+            {imageUrls.length > 1 && (
+              <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+                {imageUrls.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentImageIndex(idx)}
+                    className={`w-2 h-2 rounded-full transition-colors ${
+                      idx === currentImageIndex ? "bg-white" : "bg-white/50"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+
+            {/* 이미지 카운터 */}
+            <div className="absolute top-3 right-3 px-2 py-1 rounded-full bg-black/40 text-white text-xs">
+              {currentImageIndex + 1} / {imageUrls.length}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* 판매자 정보 */}
       <Link
@@ -314,7 +374,7 @@ export default function PostDetailPage() {
 
         {/* 내용 - [images:...] 패턴 제거 (백엔드 imageUrls 필드 추가 전 임시 처리) */}
         <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-          {post.description?.replace(/\n*\[images:[^\]]*\]/g, "").trim()}
+          {stripImagePattern(post.description)}
         </p>
 
         {/* 관심/조회 정보 */}

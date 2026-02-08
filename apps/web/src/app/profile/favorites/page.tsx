@@ -6,7 +6,7 @@ import Image from "next/image";
 import { MobileLayout, Header } from "@/components/common";
 import { HeartIcon } from "@/components/icons";
 import { useAuth } from "@/context/AuthContext";
-import { getMyLikes, Post, togglePostLike } from "@/lib/postApi";
+import { getMyLikes, extractImageUrls, Post, togglePostLike } from "@/lib/postApi";
 
 // 관심 상품 아이템 컴포넌트
 function FavoriteItem({
@@ -43,21 +43,31 @@ function FavoriteItem({
     }
   };
 
+  const thumbnailUrl = extractImageUrls(post.description)[0];
+
   return (
     <div className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100">
-      {/* 상품 이미지 */}
-      <Link href={`/posts/${post.id}`} className="flex-shrink-0">
-        <Image
-          src={process.env.NEXT_PUBLIC_ICON_ISLAND || "/icons/island.png"}
-          alt={post.itemName}
-          width={80}
-          height={80}
-          className="w-20 h-20 rounded-lg object-cover bg-gray-100"
-        />
+      {/* 상품 썸네일 - 업로드된 이미지가 있으면 첫 번째 이미지, 없으면 기본 아이콘 */}
+      <Link href={`/post/${post.id}`} className="flex-shrink-0">
+        {thumbnailUrl ? (
+          <img
+            src={thumbnailUrl}
+            alt={post.itemName}
+            className="w-20 h-20 rounded-lg object-cover bg-gray-100"
+          />
+        ) : (
+          <Image
+            src={process.env.NEXT_PUBLIC_ICON_ISLAND || "/icons/island.png"}
+            alt={post.itemName}
+            width={80}
+            height={80}
+            className="w-20 h-20 rounded-lg object-cover bg-gray-100"
+          />
+        )}
       </Link>
 
       {/* 상품 정보 */}
-      <Link href={`/posts/${post.id}`} className="flex-1 min-w-0">
+      <Link href={`/post/${post.id}`} className="flex-1 min-w-0">
         <div className="flex items-center gap-2">
           {getStatusBadge(post.status)}
           <span className="text-sm text-gray-400">{post.categoryName}</span>
