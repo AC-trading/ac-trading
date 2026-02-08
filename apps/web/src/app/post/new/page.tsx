@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { HomeOutlineIcon, PlusIcon } from "@/components/icons";
@@ -341,6 +341,7 @@ export default function NewPostPage() {
                   key={index}
                   className="relative w-16 h-16 flex-shrink-0 bg-gray-200 rounded-lg overflow-hidden"
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={image.previewUrl}
                     alt={`이미지 ${index + 1}`}

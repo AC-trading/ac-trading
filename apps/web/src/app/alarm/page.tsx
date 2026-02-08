@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { MobileLayout, Header } from "@/components/common";
 import { RefreshIcon } from "@/components/icons";
 
@@ -113,9 +114,11 @@ function AlarmItem({ alarm }: { alarm: (typeof mockAlarms)[0] }) {
       </div>
 
       {/* 상품 카테고리 아이콘 */}
-      <img
-        src={alarm.product?.image || process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/island.png"}
+      <Image
+        src={alarm.product?.image || process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
         alt="알림 아이콘"
+        width={48}
+        height={48}
         className="w-12 h-12 rounded-lg flex-shrink-0 object-cover bg-gray-100"
       />
     </Link>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { MobileLayout } from "@/components/common";
 import { ChevronLeftIcon, SearchIcon, HeartIcon } from "@/components/icons";
@@ -96,9 +97,11 @@ function SearchResultItem({ post }: { post: Post }) {
       className="flex gap-4 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors"
     >
       <div className="w-28 h-28 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
-        <img
-          src="/icons/raccoon_bill.svg"
+        <Image
+          src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
           alt="상품 카테고리"
+          width={112}
+          height={112}
           className="w-full h-full object-cover"
         />
       </div>

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { MobileLayout, Header } from "@/components/common";
 import { HeartIcon, PlusIcon } from "@/components/icons";
 import { useAuth } from "@/context/AuthContext";
@@ -26,9 +27,11 @@ function PostItem({ post }: { post: Post }) {
         - 현재 아이콘: island.png, carrot.svg
       */}
       <div className="w-28 h-28 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
-        <img
-          src="/icons/raccoon_bill.svg"
+        <Image
+          src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
           alt="상품 카테고리"
+          width={112}
+          height={112}
           className="w-full h-full object-cover"
         />
       </div>
