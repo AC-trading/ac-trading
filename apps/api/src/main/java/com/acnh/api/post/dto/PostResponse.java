@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * 게시글 목록/상세 응답 DTO
@@ -15,6 +16,7 @@ public class PostResponse {
 
     private Long id;
     private Long userId;
+    private UUID userUuid;  // 유저 프로필 조회용 UUID
     private String userNickname;
     private String userIslandName;
     private Integer userMannerScore;
@@ -65,10 +67,11 @@ public class PostResponse {
      * Entity -> DTO 변환 (유저 정보, 카테고리명, 찜 여부 포함)
      */
     public static PostResponse from(Post post, String userNickname, String userIslandName,
-                                    Integer userMannerScore, String categoryName, Boolean isLiked) {
+                                    Integer userMannerScore, UUID userUuid, String categoryName, Boolean isLiked) {
         return PostResponse.builder()
                 .id(post.getId())
                 .userId(post.getUserId())
+                .userUuid(userUuid)
                 .userNickname(userNickname)
                 .userIslandName(userIslandName)
                 .userMannerScore(userMannerScore)

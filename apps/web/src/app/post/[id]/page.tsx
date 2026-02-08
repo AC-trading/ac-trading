@@ -264,7 +264,7 @@ export default function PostDetailPage() {
 
       {/* 판매자 정보 */}
       <Link
-        href={`/user/${post.userId}`}
+        href={`/user/${post.userUuid}`}
         className="flex items-center gap-3 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors"
       >
         <div className="w-12 h-12 rounded-full bg-primary-light flex items-center justify-center text-2xl">

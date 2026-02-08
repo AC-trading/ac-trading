@@ -23,6 +23,7 @@ export interface CategoryListResponse {
 export interface Post {
   id: number;
   userId: number;
+  userUuid: string | null;  // 유저 프로필 조회용 UUID
   userNickname: string | null;
   userIslandName: string | null;
   userMannerScore: number | null;
