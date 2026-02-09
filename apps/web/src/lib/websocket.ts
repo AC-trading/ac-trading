@@ -8,7 +8,7 @@ export interface ChatMessage {
   chatRoomId: number;
   senderId: number;
   senderNickname: string;
-  messageType: 'TEXT' | 'IMAGE';
+  messageType: 'TEXT' | 'IMAGE' | 'SYSTEM';
   content: string | null;
   imageUrl: string | null;
   isRead: boolean;

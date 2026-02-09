@@ -7,6 +7,7 @@ interface AppointmentModalProps {
   onConfirm: (scheduledTradeAt: string) => void;
   onClose: () => void;
   isSubmitting: boolean;
+  initialScheduledAt?: string | null;
 }
 
 // 약속 잡기 모달 (당근마켓 스타일)
@@ -15,21 +16,44 @@ export default function AppointmentModal({
   onConfirm,
   onClose,
   isSubmitting,
+  initialScheduledAt,
 }: AppointmentModalProps) {
-  // 기본값: 내일, 현재 시간에서 30분 단위로 올림
+  // 기존 약속이 있으면 해당 시간으로 초기화, 없으면 내일 + 30분 올림
+  const getInitialDate = (): Date | null => {
+    if (initialScheduledAt) {
+      // 백엔드 UTC → 로컬 변환
+      const dateStr = initialScheduledAt.endsWith('Z') || initialScheduledAt.includes('+')
+        ? initialScheduledAt
+        : initialScheduledAt + 'Z';
+      const d = new Date(dateStr);
+      if (!isNaN(d.getTime())) return d;
+    }
+    return null;
+  };
+
+  const initialDate = getInitialDate();
+
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
 
   const [selectedDate, setSelectedDate] = useState(() => {
-    const y = tomorrow.getFullYear();
-    const m = String(tomorrow.getMonth() + 1).padStart(2, "0");
-    const d = String(tomorrow.getDate()).padStart(2, "0");
+    const base = initialDate || tomorrow;
+    const y = base.getFullYear();
+    const m = String(base.getMonth() + 1).padStart(2, "0");
+    const d = String(base.getDate()).padStart(2, "0");
     return `${y}-${m}-${d}`;
   });
 
   const [selectedHour, setSelectedHour] = useState(() => {
+    if (initialDate) {
+      // Before: 분 반올림이 60이면 시간 미조정 (예: 14:55 → 14:00)
+      // After: 분 반올림 60 시 시간 +1 (예: 14:55 → 15:00)
+      const m = initialDate.getMinutes();
+      const rounded = Math.round(m / 10) * 10;
+      const h = rounded >= 60 ? (initialDate.getHours() + 1) % 24 : initialDate.getHours();
+      return String(h).padStart(2, "0");
+    }
     const now = new Date();
-    // 30분 단위로 올림
     const minutes = now.getMinutes();
     // Before: minutes > 30 → 정확히 30분일 때 올림 안 됨
     // After: minutes >= 30 → 30분 이상이면 다음 시간으로 올림
@@ -43,6 +67,12 @@ export default function AppointmentModal({
   });
 
   const [selectedMinute, setSelectedMinute] = useState(() => {
+    if (initialDate) {
+      // 10분 단위에 맞추기
+      const m = initialDate.getMinutes();
+      const rounded = Math.round(m / 10) * 10;
+      return String(rounded >= 60 ? 0 : rounded).padStart(2, "0");
+    }
     const now = new Date();
     const minutes = now.getMinutes();
     // Before: minutes > 30 → 30분일 때 "30" 반환 (올림 안 됨)
@@ -113,7 +143,7 @@ export default function AppointmentModal({
         {/* 타이틀 */}
         <div className="px-6 pb-6">
           <h2 className="text-xl font-bold text-gray-900">
-            {otherUserNickname}님과 약속
+            {initialScheduledAt ? "약속 시간 변경" : `${otherUserNickname}님과 약속`}
           </h2>
         </div>
 

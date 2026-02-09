@@ -106,11 +106,21 @@ export async function getChatMessages(roomId: number): Promise<ChatMessage[]> {
   return fetchWithAuth<ChatMessage[]>(`${API_URL}/api/chat/rooms/${roomId}/messages`);
 }
 
+// 백엔드 LocalDateTime(UTC 기준)을 로컬 시간으로 변환
+// Before: new Date(dateString) → timezone 정보 없어 로컬로 해석, 9시간 오차
+// After: 'Z' suffix 추가하여 UTC로 파싱 → 브라우저가 자동으로 로컬 시간 변환
+function parseServerDate(dateString: string): Date {
+  if (!dateString.endsWith('Z') && !dateString.includes('+')) {
+    return new Date(dateString + 'Z');
+  }
+  return new Date(dateString);
+}
+
 // 시간 포맷팅 (채팅 목록용)
 export function formatChatTime(dateString: string | null): string {
   if (!dateString) return '';
 
-  const date = new Date(dateString);
+  const date = parseServerDate(dateString);
   const now = new Date();
   const diff = now.getTime() - date.getTime();
 
@@ -129,7 +139,7 @@ export function formatChatTime(dateString: string | null): string {
 
 // 시간 포맷팅 (채팅방 내부용)
 export function formatMessageTime(dateString: string): string {
-  const date = new Date(dateString);
+  const date = parseServerDate(dateString);
   const hours = date.getHours();
   const minutes = date.getMinutes();
   const ampm = hours >= 12 ? '오후' : '오전';

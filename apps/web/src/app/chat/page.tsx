@@ -27,12 +27,12 @@ function ChatItem({ chat }: { chat: ChatRoom }) {
 
       {/* 채팅 정보 */}
       <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-black">{chat.otherUserNickname}</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="font-medium text-black truncate max-w-[80px] flex-shrink-0">{chat.otherUserNickname}</span>
           {chat.otherUserIslandName && (
-            <span className="text-xs text-black">{chat.otherUserIslandName}</span>
+            <span className="text-xs text-black truncate max-w-[60px] flex-shrink-0">{chat.otherUserIslandName}</span>
           )}
-          <span className="text-xs text-black">· {formatChatTime(chat.lastMessageAt)}</span>
+          <span className="text-xs text-black whitespace-nowrap flex-shrink-0">· {formatChatTime(chat.lastMessageAt)}</span>
         </div>
         <p className="text-sm text-black truncate mt-0.5">
           {chat.lastMessage || "채팅을 시작해보세요!"}
@@ -45,13 +45,18 @@ function ChatItem({ chat }: { chat: ChatRoom }) {
           {chat.postItemName}
         </span>
         {chat.postStatus && (
-          <span className={`text-xs px-1.5 py-0.5 rounded ${
+          <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
             chat.postStatus === 'AVAILABLE' ? 'bg-green-100 text-green-700' :
-            chat.postStatus === 'RESERVED' ? 'bg-yellow-100 text-yellow-700' :
-            'bg-gray-100 text-gray-700'
-          }`}>
+            chat.postStatus === 'RESERVED' ? 'text-yellow-700' :
+            'text-white'
+          }`}
+          style={
+            chat.postStatus === 'RESERVED' ? { backgroundColor: '#FFFFF0', border: '1px solid #e5e0c8' } :
+            chat.postStatus === 'COMPLETED' ? { backgroundColor: '#adb5bd' } :
+            undefined
+          }>
             {chat.postStatus === 'AVAILABLE' ? '판매중' :
-             chat.postStatus === 'RESERVED' ? '예약중' : '완료'}
+             chat.postStatus === 'RESERVED' ? '예약중' : '거래완료'}
           </span>
         )}
       </div>
