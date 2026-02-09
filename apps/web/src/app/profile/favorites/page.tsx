@@ -20,7 +20,7 @@ function FavoriteItem({
   const formatPrice = (price: number | null, currencyType: string | null) => {
     if (price === null) return "가격 미정";
     if (currencyType === "MILE_TICKET") return `마일 티켓 ${price}장`;
-    return `${price.toLocaleString()} 벨`;
+    return `${price.toLocaleString()} 덩`;
   };
 
   // 거래 상태 배지
