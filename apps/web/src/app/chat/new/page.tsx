@@ -1,12 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { createChatRoom } from "@/lib/chatApi";
 
-// 채팅방 생성 후 리다이렉트하는 중간 페이지
-export default function NewChatPage() {
+// 로딩 스피너
+function LoadingSpinner() {
+  return (
+    <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+      <div className="w-8 h-8 border-2 border-[#7ECEC5] border-t-transparent rounded-full animate-spin" />
+      <p className="mt-3 text-gray-500 text-sm">채팅방 연결 중...</p>
+    </div>
+  );
+}
+
+// 채팅방 생성 후 리다이렉트하는 컴포넌트
+function NewChatContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const postId = searchParams.get("postId");
@@ -54,11 +64,14 @@ export default function NewChatPage() {
     );
   }
 
-  // 로딩 상태
+  return <LoadingSpinner />;
+}
+
+// Next.js SSG에서 useSearchParams는 Suspense boundary 필요
+export default function NewChatPage() {
   return (
-    <div className="min-h-screen bg-white flex flex-col items-center justify-center">
-      <div className="w-8 h-8 border-2 border-[#7ECEC5] border-t-transparent rounded-full animate-spin" />
-      <p className="mt-3 text-gray-500 text-sm">채팅방 연결 중...</p>
-    </div>
+    <Suspense fallback={<LoadingSpinner />}>
+      <NewChatContent />
+    </Suspense>
   );
 }
