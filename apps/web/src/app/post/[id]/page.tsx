@@ -350,9 +350,9 @@ export default function PostDetailPage() {
             <p className="font-semibold text-[#5BBFB3]">{post.userNickname || "익명"}</p>
             <p className="text-sm text-gray-500">{post.userIslandName || "섬 이름 없음"}</p>
           </div>
-          {post.userMannerScore != null && (
+          {Number.isFinite(post.userMannerScore) && (
             <div className="text-right">
-              <p className="text-sm font-medium" style={{ color: getMannerScoreColor(post.userMannerScore) }}>무 점수 : {post.userMannerScore} 벨</p>
+              <p className="text-sm font-medium" style={{ color: getMannerScoreColor(post.userMannerScore!) }}>무 점수 : {post.userMannerScore} 벨</p>
             </div>
           )}
         </Link>
@@ -365,9 +365,9 @@ export default function PostDetailPage() {
             <p className="font-semibold text-[#5BBFB3]">{post.userNickname || "익명"}</p>
             <p className="text-sm text-gray-500">{post.userIslandName || "섬 이름 없음"}</p>
           </div>
-          {post.userMannerScore != null && (
+          {Number.isFinite(post.userMannerScore) && (
             <div className="text-right">
-              <p className="text-sm font-medium" style={{ color: getMannerScoreColor(post.userMannerScore) }}>무 점수 : {post.userMannerScore} 벨</p>
+              <p className="text-sm font-medium" style={{ color: getMannerScoreColor(post.userMannerScore!) }}>무 점수 : {post.userMannerScore} 벨</p>
             </div>
           )}
         </div>
