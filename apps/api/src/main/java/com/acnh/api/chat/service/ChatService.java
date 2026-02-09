@@ -19,6 +19,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -463,8 +465,16 @@ public class ChatService {
 
         ChatMessageResponse response = ChatMessageResponse.from(saved, "시스템");
 
-        // WebSocket 브로드캐스트 (실시간 반영)
-        messagingTemplate.convertAndSend("/topic/chat." + chatRoomId, response);
+        // Before: 트랜잭션 커밋 전 브로드캐스트 → 롤백 시 유령 메시지 전송 위험
+        // After: 트랜잭션 커밋 후 브로드캐스트 → 롤백 시 메시지 미전송
+        TransactionSynchronizationManager.registerSynchronization(
+                new TransactionSynchronization() {
+                    @Override
+                    public void afterCommit() {
+                        messagingTemplate.convertAndSend("/topic/chat." + chatRoomId, response);
+                    }
+                }
+        );
 
         log.info("시스템 메시지 전송 - roomId: {}, content: {}", chatRoomId, content);
     }

@@ -46,7 +46,12 @@ export default function AppointmentModal({
 
   const [selectedHour, setSelectedHour] = useState(() => {
     if (initialDate) {
-      return String(initialDate.getHours()).padStart(2, "0");
+      // Before: 분 반올림이 60이면 시간 미조정 (예: 14:55 → 14:00)
+      // After: 분 반올림 60 시 시간 +1 (예: 14:55 → 15:00)
+      const m = initialDate.getMinutes();
+      const rounded = Math.round(m / 10) * 10;
+      const h = rounded >= 60 ? (initialDate.getHours() + 1) % 24 : initialDate.getHours();
+      return String(h).padStart(2, "0");
     }
     const now = new Date();
     const minutes = now.getMinutes();
