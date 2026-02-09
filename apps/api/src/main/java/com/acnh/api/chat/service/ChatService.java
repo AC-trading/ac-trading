@@ -368,10 +368,15 @@ public class ChatService {
         chatRoom.cancelReservation();
         chatRoom.updateStatus("ACTIVE");
 
-        // Before: 게시글 상태 미변경 → 채팅 목록에서 "예약중" 유지
-        // After: 게시글 상태도 AVAILABLE로 복구
+        // Before: 무조건 게시글 상태 AVAILABLE로 복구 → 다른 채팅방이 예약 중이면 상태 불일치
+        // After: 같은 게시글의 다른 예약된 채팅방이 없을 때만 AVAILABLE로 복구
         Post post = findPostById(chatRoom.getPostId());
-        post.updateStatus("AVAILABLE");
+        boolean hasOtherReserved = chatRoomRepository.findByPostIdAndDeletedAtIsNull(chatRoom.getPostId())
+                .stream()
+                .anyMatch(r -> !r.getId().equals(chatRoom.getId()) && r.getReservedUserId() != null);
+        if (!hasOtherReserved) {
+            post.updateStatus("AVAILABLE");
+        }
 
         log.info("예약 해제 - roomId: {}", roomId);
 
