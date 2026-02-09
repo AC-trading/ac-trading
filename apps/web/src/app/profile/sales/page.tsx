@@ -25,35 +25,35 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
   { value: "COMPLETED", label: "거래완료" },
 ];
 
+// 상태 배지 (컴포넌트 외부 - 매 렌더링마다 재생성 방지)
+function getStatusBadge(status: string) {
+  switch (status) {
+    case "AVAILABLE":
+      return (
+        <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
+          판매중
+        </span>
+      );
+    case "RESERVED":
+      return (
+        <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full">
+          예약중
+        </span>
+      );
+    case "COMPLETED":
+      return (
+        <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full">
+          거래완료
+        </span>
+      );
+    default:
+      return null;
+  }
+}
+
 // 판매 게시글 아이템 컴포넌트
 function SalesItem({ post }: { post: Post }) {
   const thumbnailUrl = extractImageUrls(post.description).filter(isSafeImageUrl)[0];
-
-  // 상태 배지
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "AVAILABLE":
-        return (
-          <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full">
-            판매중
-          </span>
-        );
-      case "RESERVED":
-        return (
-          <span className="px-2 py-0.5 bg-yellow-100 text-yellow-700 text-xs rounded-full">
-            예약중
-          </span>
-        );
-      case "COMPLETED":
-        return (
-          <span className="px-2 py-0.5 bg-gray-200 text-gray-600 text-xs rounded-full">
-            거래완료
-          </span>
-        );
-      default:
-        return null;
-    }
-  };
 
   return (
     <Link
@@ -105,6 +105,8 @@ export default function SalesPage() {
 
   // 내 판매 게시글 불러오기
   useEffect(() => {
+    let cancelled = false;
+
     async function fetchSalesPosts() {
       if (!isAuthenticated) {
         setLoading(false);
@@ -113,18 +115,21 @@ export default function SalesPage() {
 
       try {
         const response = await getMyPosts(0, 100);
+        if (cancelled) return;
         // postType === 'SELL'인 게시글만 필터링
         const salesPosts = response.posts.filter((post) => post.postType === "SELL");
         setPosts(salesPosts);
       } catch (err) {
+        if (cancelled) return;
         console.error("판매내역 조회 실패:", err);
         setError("판매내역을 불러오는데 실패했습니다.");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     }
 
     fetchSalesPosts();
+    return () => { cancelled = true; };
   }, [isAuthenticated]);
 
   // 상태 필터 적용
@@ -178,22 +183,16 @@ export default function SalesPage() {
         ))}
       </div>
 
-      {/* 로딩 상태 */}
-      {loading && (
+      {/* 컨텐츠 영역 - early return 패턴으로 상태별 배타적 렌더링 */}
+      {loading ? (
         <div className="flex items-center justify-center py-20">
           <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
         </div>
-      )}
-
-      {/* 에러 상태 */}
-      {error && (
+      ) : error ? (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
           <p>{error}</p>
         </div>
-      )}
-
-      {/* 게시글 목록 */}
-      {!loading && !error && filteredPosts.length > 0 && (
+      ) : filteredPosts.length > 0 ? (
         <div>
           <div className="px-4 py-2 bg-gray-50 text-gray-500 text-sm">
             총 {filteredPosts.length}개
@@ -202,10 +201,7 @@ export default function SalesPage() {
             <SalesItem key={post.id} post={post} />
           ))}
         </div>
-      )}
-
-      {/* 빈 상태 */}
-      {!loading && !error && filteredPosts.length === 0 && (
+      ) : (
         <div className="flex flex-col items-center justify-center py-20 text-gray-400">
           <Image
             src={process.env.NEXT_PUBLIC_ICON_ISLAND || "/icons/island.png"}
