@@ -45,13 +45,18 @@ function ChatItem({ chat }: { chat: ChatRoom }) {
           {chat.postItemName}
         </span>
         {chat.postStatus && (
-          <span className={`text-xs px-1.5 py-0.5 rounded ${
+          <span className={`text-xs px-1.5 py-0.5 rounded font-medium ${
             chat.postStatus === 'AVAILABLE' ? 'bg-green-100 text-green-700' :
-            chat.postStatus === 'RESERVED' ? 'bg-yellow-100 text-yellow-700' :
-            'bg-gray-100 text-gray-700'
-          }`}>
+            chat.postStatus === 'RESERVED' ? 'text-yellow-700' :
+            'text-white'
+          }`}
+          style={
+            chat.postStatus === 'RESERVED' ? { backgroundColor: '#FFFFF0', border: '1px solid #e5e0c8' } :
+            chat.postStatus === 'COMPLETED' ? { backgroundColor: '#adb5bd' } :
+            undefined
+          }>
             {chat.postStatus === 'AVAILABLE' ? '판매중' :
-             chat.postStatus === 'RESERVED' ? '예약중' : '완료'}
+             chat.postStatus === 'RESERVED' ? '예약중' : '거래완료'}
           </span>
         )}
       </div>
