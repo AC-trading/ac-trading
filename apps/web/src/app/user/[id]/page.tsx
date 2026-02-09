@@ -186,7 +186,7 @@ export default function UserProfilePage() {
               {userProfile.mannerScore != null && Number.isFinite(userProfile.mannerScore) ? `${userProfile.mannerScore.toFixed(1)} 벨` : "-"}
             </span>
             <Image
-              src={process.env.NEXT_PUBLIC_ICON_CARROT || "/icons/carrot.svg"}
+              src={process.env.NEXT_PUBLIC_ICON_CARROT || "/icons/turnip-2.svg"}
               alt="무 아이콘"
               title="무 점수"
               width={40}
