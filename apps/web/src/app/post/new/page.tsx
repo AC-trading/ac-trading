@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { HomeOutlineIcon, PlusIcon } from "@/components/icons";
-import { createPost, getCategories, uploadPostImages, Category, PostCreateRequest } from "@/lib/postApi";
+import { createPost, getPost, updatePost, getCategories, uploadPostImages, extractImageUrls, stripImagePattern, Category, PostCreateRequest, PostUpdateRequest } from "@/lib/postApi";
 
 // 게시글 이미지 최대 업로드 수 (환경변수 또는 기본값 3)
 const MAX_POST_IMAGES = Number(process.env.NEXT_PUBLIC_MAX_POST_IMAGES) || 3;
@@ -15,9 +15,25 @@ interface ImagePreview {
   previewUrl: string;
 }
 
-// 상품 등록 페이지 - Figma 디자인 기반
+// Suspense boundary로 감싸는 래퍼 (useSearchParams 필요)
 export default function NewPostPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+      </div>
+    }>
+      <NewPostContent />
+    </Suspense>
+  );
+}
+
+// 상품 등록/수정 페이지
+function NewPostContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const editId = searchParams.get("editId");
+  const isEditMode = !!editId;
 
   // 폼 상태
   const [postType, setPostType] = useState<"SELL" | "BUY">("SELL");
@@ -28,6 +44,7 @@ export default function NewPostPage() {
   const [currencyType, setCurrencyType] = useState<"BELL" | "MILE_TICKET">("BELL");
   const [priceNegotiable, setPriceNegotiable] = useState(false);
   const [images, setImages] = useState<ImagePreview[]>([]);
+  const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const imagesRef = useRef<ImagePreview[]>([]);
 
@@ -52,8 +69,8 @@ export default function NewPostPage() {
       try {
         const response = await getCategories();
         setCategories(response.categories);
-        // 첫 번째 카테고리를 기본 선택
-        if (response.categories.length > 0) {
+        // 수정 모드가 아닐 때만 첫 번째 카테고리 기본 선택
+        if (!isEditMode && response.categories.length > 0) {
           setCategoryId(response.categories[0].id);
         }
       } catch (err) {
@@ -61,11 +78,38 @@ export default function NewPostPage() {
       }
     }
     loadCategories();
-  }, []);
+  }, [isEditMode]);
+
+  // 수정 모드: 기존 게시글 데이터 로드
+  useEffect(() => {
+    if (!editId) return;
+    async function loadPostData() {
+      try {
+        const postData = await getPost(parseInt(editId!, 10));
+        setPostType(postData.postType);
+        setCategoryId(postData.categoryId);
+        setItemName(postData.itemName);
+        // description에서 이미지 패턴 제거하여 순수 텍스트만 표시
+        setDescription(stripImagePattern(postData.description));
+        if (postData.price != null) setPrice(String(postData.price));
+        if (postData.currencyType) setCurrencyType(postData.currencyType);
+        if (postData.priceNegotiable != null) setPriceNegotiable(postData.priceNegotiable);
+        // 기존 이미지 URL은 수정 시 유지 (새 이미지 업로드로 교체 가능)
+        const existingImageUrls = extractImageUrls(postData.description);
+        if (existingImageUrls.length > 0) {
+          setExistingImageUrls(existingImageUrls);
+        }
+      } catch (err) {
+        console.error("게시글 로드 실패:", err);
+        setError("게시글을 불러오는데 실패했습니다");
+      }
+    }
+    loadPostData();
+  }, [editId]);
 
   // 이미지 파일 선택 핸들러
   const handleImageAdd = () => {
-    if (images.length >= MAX_POST_IMAGES) return;
+    if ((existingImageUrls.length + images.length) >= MAX_POST_IMAGES) return;
     fileInputRef.current?.click();
   };
 
@@ -75,7 +119,7 @@ export default function NewPostPage() {
     if (!files) return;
 
     const newImages: ImagePreview[] = [];
-    const remainingSlots = MAX_POST_IMAGES - images.length;
+    const remainingSlots = MAX_POST_IMAGES - existingImageUrls.length - images.length;
 
     for (let i = 0; i < Math.min(files.length, remainingSlots); i++) {
       const file = files[i];
@@ -118,35 +162,51 @@ export default function NewPostPage() {
     setError(null);
 
     try {
-      // 1. 이미지가 있으면 먼저 업로드
-      let imageUrls: string[] = [];
+      // 1. 새 이미지가 있으면 업로드
+      let newImageUrls: string[] = [];
       if (images.length > 0) {
         const files = images.map((img) => img.file);
         const uploadResult = await uploadPostImages(files);
-        imageUrls = uploadResult.urls;
+        newImageUrls = uploadResult.urls;
       }
 
-      // 2. 게시글 생성 (이미지 URL을 설명에 포함)
-      // TODO: 백엔드 Post 엔티티에 imageUrls 필드 추가 후 별도 전달
-      const descriptionWithImages = imageUrls.length > 0
-        ? `${description.trim()}\n\n[images:${imageUrls.join(",")}]`
+      // 2. 최종 이미지 URL 목록 (기존 + 새로 업로드)
+      const allImageUrls = [...existingImageUrls, ...newImageUrls];
+
+      // 3. 이미지 URL을 설명에 포함
+      const descriptionWithImages = allImageUrls.length > 0
+        ? `${description.trim()}\n\n[images:${allImageUrls.join(",")}]`
         : description.trim();
 
-      const request: PostCreateRequest = {
-        postType,
-        categoryId,
-        itemName: itemName.trim(),
-        description: descriptionWithImages,
-        currencyType,
-        price: price ? parseInt(price, 10) : undefined,
-        priceNegotiable,
-      };
-
-      const newPost = await createPost(request);
-      router.push(`/post/${newPost.id}`);
+      if (isEditMode && editId) {
+        // 수정 모드
+        const request: PostUpdateRequest = {
+          categoryId: categoryId ?? undefined,
+          itemName: itemName.trim(),
+          description: descriptionWithImages,
+          currencyType,
+          price: price ? parseInt(price, 10) : undefined,
+          priceNegotiable,
+        };
+        await updatePost(parseInt(editId, 10), request);
+        router.push(`/post/${editId}`);
+      } else {
+        // 작성 모드
+        const request: PostCreateRequest = {
+          postType,
+          categoryId,
+          itemName: itemName.trim(),
+          description: descriptionWithImages,
+          currencyType,
+          price: price ? parseInt(price, 10) : undefined,
+          priceNegotiable,
+        };
+        const newPost = await createPost(request);
+        router.push(`/post/${newPost.id}`);
+      }
     } catch (err) {
-      console.error("게시글 작성 실패:", err);
-      setError(err instanceof Error ? err.message : "게시글 작성에 실패했습니다");
+      console.error(isEditMode ? "게시글 수정 실패:" : "게시글 작성 실패:", err);
+      setError(err instanceof Error ? err.message : isEditMode ? "게시글 수정에 실패했습니다" : "게시글 작성에 실패했습니다");
     } finally {
       setIsSubmitting(false);
     }
@@ -161,7 +221,7 @@ export default function NewPostPage() {
             <Link href="/" className="p-1 hover:bg-gray-100 rounded-full transition-colors">
               <HomeOutlineIcon className="w-6 h-6 text-gray-800" />
             </Link>
-            <h1 className="font-semibold text-lg">글쓰기</h1>
+            <h1 className="font-semibold text-lg">{isEditMode ? "글 수정" : "글쓰기"}</h1>
             <div className="w-8" />
           </div>
         </header>
@@ -331,17 +391,39 @@ export default function NewPostPage() {
               <button
                 type="button"
                 onClick={handleImageAdd}
-                disabled={images.length >= MAX_POST_IMAGES}
+                disabled={(existingImageUrls.length + images.length) >= MAX_POST_IMAGES}
                 className="w-16 h-16 flex-shrink-0 border-2 border-primary border-dashed rounded-lg flex flex-col items-center justify-center hover:bg-primary/5 transition-colors disabled:opacity-50"
               >
                 <PlusIcon className="w-6 h-6 text-primary" />
-                <span className="text-xs text-primary mt-0.5">{images.length}/{MAX_POST_IMAGES}</span>
+                <span className="text-xs text-primary mt-0.5">{existingImageUrls.length + images.length}/{MAX_POST_IMAGES}</span>
               </button>
 
-              {/* 선택된 이미지 미리보기 */}
+              {/* 기존 이미지 미리보기 (수정 모드) */}
+              {existingImageUrls.map((url, index) => (
+                <div
+                  key={`existing-${index}`}
+                  className="relative w-16 h-16 flex-shrink-0 bg-gray-200 rounded-lg overflow-hidden"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={url}
+                    alt={`기존 이미지 ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setExistingImageUrls(existingImageUrls.filter((_, i) => i !== index))}
+                    className="absolute -top-1 -right-1 w-5 h-5 bg-gray-800 text-white rounded-full text-xs flex items-center justify-center"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+
+              {/* 새로 선택된 이미지 미리보기 */}
               {images.map((image, index) => (
                 <div
-                  key={index}
+                  key={`new-${index}`}
                   className="relative w-16 h-16 flex-shrink-0 bg-gray-200 rounded-lg overflow-hidden"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -371,7 +453,7 @@ export default function NewPostPage() {
             disabled={!itemName.trim() || !description.trim() || !categoryId || isSubmitting}
             className="w-full py-4 bg-primary text-white font-semibold rounded-xl hover:bg-primary-dark transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
           >
-            {isSubmitting ? "등록 중..." : "작성하기"}
+            {isSubmitting ? (isEditMode ? "수정 중..." : "등록 중...") : (isEditMode ? "수정하기" : "작성하기")}
           </button>
         </div>
       </div>
