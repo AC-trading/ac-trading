@@ -97,10 +97,13 @@ class WebSocketClient {
       heartbeatIncoming: 10000,
       heartbeatOutgoing: 10000,
 
-      // 연결 성공
+      // 연결 성공 (STOMP.js 자동 재연결 시에도 호출됨)
       onConnect: () => {
         // 현재 세대가 아니면 무시 (이전 연결의 콜백)
         if (generation !== this.connectionGeneration) return;
+        // Before: 재연결 시 hasDisconnected가 true인 채로 유지 → 이후 disconnect 콜백 무시됨
+        // After: 재연결 성공 시 리셋하여 다음 disconnect 감지 가능
+        hasDisconnected = false;
         console.log('WebSocket 연결 성공');
         onConnect?.();
       },
