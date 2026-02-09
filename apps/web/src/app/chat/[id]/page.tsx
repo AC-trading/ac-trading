@@ -549,7 +549,7 @@ export default function ChatRoomPage() {
                   </button>
                 )}
 
-                {/* 예약중 → 거래 완료 + 예약 취소 */}
+                {/* 예약중 → 거래 완료 + 약속 변경 + 예약 취소 */}
                 {chatRoom.postStatus === "RESERVED" && (
                   <>
                     <button
@@ -561,6 +561,13 @@ export default function ChatRoomPage() {
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                       거래 완료
+                    </button>
+                    <button
+                      onClick={() => setShowAppointmentModal(true)}
+                      disabled={isStatusChanging}
+                      className="flex items-center gap-1.5 px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                      약속 변경
                     </button>
                     <button
                       onClick={handleUnreserve}

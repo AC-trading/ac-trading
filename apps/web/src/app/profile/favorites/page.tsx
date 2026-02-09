@@ -17,8 +17,11 @@ function FavoriteItem({
   onUnlike: (postId: number) => void;
 }) {
   // 가격 포맷팅
+  // Before: price === 0 → "0 덩" (나눔인데 가격처럼 표시)
+  // After: price === 0 → "나눔"
   const formatPrice = (price: number | null, currencyType: string | null) => {
     if (price === null) return "가격 미정";
+    if (price === 0) return "나눔";
     if (currencyType === "MILE_TICKET") return `마일 티켓 ${price}장`;
     return `${price.toLocaleString()} 덩`;
   };
