@@ -1,6 +1,7 @@
 package com.acnh.api.chat.dto;
 
 import com.acnh.api.chat.entity.ChatRoom;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -33,7 +34,9 @@ public class ChatRoomResponse {
     private LocalDateTime scheduledTradeAt;
     private LocalDateTime createdAt;
 
-    // 현재 사용자가 게시글 작성자인지 여부 (거래 액션 버튼 표시용)
+    // Before: Lombok @Getter + boolean isPostOwner → Jackson이 "postOwner"로 직렬화 (is 접두사 제거)
+    // After: @JsonProperty로 명시적 키 지정 → 프론트엔드 기대값 "isPostOwner"와 일치
+    @JsonProperty("isPostOwner")
     private boolean isPostOwner;
 
     /**
@@ -44,13 +47,12 @@ public class ChatRoomResponse {
                                          String otherUserNickname, String otherUserIslandName,
                                          String lastMessage, LocalDateTime lastMessageAt,
                                          Integer unreadCount) {
-        // 상대방 ID 결정 (내가 postOwner면 상대방은 applicant, 반대면 postOwner)
-        Long otherUserId = chatRoom.getPostOwnerId().equals(currentUserId)
+        // Before: getPostOwnerId().equals(currentUserId) 중복 호출
+        // After: isPostOwner 먼저 판별하여 otherUserId 결정에 재사용
+        boolean isPostOwner = chatRoom.getPostOwnerId().equals(currentUserId);
+        Long otherUserId = isPostOwner
                 ? chatRoom.getApplicantId()
                 : chatRoom.getPostOwnerId();
-
-        // 현재 사용자가 게시글 작성자인지 판별
-        boolean isPostOwner = chatRoom.getPostOwnerId().equals(currentUserId);
 
         return ChatRoomResponse.builder()
                 .id(chatRoom.getId())
