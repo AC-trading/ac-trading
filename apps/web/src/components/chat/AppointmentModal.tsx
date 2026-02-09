@@ -31,7 +31,9 @@ export default function AppointmentModal({
     const now = new Date();
     // 30분 단위로 올림
     const minutes = now.getMinutes();
-    if (minutes > 30) {
+    // Before: minutes > 30 → 정확히 30분일 때 올림 안 됨
+    // After: minutes >= 30 → 30분 이상이면 다음 시간으로 올림
+    if (minutes >= 30) {
       const next = new Date(now.getTime());
       next.setHours(next.getHours() + 1);
       next.setMinutes(0);
@@ -43,7 +45,9 @@ export default function AppointmentModal({
   const [selectedMinute, setSelectedMinute] = useState(() => {
     const now = new Date();
     const minutes = now.getMinutes();
-    if (minutes > 30) return "00";
+    // Before: minutes > 30 → 30분일 때 "30" 반환 (올림 안 됨)
+    // After: minutes >= 30 → 30분 이상이면 "00" (다음 시간 올림과 일치)
+    if (minutes >= 30) return "00";
     if (minutes > 0) return "30";
     return "00";
   });

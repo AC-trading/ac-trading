@@ -8,7 +8,7 @@ import { ChevronLeftIcon, CameraIcon, MoreVerticalIcon, FlagIcon, BlockIcon, Exi
 import { useAuth } from "@/context/AuthContext";
 import { webSocketClient, ChatMessage } from "@/lib/websocket";
 import { getChatRoom, getChatMessages, formatMessageTime, ChatRoom } from "@/lib/chatApi";
-import { blockUser, leaveChatRoom, createReport, ReportReasonCode, reserveChatRoom, unreserveChatRoom, completeChatRoom } from "@/lib/postApi";
+import { blockUser, leaveChatRoom, createReport, ReportReasonCode, reserveChatRoom, unreserveChatRoom, completeChatRoom, formatPrice } from "@/lib/postApi";
 import AppointmentModal from "@/components/chat/AppointmentModal";
 
 // 거래 상태 타입
@@ -501,7 +501,7 @@ export default function ChatRoomPage() {
                   </div>
                   {chatRoom.postPrice != null && (
                     <p className="text-sm font-semibold text-gray-900 mt-0.5">
-                      {chatRoom.postPrice.toLocaleString()}벨
+                      {formatPrice(chatRoom.postPrice, chatRoom.postCurrencyType)}
                     </p>
                   )}
                 </div>

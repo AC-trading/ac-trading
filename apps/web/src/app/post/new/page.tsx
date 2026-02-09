@@ -235,29 +235,31 @@ function NewPostContent() {
             </div>
           )}
 
-          {/* 거래 유형 선택 (팔아요/구해요) */}
+          {/* 거래 유형 선택 (팔아요/구해요) - 수정 모드에서는 변경 불가 */}
           <div>
             <label className="block text-primary font-semibold mb-2">거래 유형</label>
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => setPostType("SELL")}
+                onClick={() => !isEditMode && setPostType("SELL")}
+                disabled={isEditMode}
                 className={`flex-1 py-3 rounded-lg text-sm font-medium border transition-colors ${
                   postType === "SELL"
                     ? "border-primary bg-primary text-white"
                     : "border-gray-300 text-gray-700 hover:border-gray-400"
-                }`}
+                } ${isEditMode ? "opacity-60 cursor-not-allowed" : ""}`}
               >
                 팔아요
               </button>
               <button
                 type="button"
-                onClick={() => setPostType("BUY")}
+                onClick={() => !isEditMode && setPostType("BUY")}
+                disabled={isEditMode}
                 className={`flex-1 py-3 rounded-lg text-sm font-medium border transition-colors ${
                   postType === "BUY"
                     ? "border-primary bg-primary text-white"
                     : "border-gray-300 text-gray-700 hover:border-gray-400"
-                }`}
+                } ${isEditMode ? "opacity-60 cursor-not-allowed" : ""}`}
               >
                 구해요
               </button>

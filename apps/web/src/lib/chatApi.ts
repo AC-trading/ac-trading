@@ -9,6 +9,7 @@ export interface ChatRoom {
   postItemName: string;
   postImageUrl: string | null;
   postPrice: number | null;
+  postCurrencyType: string | null;
   postStatus: string | null;
   otherUserId: number;
   otherUserNickname: string;

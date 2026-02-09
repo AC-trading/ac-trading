@@ -484,6 +484,7 @@ public class ChatService {
         // TODO: Post에 이미지 필드 추가 시 연동 필요
         String postImageUrl = null;
         Integer postPrice = post != null ? post.getPrice() : null;
+        String postCurrencyType = post != null ? post.getCurrencyType() : null;
         String postStatus = post != null ? post.getStatus() : null;
 
         // 상대방 정보
@@ -509,7 +510,7 @@ public class ChatService {
         int unreadCount = (int) chatMessageRepository
                 .countByChatRoomIdAndSenderIdNotAndIsReadFalseAndDeletedAtIsNull(chatRoom.getId(), currentUserId);
 
-        return ChatRoomResponse.from(chatRoom, currentUserId, postItemName, postImageUrl, postPrice, postStatus,
+        return ChatRoomResponse.from(chatRoom, currentUserId, postItemName, postImageUrl, postPrice, postCurrencyType, postStatus,
                 otherNickname, otherIslandName, lastMessage, lastMessageAt, unreadCount);
     }
 
@@ -530,6 +531,7 @@ public class ChatService {
         // TODO: Post에 이미지 필드 추가 시 연동 필요
         String postImageUrl = null;
         Integer postPrice = post != null ? post.getPrice() : null;
+        String postCurrencyType = post != null ? post.getCurrencyType() : null;
         String postStatus = post != null ? post.getStatus() : null;
 
         // 상대방 정보
@@ -552,7 +554,7 @@ public class ChatService {
         // 읽지 않은 메시지 수
         int unreadCount = unreadCountMap.getOrDefault(chatRoom.getId(), 0L).intValue();
 
-        return ChatRoomResponse.from(chatRoom, currentUserId, postItemName, postImageUrl, postPrice, postStatus,
+        return ChatRoomResponse.from(chatRoom, currentUserId, postItemName, postImageUrl, postPrice, postCurrencyType, postStatus,
                 otherNickname, otherIslandName, lastMessage, lastMessageAt, unreadCount);
     }
 }

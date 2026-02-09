@@ -18,6 +18,7 @@ public class ChatRoomResponse {
     private String postItemName;
     private String postImageUrl;
     private Integer postPrice;
+    private String postCurrencyType;
     private String postStatus;
 
     private Long otherUserId;
@@ -36,7 +37,7 @@ public class ChatRoomResponse {
      * Entity -> DTO 변환
      */
     public static ChatRoomResponse from(ChatRoom chatRoom, Long currentUserId,
-                                         String postItemName, String postImageUrl, Integer postPrice, String postStatus,
+                                         String postItemName, String postImageUrl, Integer postPrice, String postCurrencyType, String postStatus,
                                          String otherUserNickname, String otherUserIslandName,
                                          String lastMessage, LocalDateTime lastMessageAt,
                                          Integer unreadCount) {
@@ -51,6 +52,7 @@ public class ChatRoomResponse {
                 .postItemName(postItemName)
                 .postImageUrl(postImageUrl)
                 .postPrice(postPrice)
+                .postCurrencyType(postCurrencyType)
                 .postStatus(postStatus)
                 .otherUserId(otherUserId)
                 .otherUserNickname(otherUserNickname)

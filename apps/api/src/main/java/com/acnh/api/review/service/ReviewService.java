@@ -50,6 +50,9 @@ public class ReviewService {
     // 무 점수 지연 적용 일수
     private static final int MANNER_SCORE_DELAY_DAYS = 3;
 
+    // 리뷰 작성 시 작성자에게 즉시 부여되는 무 점수 보너스
+    private static final int MANNER_SCORE_WRITE_BONUS = 2;
+
     /**
      * 리뷰 작성
      * - 해당 게시글에 채팅 기록이 있는 경우만 평가 가능
@@ -101,9 +104,9 @@ public class ReviewService {
         log.info("리뷰 작성 완료 - reviewId: {}, postId: {}, reviewerId: {}, revieweeId: {}",
                 savedReview.getId(), post.getId(), reviewer.getId(), reviewee.getId());
 
-        // 무 점수: 리뷰 작성자 즉시 +2
-        reviewer.increaseMannerScore(2);
-        log.info("무 점수 즉시 적용 - reviewerId: {}, +2 (리뷰 작성 보상)", reviewer.getId());
+        // 무 점수: 리뷰 작성자 즉시 보너스 적용
+        reviewer.increaseMannerScore(MANNER_SCORE_WRITE_BONUS);
+        log.info("무 점수 즉시 적용 - reviewerId: {}, +{} (리뷰 작성 보상)", reviewer.getId(), MANNER_SCORE_WRITE_BONUS);
 
         // 무 점수: 리뷰 수신자 3일 후 지연 적용
         int rating = request.getRating();
