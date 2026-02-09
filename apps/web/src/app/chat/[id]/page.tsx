@@ -529,8 +529,8 @@ export default function ChatRoomPage() {
               </Link>
             </div>
 
-            {/* 거래 액션 버튼 (상태별) */}
-            {chatRoom.postStatus !== "COMPLETED" && (
+            {/* 거래 액션 버튼 (게시글 작성자만 표시) */}
+            {chatRoom.isPostOwner && chatRoom.postStatus !== "COMPLETED" && (
               <div className="flex items-center gap-2 px-4 pb-3">
                 {/* 판매중 → 약속 잡기 */}
                 {chatRoom.postStatus === "AVAILABLE" && (
@@ -726,7 +726,8 @@ export default function ChatRoomPage() {
                 <span className="text-xs text-white font-medium">카메라</span>
               </button>
 
-              {/* 약속 - AVAILABLE/RESERVED 상태에서 모달 열기 (RESERVED면 시간 변경) */}
+              {/* 약속 - 게시글 작성자만 표시, AVAILABLE/RESERVED 상태에서 모달 열기 */}
+              {chatRoom?.isPostOwner && (
               <button
                 onClick={() => {
                   setIsBottomTabOpen(false);
@@ -757,6 +758,7 @@ export default function ChatRoomPage() {
                 </div>
                 <span className="text-xs text-white font-medium">약속</span>
               </button>
+              )}
             </div>
           </div>
         </div>

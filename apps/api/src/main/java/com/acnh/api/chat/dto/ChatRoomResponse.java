@@ -33,6 +33,9 @@ public class ChatRoomResponse {
     private LocalDateTime scheduledTradeAt;
     private LocalDateTime createdAt;
 
+    // 현재 사용자가 게시글 작성자인지 여부 (거래 액션 버튼 표시용)
+    private boolean isPostOwner;
+
     /**
      * Entity -> DTO 변환
      */
@@ -45,6 +48,9 @@ public class ChatRoomResponse {
         Long otherUserId = chatRoom.getPostOwnerId().equals(currentUserId)
                 ? chatRoom.getApplicantId()
                 : chatRoom.getPostOwnerId();
+
+        // 현재 사용자가 게시글 작성자인지 판별
+        boolean isPostOwner = chatRoom.getPostOwnerId().equals(currentUserId);
 
         return ChatRoomResponse.builder()
                 .id(chatRoom.getId())
@@ -63,6 +69,7 @@ public class ChatRoomResponse {
                 .status(chatRoom.getStatus())
                 .scheduledTradeAt(chatRoom.getScheduledTradeAt())
                 .createdAt(chatRoom.getCreatedAt())
+                .isPostOwner(isPostOwner)
                 .build();
     }
 }

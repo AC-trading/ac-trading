@@ -20,6 +20,8 @@ export interface ChatRoom {
   status: string;
   scheduledTradeAt: string | null;
   createdAt: string;
+  // 현재 사용자가 게시글 작성자인지 여부 (거래 액션 버튼 표시용)
+  isPostOwner: boolean;
 }
 
 // 채팅방 목록 응답 타입
