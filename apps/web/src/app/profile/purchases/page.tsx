@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import {
   getMyPosts,
   extractImageUrls,
+  isSafeImageUrl,
   formatPrice,
   formatRelativeTime,
   Post,
@@ -26,7 +27,7 @@ const STATUS_FILTERS: { value: StatusFilter; label: string }[] = [
 
 // 구매 게시글 아이템 컴포넌트
 function PurchaseItem({ post }: { post: Post }) {
-  const thumbnailUrl = extractImageUrls(post.description)[0];
+  const thumbnailUrl = extractImageUrls(post.description).filter(isSafeImageUrl)[0];
 
   // 상태 배지
   const getStatusBadge = (status: string) => {
