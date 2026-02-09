@@ -75,7 +75,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query(value = "SELECT * FROM posts p WHERE p.deleted_at IS NULL " +
             "AND (:hasCategoryFilter = false OR p.category_id IN (:categoryIds)) " +
             "AND (:hasPostTypeFilter = false OR p.post_type IN (:postTypes)) " +
-            "AND (:status IS NULL OR p.status = :status) " +
+            // Before: 상태 필터 없으면 COMPLETED 포함 → 홈화면에 거래 완료 게시글 노출
+            // After: 상태 필터 없으면 COMPLETED 제외, 명시적 필터 시 해당 상태만 조회
+            "AND ((:status IS NULL AND p.status != 'COMPLETED') OR p.status = :status) " +
             "AND (:hasCurrencyTypeFilter = false OR p.currency_type IN (:currencyTypes)) " +
             "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
@@ -83,7 +85,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             countQuery = "SELECT COUNT(*) FROM posts p WHERE p.deleted_at IS NULL " +
             "AND (:hasCategoryFilter = false OR p.category_id IN (:categoryIds)) " +
             "AND (:hasPostTypeFilter = false OR p.post_type IN (:postTypes)) " +
-            "AND (:status IS NULL OR p.status = :status) " +
+            "AND ((:status IS NULL AND p.status != 'COMPLETED') OR p.status = :status) " +
             "AND (:hasCurrencyTypeFilter = false OR p.currency_type IN (:currencyTypes)) " +
             "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR p.price <= :maxPrice)",
@@ -113,7 +115,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             "  OR LOWER(REPLACE(COALESCE(p.description, ''), ' ', '')) LIKE LOWER(CONCAT('%', REPLACE(:keyword, ' ', ''), '%'))) " +
             "AND (:hasCategoryFilter = false OR p.category_id IN (:categoryIds)) " +
             "AND (:hasPostTypeFilter = false OR p.post_type IN (:postTypes)) " +
-            "AND (:status IS NULL OR p.status = :status) " +
+            // Before: 상태 필터 없으면 COMPLETED 포함 → 검색 결과에 거래 완료 게시글 노출
+            // After: 상태 필터 없으면 COMPLETED 제외, 명시적 필터 시 해당 상태만 조회
+            "AND ((:status IS NULL AND p.status != 'COMPLETED') OR p.status = :status) " +
             "AND (:hasCurrencyTypeFilter = false OR p.currency_type IN (:currencyTypes)) " +
             "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR p.price <= :maxPrice) " +
@@ -123,7 +127,7 @@ public interface PostRepository extends JpaRepository<Post, Long> {
             "  OR LOWER(REPLACE(COALESCE(p.description, ''), ' ', '')) LIKE LOWER(CONCAT('%', REPLACE(:keyword, ' ', ''), '%'))) " +
             "AND (:hasCategoryFilter = false OR p.category_id IN (:categoryIds)) " +
             "AND (:hasPostTypeFilter = false OR p.post_type IN (:postTypes)) " +
-            "AND (:status IS NULL OR p.status = :status) " +
+            "AND ((:status IS NULL AND p.status != 'COMPLETED') OR p.status = :status) " +
             "AND (:hasCurrencyTypeFilter = false OR p.currency_type IN (:currencyTypes)) " +
             "AND (:minPrice IS NULL OR p.price >= :minPrice) " +
             "AND (:maxPrice IS NULL OR p.price <= :maxPrice)",
