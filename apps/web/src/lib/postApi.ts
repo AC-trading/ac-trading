@@ -826,12 +826,14 @@ export async function leaveChatRoom(roomId: number): Promise<{ message: string }
 }
 
 /**
- * 거래 예약하기
+ * 거래 예약하기 (약속 잡기)
  * POST /api/chat/rooms/{roomId}/reserve
+ * @param scheduledTradeAt - 거래 예정 일시 (ISO 8601, 선택)
  */
-export async function reserveChatRoom(roomId: number): Promise<ChatRoom> {
+export async function reserveChatRoom(roomId: number, scheduledTradeAt?: string): Promise<ChatRoom> {
   return fetchWithAuth<ChatRoom>(`${API_URL}/api/chat/rooms/${roomId}/reserve`, {
     method: 'POST',
+    body: JSON.stringify(scheduledTradeAt ? { scheduledTradeAt } : {}),
   });
 }
 
