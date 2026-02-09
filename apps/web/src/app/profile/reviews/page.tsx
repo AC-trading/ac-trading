@@ -7,27 +7,6 @@ import { MobileLayout, Header } from "@/components/common";
 import { useAuth } from "@/context/AuthContext";
 import { getMyReviews, ReviewResponse, formatRelativeTime } from "@/lib/postApi";
 
-// 별점 표시 컴포넌트
-function StarRating({ rating }: { rating: number }) {
-  return (
-    <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <svg
-          key={star}
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill={star <= rating ? "#FBBF24" : "none"}
-          stroke={star <= rating ? "#FBBF24" : "#D1D5DB"}
-          strokeWidth="2"
-        >
-          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-        </svg>
-      ))}
-    </div>
-  );
-}
-
 // 리뷰 아이템 컴포넌트
 function ReviewItem({ review }: { review: ReviewResponse }) {
   return (
@@ -51,9 +30,6 @@ function ReviewItem({ review }: { review: ReviewResponse }) {
         </div>
       </div>
 
-      {/* 별점 */}
-      <StarRating rating={review.rating} />
-
       {/* 리뷰 내용 */}
       {review.comment && (
         <p className="text-sm text-black mt-2">{review.comment}</p>
@@ -74,7 +50,6 @@ export default function ProfileReviewsPage() {
   const router = useRouter();
   const { isLoading: authLoading, isAuthenticated } = useAuth();
   const [reviews, setReviews] = useState<ReviewResponse[]>([]);
-  const [averageRating, setAverageRating] = useState<number | null>(null);
   const [reviewCount, setReviewCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -92,7 +67,6 @@ export default function ProfileReviewsPage() {
         setError(null);
         const response = await getMyReviews(0, 20);
         setReviews(response.reviews);
-        setAverageRating(response.averageRating);
         setReviewCount(response.reviewCount ?? response.totalElements);
       } catch (err) {
         console.error("리뷰 로드 실패:", err);
@@ -127,16 +101,7 @@ export default function ProfileReviewsPage() {
       {!isLoading && !error && (
         <>
           <div className="p-4 bg-gray-50 border-b border-gray-100">
-            <div className="flex items-center justify-center gap-4">
-              <div className="text-center">
-                <p className="text-3xl font-bold text-primary">
-                  {averageRating != null && Number.isFinite(averageRating)
-                    ? averageRating.toFixed(1)
-                    : "-"}
-                </p>
-                <p className="text-xs text-gray-500 mt-1">평균 별점</p>
-              </div>
-              <div className="w-px h-10 bg-gray-200" />
+            <div className="flex items-center justify-center">
               <div className="text-center">
                 <p className="text-3xl font-bold text-gray-800">{reviewCount}</p>
                 <p className="text-xs text-gray-500 mt-1">받은 리뷰</p>
