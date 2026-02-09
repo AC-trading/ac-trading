@@ -16,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,6 +41,7 @@ public class ChatService {
     private final MemberRepository memberRepository;
     private final PostRepository postRepository;
     private final ProfanityFilter profanityFilter;
+    private final SimpMessagingTemplate messagingTemplate;
 
     /**
      * 채팅방 생성 또는 기존 채팅방 반환
@@ -321,6 +323,11 @@ public class ChatService {
 
         log.info("예약자 지정 - roomId: {}, reservedUserId: {}", roomId, chatRoom.getApplicantId());
 
+        // 시스템 메시지: 약속 잡기 알림
+        String formattedTime = formatScheduledTradeAt(scheduledTradeAt);
+        sendSystemMessage(roomId, member.getId(),
+                "약속이 잡혔어요.\n날짜: " + formattedTime);
+
         return toChatRoomResponse(chatRoom, member.getId());
     }
 
@@ -347,6 +354,9 @@ public class ChatService {
         chatRoom.updateStatus("ACTIVE");
 
         log.info("예약 해제 - roomId: {}", roomId);
+
+        // 시스템 메시지: 약속 취소 알림
+        sendSystemMessage(roomId, member.getId(), "약속이 취소되었어요.");
 
         return toChatRoomResponse(chatRoom, member.getId());
     }
@@ -378,6 +388,9 @@ public class ChatService {
         post.updateStatus("COMPLETED");
 
         log.info("거래 완료 - roomId: {}, postId: {}", roomId, chatRoom.getPostId());
+
+        // 시스템 메시지: 거래 완료 알림
+        sendSystemMessage(roomId, member.getId(), "거래가 완료되었어요.");
 
         return toChatRoomResponse(chatRoom, member.getId());
     }
@@ -418,6 +431,53 @@ public class ChatService {
         return chatRooms.stream()
                 .map(room -> toChatRoomResponse(room, member.getId()))
                 .toList();
+    }
+
+    // ========== 시스템 메시지 ==========
+
+    /**
+     * 시스템 메시지 생성, 저장, WebSocket 브로드캐스트
+     * - 약속 잡기, 예약 취소, 거래 완료 등 상태 변경 시 채팅방에 알림 표시
+     */
+    private void sendSystemMessage(Long chatRoomId, Long senderId, String content) {
+        ChatMessage systemMessage = ChatMessage.builder()
+                .chatRoomId(chatRoomId)
+                .senderId(senderId)
+                .messageType("SYSTEM")
+                .content(content)
+                .build();
+
+        ChatMessage saved = chatMessageRepository.save(systemMessage);
+
+        // 채팅방 updatedAt 갱신 (목록 정렬용)
+        ChatRoom chatRoom = findChatRoomById(chatRoomId);
+        chatRoom.touch();
+
+        ChatMessageResponse response = ChatMessageResponse.from(saved, "시스템");
+
+        // WebSocket 브로드캐스트 (실시간 반영)
+        messagingTemplate.convertAndSend("/topic/chat." + chatRoomId, response);
+
+        log.info("시스템 메시지 전송 - roomId: {}, content: {}", chatRoomId, content);
+    }
+
+    /**
+     * 약속 일시를 한국어 포맷으로 변환
+     * 예: "2월 15일 토요일 오후 2:30"
+     */
+    private String formatScheduledTradeAt(LocalDateTime dateTime) {
+        if (dateTime == null) return "";
+
+        String[] dayNames = {"일요일", "월요일", "화요일", "수요일", "목요일", "금요일", "토요일"};
+        String dayName = dayNames[dateTime.getDayOfWeek().getValue() % 7];
+
+        int hour = dateTime.getHour();
+        String ampm = hour >= 12 ? "오후" : "오전";
+        int h12 = hour == 0 ? 12 : hour > 12 ? hour - 12 : hour;
+        String minute = String.format("%02d", dateTime.getMinute());
+
+        return String.format("%d월 %d일 %s %s %d:%s",
+                dateTime.getMonthValue(), dateTime.getDayOfMonth(), dayName, ampm, h12, minute);
     }
 
     // ========== Private Helper Methods ==========

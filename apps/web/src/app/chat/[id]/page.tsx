@@ -19,6 +19,7 @@ interface DisplayMessage {
   id: number;
   senderId: number;
   senderNickname: string;
+  messageType: 'TEXT' | 'IMAGE' | 'SYSTEM';
   content: string | null;
   imageUrl: string | null;
   isMe: boolean;
@@ -26,10 +27,29 @@ interface DisplayMessage {
   isRead: boolean;
 }
 
+// 시스템 메시지 컴포넌트 (약속 잡기, 예약 취소, 거래 완료 알림)
+function SystemMessageCard({ message }: { message: DisplayMessage }) {
+  return (
+    <div className="flex justify-center mb-4 px-4">
+      <div className="bg-gray-100 rounded-2xl px-5 py-4 max-w-[280px] w-full shadow-sm">
+        <p className="text-sm text-gray-800 font-semibold whitespace-pre-line text-center">
+          {message.content}
+        </p>
+        <p className="text-xs text-gray-400 text-center mt-2">{message.time}</p>
+      </div>
+    </div>
+  );
+}
+
 // 메시지 버블 컴포넌트
 // Before: isRead가 true인 모든 내 메시지에 "읽음" 표시
 // After: isLastRead prop으로 마지막 읽힌 내 메시지에만 "읽음" 표시
 function MessageBubble({ message, isLastRead }: { message: DisplayMessage; isLastRead?: boolean }) {
+  // 시스템 메시지는 카드형으로 렌더링
+  if (message.messageType === "SYSTEM") {
+    return <SystemMessageCard message={message} />;
+  }
+
   return (
     <div className={`flex ${message.isMe ? "justify-end" : "justify-start"} mb-3`}>
       {!message.isMe && (
@@ -162,9 +182,10 @@ export default function ChatRoomPage() {
     id: msg.id,
     senderId: msg.senderId,
     senderNickname: msg.senderNickname,
+    messageType: msg.messageType,
     content: msg.content,
     imageUrl: msg.imageUrl,
-    isMe: otherUserId !== undefined && msg.senderId !== otherUserId,
+    isMe: msg.messageType === 'SYSTEM' ? false : (otherUserId !== undefined && msg.senderId !== otherUserId),
     time: formatMessageTime(msg.createdAt),
     isRead: msg.isRead,
   });
