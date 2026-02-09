@@ -312,9 +312,18 @@ public class ChatService {
             throw new InvalidRequestException("게시글 작성자만 예약자를 지정할 수 있습니다");
         }
 
-        // 이미 예약된 경우
+        String formattedTime = formatScheduledTradeAt(scheduledTradeAt);
+
+        // Before: 이미 예약된 경우 에러 → 약속 시간 변경 불가
+        // After: 이미 예약된 경우 약속 시간만 업데이트
         if (chatRoom.getReservedUserId() != null) {
-            throw new InvalidRequestException("이미 예약된 채팅방입니다");
+            chatRoom.updateScheduledTradeAt(scheduledTradeAt);
+            log.info("약속 시간 변경 - roomId: {}, scheduledTradeAt: {}", roomId, scheduledTradeAt);
+
+            sendSystemMessage(roomId, member.getId(),
+                    "약속이 변경되었어요.\n날짜: " + formattedTime);
+
+            return toChatRoomResponse(chatRoom, member.getId());
         }
 
         // 채팅방의 신청자를 예약자로 지정
@@ -324,7 +333,6 @@ public class ChatService {
         log.info("예약자 지정 - roomId: {}, reservedUserId: {}", roomId, chatRoom.getApplicantId());
 
         // 시스템 메시지: 약속 잡기 알림
-        String formattedTime = formatScheduledTradeAt(scheduledTradeAt);
         sendSystemMessage(roomId, member.getId(),
                 "약속이 잡혔어요.\n날짜: " + formattedTime);
 

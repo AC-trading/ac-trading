@@ -719,14 +719,12 @@ export default function ChatRoomPage() {
                 <span className="text-xs text-white font-medium">카메라</span>
               </button>
 
-              {/* 약속 - AVAILABLE 상태에서만 모달 열기 */}
+              {/* 약속 - AVAILABLE/RESERVED 상태에서 모달 열기 (RESERVED면 시간 변경) */}
               <button
                 onClick={() => {
                   setIsBottomTabOpen(false);
-                  if (chatRoom?.postStatus === "AVAILABLE") {
+                  if (chatRoom?.postStatus === "AVAILABLE" || chatRoom?.postStatus === "RESERVED") {
                     setShowAppointmentModal(true);
-                  } else if (chatRoom?.postStatus === "RESERVED") {
-                    alert("이미 약속이 잡혀있습니다.");
                   } else {
                     alert("거래가 완료된 상품입니다.");
                   }
@@ -942,6 +940,7 @@ export default function ChatRoomPage() {
             onConfirm={handleReserve}
             onClose={() => setShowAppointmentModal(false)}
             isSubmitting={isStatusChanging}
+            initialScheduledAt={chatRoom.scheduledTradeAt}
           />
         )}
 
