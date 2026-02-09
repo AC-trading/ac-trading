@@ -34,6 +34,16 @@ const REPORT_REASONS: { code: ReportReasonCode; label: string }[] = [
   { code: "OTHER", label: "기타" },
 ];
 
+// 허용된 프로토콜만 통과시키는 이미지 URL 검증
+function isSafeImageUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return ["https:", "http:"].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
 // 상품 상세 페이지 - Figma 디자인 기반
 export default function PostDetailPage() {
   const params = useParams();
@@ -263,7 +273,9 @@ export default function PostDetailPage() {
 
       {/* 상품 이미지 - description에서 [images:url1,url2,...] 패턴 파싱 */}
       {(() => {
-        const imageUrls = extractImageUrls(post.description);
+        // Before: extractImageUrls 결과를 검증 없이 사용
+        // After: isSafeImageUrl로 javascript:, data: 등 위험한 프로토콜 차단
+        const imageUrls = extractImageUrls(post.description).filter(isSafeImageUrl);
 
         if (imageUrls.length === 0) {
           return (
