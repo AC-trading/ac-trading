@@ -10,7 +10,6 @@ import {
   extractImageUrls,
   formatPrice,
   formatRelativeTime,
-  getStatusLabel,
   Post,
 } from "@/lib/postApi";
 
