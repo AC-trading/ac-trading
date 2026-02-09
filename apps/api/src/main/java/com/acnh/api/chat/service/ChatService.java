@@ -332,6 +332,11 @@ public class ChatService {
         chatRoom.reserve(chatRoom.getApplicantId(), scheduledTradeAt);
         chatRoom.updateStatus("RESERVED");
 
+        // Before: 게시글 상태 미변경 → 채팅 목록에서 "판매중" 유지
+        // After: 게시글 상태도 RESERVED로 변경
+        Post post = findPostById(chatRoom.getPostId());
+        post.updateStatus("RESERVED");
+
         log.info("예약자 지정 - roomId: {}, reservedUserId: {}", roomId, chatRoom.getApplicantId());
 
         // 시스템 메시지: 약속 잡기 알림
@@ -362,6 +367,11 @@ public class ChatService {
 
         chatRoom.cancelReservation();
         chatRoom.updateStatus("ACTIVE");
+
+        // Before: 게시글 상태 미변경 → 채팅 목록에서 "예약중" 유지
+        // After: 게시글 상태도 AVAILABLE로 복구
+        Post post = findPostById(chatRoom.getPostId());
+        post.updateStatus("AVAILABLE");
 
         log.info("예약 해제 - roomId: {}", roomId);
 
