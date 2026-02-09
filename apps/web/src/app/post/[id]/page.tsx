@@ -108,16 +108,27 @@ export default function PostDetailPage() {
   }, [postId]);
 
   // 좋아요 토글 핸들러
+  // Before: API 응답 후 UI 반영 → 버튼 반응이 느림
+  // After: 낙관적 업데이트 → 즉시 UI 반영, 실패 시 롤백
   const handleLikeToggle = async () => {
     if (!post) return;
 
+    const prevLiked = isLiked;
+    const prevCount = likeCount;
+
+    // 낙관적 업데이트: 즉시 UI 반영
+    setIsLiked(!prevLiked);
+    setLikeCount(prevLiked ? prevCount - 1 : prevCount + 1);
+
     try {
-      const result = await togglePostLike(post.id, isLiked);
+      const result = await togglePostLike(post.id, prevLiked);
       setIsLiked(result.isLiked);
       setLikeCount(result.likeCount);
     } catch (err) {
+      // 실패 시 롤백
+      setIsLiked(prevLiked);
+      setLikeCount(prevCount);
       console.error("좋아요 실패:", err);
-      alert(err instanceof Error ? err.message : "좋아요에 실패했습니다");
     }
   };
 

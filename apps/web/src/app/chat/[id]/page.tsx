@@ -224,8 +224,11 @@ export default function ChatRoomPage() {
             }
           },
           // 읽음 알림 수신
-          () => {
-            // 상대방이 읽으면 내 메시지들을 읽음 처리
+          // Before: userId를 무시하여 자신의 markAsRead broadcast도 처리 → 안 읽었는데 읽음 표시
+          // After: 상대방(otherUserId)의 읽음 알림일 때만 내 메시지를 읽음 처리
+          (readUserId: number) => {
+            const otherUserId = chatRoom?.otherUserId;
+            if (otherUserId === undefined || readUserId !== otherUserId) return;
             setMessages((prev) =>
               prev.map((msg) =>
                 msg.isMe ? { ...msg, isRead: true } : msg
