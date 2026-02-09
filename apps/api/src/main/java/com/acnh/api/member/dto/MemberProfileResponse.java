@@ -1,6 +1,7 @@
 package com.acnh.api.member.dto;
 
 import com.acnh.api.member.entity.Member;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -24,6 +25,9 @@ public class MemberProfileResponse {
     private Integer totalTradeCount;
     private Long reviewCount;
     private LocalDateTime createdAt;
+    // Before: Lombok @Getter + boolean → Jackson이 "profileComplete"로 직렬화 (is prefix 제거)
+    // After: @JsonProperty로 "isProfileComplete" 명시 → 프론트 필드명과 일치
+    @JsonProperty("isProfileComplete")
     private boolean isProfileComplete;
 
     /**

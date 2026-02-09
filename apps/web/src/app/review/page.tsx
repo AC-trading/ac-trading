@@ -175,7 +175,7 @@ function ReviewForm() {
             placeholder="여기에 적어주세요!"
             value={review}
             onChange={(e) => setReview(e.target.value)}
-            className="w-full h-40 p-4 border border-gray-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+            className="w-full h-40 p-4 border border-gray-200 rounded-xl resize-none text-gray-900 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
           />
         </div>
       </div>

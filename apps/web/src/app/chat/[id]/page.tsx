@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
@@ -26,7 +26,9 @@ interface DisplayMessage {
 }
 
 // 메시지 버블 컴포넌트
-function MessageBubble({ message }: { message: DisplayMessage }) {
+// Before: isRead가 true인 모든 내 메시지에 "읽음" 표시
+// After: isLastRead prop으로 마지막 읽힌 내 메시지에만 "읽음" 표시
+function MessageBubble({ message, isLastRead }: { message: DisplayMessage; isLastRead?: boolean }) {
   return (
     <div className={`flex ${message.isMe ? "justify-end" : "justify-start"} mb-3`}>
       {!message.isMe && (
@@ -53,7 +55,7 @@ function MessageBubble({ message }: { message: DisplayMessage }) {
           )}
         </div>
         <div className="flex items-center gap-1 mt-1">
-          {message.isMe && message.isRead && (
+          {message.isMe && isLastRead && (
             <span className="text-xs text-gray-400">읽음</span>
           )}
           <span className={`text-xs ${message.isMe ? "text-gray-500" : "text-gray-400"}`}>
@@ -248,6 +250,14 @@ export default function ChatRoomPage() {
     };
   }, [accessToken, roomId, isLoading, chatRoom?.otherUserId]);
 
+  // 읽힌 내 메시지 중 마지막 메시지 ID (읽음 표시는 마지막에만)
+  const lastReadMyMessageId = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      if (messages[i].isMe && messages[i].isRead) return messages[i].id;
+    }
+    return null;
+  }, [messages]);
+
   // 메시지 변경 시 스크롤
   useEffect(() => {
     scrollToBottom();
@@ -437,7 +447,7 @@ export default function ChatRoomPage() {
             </div>
           ) : (
             messages.map((message) => (
-              <MessageBubble key={message.id} message={message} />
+              <MessageBubble key={message.id} message={message} isLastRead={message.id === lastReadMyMessageId} />
             ))
           )}
           <div ref={messagesEndRef} />
