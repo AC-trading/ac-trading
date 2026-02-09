@@ -710,7 +710,7 @@ export function formatPrice(price: number | null, currencyType: string | null): 
 
   switch (currencyType) {
     case 'BELL':
-      return `${formattedPrice}벨`;
+      return `${formattedPrice}덩`;
     case 'MILE_TICKET':
       return `${formattedPrice}마일`;
     default:

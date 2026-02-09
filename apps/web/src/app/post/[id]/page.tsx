@@ -516,7 +516,7 @@ export default function PostDetailPage() {
                   placeholder="제안할 가격을 입력하세요"
                 />
                 <span className="px-4 text-primary font-medium">
-                  {offerCurrencyType === "BELL" ? "벨" : "마일"}
+                  {offerCurrencyType === "BELL" ? "덩" : "마일"}
                 </span>
               </div>
             </div>

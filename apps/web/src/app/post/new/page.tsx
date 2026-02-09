@@ -289,7 +289,7 @@ export default function NewPostPage() {
                 placeholder="가격을 입력해주세요"
               />
               <span className="px-4 text-primary font-medium">
-                {currencyType === "BELL" ? "벨" : "마일"}
+                {currencyType === "BELL" ? "덩" : "마일"}
               </span>
             </div>
           </div>
