@@ -4,7 +4,9 @@ import com.acnh.api.chat.repository.ChatRoomRepository;
 import com.acnh.api.common.exception.InvalidRequestException;
 import com.acnh.api.common.exception.NotFoundException;
 import com.acnh.api.filter.ProfanityFilter;
+import com.acnh.api.member.entity.MannerScorePending;
 import com.acnh.api.member.entity.Member;
+import com.acnh.api.member.repository.MannerScorePendingRepository;
 import com.acnh.api.member.repository.MemberRepository;
 import com.acnh.api.post.entity.Post;
 import com.acnh.api.post.repository.PostRepository;
@@ -21,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +44,14 @@ public class ReviewService {
     private final MemberRepository memberRepository;
     private final PostRepository postRepository;
     private final ChatRoomRepository chatRoomRepository;
+    private final MannerScorePendingRepository mannerScorePendingRepository;
     private final ProfanityFilter profanityFilter;
+
+    // 무 점수 지연 적용 일수
+    private static final int MANNER_SCORE_DELAY_DAYS = 3;
+
+    // 리뷰 작성 시 작성자에게 즉시 부여되는 무 점수 보너스
+    private static final int MANNER_SCORE_WRITE_BONUS = 2;
 
     /**
      * 리뷰 작성
@@ -93,6 +103,25 @@ public class ReviewService {
 
         log.info("리뷰 작성 완료 - reviewId: {}, postId: {}, reviewerId: {}, revieweeId: {}",
                 savedReview.getId(), post.getId(), reviewer.getId(), reviewee.getId());
+
+        // 무 점수: 리뷰 작성자 즉시 보너스 적용
+        reviewer.increaseMannerScore(MANNER_SCORE_WRITE_BONUS);
+        log.info("무 점수 즉시 적용 - reviewerId: {}, +{} (리뷰 작성 보상)", reviewer.getId(), MANNER_SCORE_WRITE_BONUS);
+
+        // 무 점수: 리뷰 수신자 3일 후 지연 적용
+        int rating = request.getRating();
+        int scoreDelta = rating >= 3 ? rating * 2 : rating * -2;
+        if (scoreDelta != 0) {
+            MannerScorePending pending = MannerScorePending.builder()
+                    .memberId(reviewee.getId())
+                    .reviewId(savedReview.getId())
+                    .scoreDelta(scoreDelta)
+                    .applyAt(LocalDateTime.now().plusDays(MANNER_SCORE_DELAY_DAYS))
+                    .build();
+            mannerScorePendingRepository.save(pending);
+            log.info("무 점수 지연 적용 예약 - revieweeId: {}, delta: {}, applyAt: {}",
+                    reviewee.getId(), scoreDelta, pending.getApplyAt());
+        }
 
         return toReviewResponse(savedReview);
     }

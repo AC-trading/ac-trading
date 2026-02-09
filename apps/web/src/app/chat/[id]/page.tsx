@@ -8,7 +8,8 @@ import { ChevronLeftIcon, CameraIcon, MoreVerticalIcon, FlagIcon, BlockIcon, Exi
 import { useAuth } from "@/context/AuthContext";
 import { webSocketClient, ChatMessage } from "@/lib/websocket";
 import { getChatRoom, getChatMessages, formatMessageTime, ChatRoom } from "@/lib/chatApi";
-import { blockUser, leaveChatRoom, createReport, ReportReasonCode } from "@/lib/postApi";
+import { blockUser, leaveChatRoom, createReport, ReportReasonCode, reserveChatRoom, unreserveChatRoom, completeChatRoom, formatPrice } from "@/lib/postApi";
+import AppointmentModal from "@/components/chat/AppointmentModal";
 
 // 거래 상태 타입
 type TradeStatus = "AVAILABLE" | "RESERVED" | "COMPLETED";
@@ -135,6 +136,11 @@ export default function ChatRoomPage() {
   const [reportError, setReportError] = useState<string | null>(null);
   const [isBlocking, setIsBlocking] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+
+  // 거래 상태 변경 관련 상태
+  const [showAppointmentModal, setShowAppointmentModal] = useState(false);
+  const [showCompleteConfirm, setShowCompleteConfirm] = useState(false);
+  const [isStatusChanging, setIsStatusChanging] = useState(false);
 
   // 신고 사유 옵션
   const REPORT_REASONS: { code: ReportReasonCode; label: string }[] = [
@@ -322,6 +328,69 @@ export default function ChatRoomPage() {
     }
   };
 
+  // 약속 잡기 (예약) 핸들러
+  const handleReserve = async (scheduledTradeAt: string) => {
+    setIsStatusChanging(true);
+    try {
+      await reserveChatRoom(roomId, scheduledTradeAt);
+      // 채팅방 정보 다시 조회하여 상태 반영
+      const updatedRoom = await getChatRoom(roomId);
+      setChatRoom(updatedRoom);
+      setShowAppointmentModal(false);
+    } catch (err) {
+      console.error("약속 잡기 실패:", err);
+      alert(err instanceof Error ? err.message : "약속 잡기에 실패했습니다");
+    } finally {
+      setIsStatusChanging(false);
+    }
+  };
+
+  // 예약 취소 핸들러
+  const handleUnreserve = async () => {
+    if (!confirm("약속을 취소하시겠습니까?")) return;
+
+    setIsStatusChanging(true);
+    try {
+      await unreserveChatRoom(roomId);
+      const updatedRoom = await getChatRoom(roomId);
+      setChatRoom(updatedRoom);
+    } catch (err) {
+      console.error("예약 취소 실패:", err);
+      alert(err instanceof Error ? err.message : "예약 취소에 실패했습니다");
+    } finally {
+      setIsStatusChanging(false);
+    }
+  };
+
+  // 거래 완료 핸들러
+  const handleComplete = async () => {
+    setIsStatusChanging(true);
+    try {
+      await completeChatRoom(roomId);
+      const updatedRoom = await getChatRoom(roomId);
+      setChatRoom(updatedRoom);
+      setShowCompleteConfirm(false);
+    } catch (err) {
+      console.error("거래 완료 실패:", err);
+      alert(err instanceof Error ? err.message : "거래 완료 처리에 실패했습니다");
+    } finally {
+      setIsStatusChanging(false);
+    }
+  };
+
+  // 약속 일시 포맷팅
+  const formatScheduledTime = (dateStr: string | null) => {
+    if (!dateStr) return "";
+    const date = new Date(dateStr);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? "오후" : "오전";
+    const h12 = hours === 0 ? 12 : hours > 12 ? hours - 12 : hours;
+    return `${month}/${day} ${ampm} ${h12}:${String(minutes).padStart(2, "0")}`;
+  };
+
   // 신고 제출 핸들러
   const handleReportSubmit = async () => {
     if (!chatRoom || !selectedReportReason) return;
@@ -396,48 +465,113 @@ export default function ChatRoomPage() {
           </div>
         </header>
 
-        {/* 상품 정보 바 */}
+        {/* 상품 정보 바 + 거래 액션 버튼 */}
         {chatRoom && (
-          <div className="relative z-10 flex items-center gap-3 px-4 py-3 border-b border-gray-100 bg-white">
-            <Link
-              href={`/post/${chatRoom.postId}`}
-              className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80"
-            >
-              <div className="w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
-                {chatRoom.postImageUrl ? (
-                  <Image
-                    src={chatRoom.postImageUrl}
-                    alt={chatRoom.postItemName}
-                    width={48}
-                    height={48}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-2xl">
-                    📦
-                  </div>
-                )}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className={`text-xs px-2 py-0.5 rounded font-medium ${
-                    chatRoom.postStatus === "AVAILABLE"
-                      ? "bg-[#5BBFB3] text-white"
-                      : chatRoom.postStatus === "RESERVED"
-                      ? "bg-yellow-500 text-white"
-                      : "bg-gray-500 text-white"
-                  }`}>
-                    {getTradeStatusLabel(chatRoom.postStatus as TradeStatus)}
-                  </span>
-                  <span className="text-sm text-gray-900 truncate">{chatRoom.postItemName}</span>
+          <div className="relative z-10 border-b border-gray-100 bg-white">
+            {/* 상품 정보 */}
+            <div className="flex items-center gap-3 px-4 py-3">
+              <Link
+                href={`/post/${chatRoom.postId}`}
+                className="flex items-center gap-3 flex-1 min-w-0 hover:opacity-80"
+              >
+                <div className="w-12 h-12 bg-gray-200 rounded-lg flex-shrink-0 overflow-hidden">
+                  {chatRoom.postImageUrl ? (
+                    <Image
+                      src={chatRoom.postImageUrl}
+                      alt={chatRoom.postItemName}
+                      width={48}
+                      height={48}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-2xl">
+                      📦
+                    </div>
+                  )}
                 </div>
-                {chatRoom.postPrice && (
-                  <p className="text-sm font-semibold text-gray-900 mt-0.5">
-                    {chatRoom.postPrice.toLocaleString()}벨
-                  </p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs px-2 py-0.5 rounded font-medium ${
+                      chatRoom.postStatus === "AVAILABLE"
+                        ? "bg-[#5BBFB3] text-white"
+                        : chatRoom.postStatus === "RESERVED"
+                        ? "bg-yellow-500 text-white"
+                        : "bg-gray-500 text-white"
+                    }`}>
+                      {getTradeStatusLabel(chatRoom.postStatus as TradeStatus)}
+                    </span>
+                    <span className="text-sm text-gray-900 truncate">{chatRoom.postItemName}</span>
+                  </div>
+                  {chatRoom.postPrice != null && (
+                    <p className="text-sm font-semibold text-gray-900 mt-0.5">
+                      {formatPrice(chatRoom.postPrice, chatRoom.postCurrencyType)}
+                    </p>
+                  )}
+                </div>
+              </Link>
+            </div>
+
+            {/* 거래 액션 버튼 (상태별) */}
+            {chatRoom.postStatus !== "COMPLETED" && (
+              <div className="flex items-center gap-2 px-4 pb-3">
+                {/* 판매중 → 약속 잡기 */}
+                {chatRoom.postStatus === "AVAILABLE" && (
+                  <button
+                    onClick={() => setShowAppointmentModal(true)}
+                    disabled={isStatusChanging}
+                    className="flex items-center gap-1.5 px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                      <line x1="16" y1="2" x2="16" y2="6" />
+                      <line x1="8" y1="2" x2="8" y2="6" />
+                      <line x1="3" y1="10" x2="21" y2="10" />
+                    </svg>
+                    약속잡기
+                  </button>
+                )}
+
+                {/* 예약중 → 거래 완료 + 예약 취소 */}
+                {chatRoom.postStatus === "RESERVED" && (
+                  <>
+                    <button
+                      onClick={() => setShowCompleteConfirm(true)}
+                      disabled={isStatusChanging}
+                      className="flex items-center gap-1.5 px-4 py-2 bg-[#5BBFB3] text-white rounded-full text-sm font-medium hover:bg-[#4DAE9F] transition-colors disabled:opacity-50"
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      거래 완료
+                    </button>
+                    <button
+                      onClick={handleUnreserve}
+                      disabled={isStatusChanging}
+                      className="flex items-center gap-1.5 px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-gray-500 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                      예약 취소
+                    </button>
+                    {chatRoom.scheduledTradeAt && (
+                      <span className="text-xs text-gray-400 ml-auto">
+                        {formatScheduledTime(chatRoom.scheduledTradeAt)}
+                      </span>
+                    )}
+                  </>
                 )}
               </div>
-            </Link>
+            )}
+
+            {/* 거래 완료 상태 표시 */}
+            {chatRoom.postStatus === "COMPLETED" && (
+              <div className="flex items-center gap-2 px-4 pb-3">
+                <span className="flex items-center gap-1.5 px-4 py-2 bg-gray-100 rounded-full text-sm font-medium text-gray-500">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                  거래 완료됨
+                </span>
+              </div>
+            )}
           </div>
         )}
 
@@ -567,8 +701,20 @@ export default function ChatRoomPage() {
                 <span className="text-xs text-white font-medium">카메라</span>
               </button>
 
-              {/* 약속 */}
-              <button className="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-white/20 transition-colors">
+              {/* 약속 - AVAILABLE 상태에서만 모달 열기 */}
+              <button
+                onClick={() => {
+                  setIsBottomTabOpen(false);
+                  if (chatRoom?.postStatus === "AVAILABLE") {
+                    setShowAppointmentModal(true);
+                  } else if (chatRoom?.postStatus === "RESERVED") {
+                    alert("이미 약속이 잡혀있습니다.");
+                  } else {
+                    alert("거래가 완료된 상품입니다.");
+                  }
+                }}
+                className="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-white/20 transition-colors"
+              >
                 <div className="w-12 h-12 bg-white/30 rounded-full flex items-center justify-center">
                   <svg
                     width="24"
@@ -765,6 +911,54 @@ export default function ChatRoomPage() {
                   className="w-full py-4 bg-[#5BBFB3] text-white font-semibold rounded-xl hover:bg-[#4DAE9F] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
                   {isSubmittingReport ? "신고 중..." : "신고하기"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 약속 잡기 모달 */}
+        {showAppointmentModal && chatRoom && (
+          <AppointmentModal
+            otherUserNickname={chatRoom.otherUserNickname}
+            onConfirm={handleReserve}
+            onClose={() => setShowAppointmentModal(false)}
+            isSubmitting={isStatusChanging}
+          />
+        )}
+
+        {/* 거래 완료 확인 모달 */}
+        {showCompleteConfirm && (
+          <div
+            className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-8"
+            onClick={() => setShowCompleteConfirm(false)}
+          >
+            <div
+              className="w-full max-w-sm bg-white rounded-2xl overflow-hidden"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="p-6 text-center">
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  거래 완료
+                </h3>
+                <p className="text-sm text-gray-500">
+                  거래를 완료하시겠습니까?<br />
+                  완료 후에는 되돌릴 수 없습니다.
+                </p>
+              </div>
+              <div className="flex border-t border-gray-100">
+                <button
+                  onClick={() => setShowCompleteConfirm(false)}
+                  className="flex-1 py-4 text-gray-500 font-medium hover:bg-gray-50 transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleComplete}
+                  disabled={isStatusChanging}
+                  className="flex-1 py-4 text-[#5BBFB3] font-semibold hover:bg-gray-50 transition-colors border-l border-gray-100 disabled:opacity-50"
+                >
+                  {isStatusChanging ? "처리 중..." : "완료"}
                 </button>
               </div>
             </div>

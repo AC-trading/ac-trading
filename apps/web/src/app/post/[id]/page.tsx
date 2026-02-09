@@ -19,8 +19,10 @@ import {
   PriceOfferCreateRequest,
   blockUser,
   createReport,
+  deletePost,
   ReportReasonCode,
 } from "@/lib/postApi";
+import { useAuth } from "@/context/AuthContext";
 import { addRecentViewedPost } from "@/lib/recentPosts";
 import { getMannerScoreColor } from "@/lib/mannerScore";
 
@@ -39,6 +41,7 @@ const REPORT_REASONS: { code: ReportReasonCode; label: string }[] = [
 export default function PostDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { user } = useAuth();
   // params.id가 string[] 일 수 있으므로 안전하게 처리
   const postId = Array.isArray(params.id) ? params.id[0] : params.id;
 
@@ -67,6 +70,11 @@ export default function PostDetailPage() {
   const [reportError, setReportError] = useState<string | null>(null);
   // 차단하기 상태
   const [isBlocking, setIsBlocking] = useState(false);
+  // 삭제하기 상태
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  // 내 글 여부 판별
+  const isMyPost = !!(user && post && user.id === post.userUuid);
 
   // API에서 게시글 데이터 로드
   useEffect(() => {
@@ -180,6 +188,25 @@ export default function PostDetailPage() {
       alert(err instanceof Error ? err.message : "차단에 실패했습니다");
     } finally {
       setIsBlocking(false);
+    }
+  };
+
+  // 게시글 삭제 핸들러
+  const handleDeletePost = async () => {
+    if (!post) return;
+    if (!confirm("정말 삭제하시겠습니까? 삭제 후에는 되돌릴 수 없습니다.")) return;
+
+    setIsDeleting(true);
+    try {
+      await deletePost(post.id);
+      setShowMoreMenu(false);
+      alert("게시글이 삭제되었습니다.");
+      router.push("/");
+    } catch (err) {
+      console.error("삭제 실패:", err);
+      alert(err instanceof Error ? err.message : "삭제에 실패했습니다");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -563,29 +590,62 @@ export default function PostDetailPage() {
               <div className="w-10 h-1 bg-gray-300 rounded-full" />
             </div>
 
-            {/* 메뉴 아이템들 */}
+            {/* 메뉴 아이템들 - 내 글/남의 글 분기 */}
             <div className="pb-6">
-              <button
-                onClick={() => {
-                  setShowMoreMenu(false);
-                  handleBlockUser();
-                }}
-                disabled={isBlocking}
-                className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors disabled:opacity-50"
-              >
-                <BlockIcon className="w-5 h-5 text-gray-600" />
-                <span className="text-gray-800">이 사용자의 글 보지 않기</span>
-              </button>
-              <button
-                onClick={() => {
-                  setShowMoreMenu(false);
-                  setShowReportModal(true);
-                }}
-                className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors"
-              >
-                <FlagIcon className="w-5 h-5 text-gray-600" />
-                <span className="text-gray-800">신고하기</span>
-              </button>
+              {isMyPost ? (
+                <>
+                  {/* 내 글: 수정하기, 삭제하기 */}
+                  <button
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      router.push(`/post/new?editId=${post.id}`);
+                    }}
+                    className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-600">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                    </svg>
+                    <span className="text-gray-800">수정하기</span>
+                  </button>
+                  <button
+                    onClick={handleDeletePost}
+                    disabled={isDeleting}
+                    className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
+                    <span className="text-red-500">{isDeleting ? "삭제 중..." : "삭제하기"}</span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  {/* 남의 글: 차단, 신고 */}
+                  <button
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      handleBlockUser();
+                    }}
+                    disabled={isBlocking}
+                    className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    <BlockIcon className="w-5 h-5 text-gray-600" />
+                    <span className="text-gray-800">이 사용자의 글 보지 않기</span>
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowMoreMenu(false);
+                      setShowReportModal(true);
+                    }}
+                    className="flex items-center gap-3 w-full px-6 py-4 hover:bg-gray-50 transition-colors"
+                  >
+                    <FlagIcon className="w-5 h-5 text-gray-600" />
+                    <span className="text-gray-800">신고하기</span>
+                  </button>
+                </>
+              )}
             </div>
 
             {/* 취소 버튼 */}
