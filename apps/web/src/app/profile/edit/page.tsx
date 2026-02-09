@@ -12,7 +12,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080";
 // 프로필 수정 페이지 - Figma 디자인 기반 (회원가입 페이지와 동일 스타일)
 export default function ProfileEditPage() {
   const router = useRouter();
-  const { user, accessToken, isLoading } = useAuth();
+  const { user, accessToken, isLoading, refreshUser } = useAuth();
   const [formData, setFormData] = useState({
     islandName: "",
     islandSuffix: "섬" as "섬" | "도",
@@ -104,6 +104,8 @@ export default function ProfileEditPage() {
       });
 
       if (res.ok) {
+        // 프로필 정보 갱신 후 이동 (isProfileComplete 등 최신 상태 반영)
+        await refreshUser();
         router.push("/");
       } else {
         const errorData = await res.json().catch(() => null);

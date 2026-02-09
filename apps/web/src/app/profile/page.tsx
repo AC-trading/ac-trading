@@ -10,6 +10,7 @@ import {
   HeartIcon,
 } from "@/components/icons";
 import { useAuth } from "@/context/AuthContext";
+import { getMannerScoreColor } from "@/lib/mannerScore";
 
 // 프로필 페이지 - Figma 디자인 기반
 export default function ProfilePage() {
@@ -69,7 +70,7 @@ export default function ProfilePage() {
           className="rounded-full object-cover"
         />
         <div className="flex-1">
-          <h2 className="font-semibold text-lg text-black">{user?.nickname || "닉네임 없음"}</h2>
+          <h2 className="font-semibold text-lg text-[#5BBFB3]">{user?.nickname || "닉네임 없음"}</h2>
           <p className="text-sm text-black">
             {user?.islandName || "섬 이름 없음"}
           </p>
@@ -122,7 +123,10 @@ export default function ProfilePage() {
         </div>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="text-3xl font-bold text-red-500">
+            <span
+              className="text-3xl font-bold"
+              style={{ color: user?.mannerScore != null && Number.isFinite(user.mannerScore) ? getMannerScoreColor(user.mannerScore) : "#adb5bd" }}
+            >
               {user?.mannerScore != null && Number.isFinite(user.mannerScore) ? `${user.mannerScore.toFixed(1)} 벨` : "-"}
             </span>
             <Image

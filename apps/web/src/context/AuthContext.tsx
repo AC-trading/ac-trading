@@ -25,6 +25,7 @@ interface AuthContextType {
   login: (accessToken: string, idToken?: string) => void;
   logout: () => Promise<void>;
   refreshAccessToken: () => Promise<boolean>;
+  refreshUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
@@ -110,6 +111,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, [checkAuth]);
 
+  // 사용자 정보 갱신 (프로필 수정 후 호출)
+  // Before: 프로필 수정 후 user.isProfileComplete가 갱신되지 않아
+  //         다음 수정 시 profile-setup API 호출 → "이미 프로필이 설정되어 있습니다" 에러
+  // After: refreshUser()로 최신 사용자 정보를 다시 조회
+  const refreshUser = useCallback(async () => {
+    const token = localStorage.getItem('accessToken');
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API_URL}/api/users/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const userData = await res.json();
+        setUser(userData);
+      }
+    } catch (error) {
+      console.error('사용자 정보 갱신 실패:', error);
+    }
+  }, []);
+
   // 로그인 처리
   const login = useCallback((newAccessToken: string, idToken?: string) => {
     localStorage.setItem('accessToken', newAccessToken);
@@ -174,6 +196,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       login,
       logout,
       refreshAccessToken,
+      refreshUser,
     }}>
       {children}
     </AuthContext.Provider>

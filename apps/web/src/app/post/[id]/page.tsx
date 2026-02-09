@@ -21,6 +21,7 @@ import {
   ReportReasonCode,
 } from "@/lib/postApi";
 import { addRecentViewedPost } from "@/lib/recentPosts";
+import { getMannerScoreColor } from "@/lib/mannerScore";
 
 // 신고 사유 옵션
 const REPORT_REASONS: { code: ReportReasonCode; label: string }[] = [
@@ -32,6 +33,16 @@ const REPORT_REASONS: { code: ReportReasonCode; label: string }[] = [
   { code: "EXTERNAL_MESSENGER", label: "외부 메신저 유도" },
   { code: "OTHER", label: "기타" },
 ];
+
+// 허용된 프로토콜만 통과시키는 이미지 URL 검증
+function isSafeImageUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return ["https:", "http:"].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
 
 // 상품 상세 페이지 - Figma 디자인 기반
 export default function PostDetailPage() {
@@ -262,7 +273,9 @@ export default function PostDetailPage() {
 
       {/* 상품 이미지 - description에서 [images:url1,url2,...] 패턴 파싱 */}
       {(() => {
-        const imageUrls = extractImageUrls(post.description);
+        // Before: extractImageUrls 결과를 검증 없이 사용
+        // After: isSafeImageUrl로 javascript:, data: 등 위험한 프로토콜 차단
+        const imageUrls = extractImageUrls(post.description).filter(isSafeImageUrl);
 
         if (imageUrls.length === 0) {
           return (
@@ -334,12 +347,12 @@ export default function PostDetailPage() {
             🐰
           </div>
           <div className="flex-1">
-            <p className="font-semibold text-gray-900">{post.userNickname || "익명"}</p>
+            <p className="font-semibold text-[#5BBFB3]">{post.userNickname || "익명"}</p>
             <p className="text-sm text-gray-500">{post.userIslandName || "섬 이름 없음"}</p>
           </div>
-          {post.userMannerScore != null && (
+          {Number.isFinite(post.userMannerScore) && (
             <div className="text-right">
-              <p className="text-sm font-medium text-primary">무 점수 : {post.userMannerScore} 벨</p>
+              <p className="text-sm font-medium" style={{ color: getMannerScoreColor(post.userMannerScore!) }}>무 점수 : {post.userMannerScore} 벨</p>
             </div>
           )}
         </Link>
@@ -349,12 +362,12 @@ export default function PostDetailPage() {
             🐰
           </div>
           <div className="flex-1">
-            <p className="font-semibold text-gray-900">{post.userNickname || "익명"}</p>
+            <p className="font-semibold text-[#5BBFB3]">{post.userNickname || "익명"}</p>
             <p className="text-sm text-gray-500">{post.userIslandName || "섬 이름 없음"}</p>
           </div>
-          {post.userMannerScore != null && (
+          {Number.isFinite(post.userMannerScore) && (
             <div className="text-right">
-              <p className="text-sm font-medium text-primary">무 점수 : {post.userMannerScore} 벨</p>
+              <p className="text-sm font-medium" style={{ color: getMannerScoreColor(post.userMannerScore!) }}>무 점수 : {post.userMannerScore} 벨</p>
             </div>
           )}
         </div>

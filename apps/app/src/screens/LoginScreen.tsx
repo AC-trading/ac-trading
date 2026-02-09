@@ -10,13 +10,12 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
-  Image,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useGoogleAuth, signInWithKakao } from '../auth';
 
-// 앱 assets에서 로고 이미지 import
-const raccoonLogo = require('../../assets/raccoon.png');
+// Before: raccoon.png 사용 (저작권 이슈)
+// After: 커스텀 민트색 로고 컴포넌트로 교체 (react-native-svg 미설치로 SVG 사용 불가)
 
 interface LoginScreenProps {
   onLoginSuccess: () => void;
@@ -72,7 +71,10 @@ export default function LoginScreen({ onLoginSuccess }: LoginScreenProps) {
       <StatusBar style="dark" backgroundColor="#FFFFFF" />
       {/* 로고 영역 */}
       <View style={styles.header}>
-        <Image source={raccoonLogo} style={styles.logo} />
+        {/* 커스텀 민트색 로고 - 저작권 안전 */}
+        <View style={styles.logo}>
+          <Text style={styles.logoText}>AC</Text>
+        </View>
         <Text style={styles.title}>AC Trading</Text>
         <Text style={styles.subtitle}>모여봐요 동물의 숲 아이템 거래</Text>
       </View>
@@ -141,6 +143,14 @@ const styles = StyleSheet.create({
     height: 96,
     borderRadius: 48,
     marginBottom: 8,
+    backgroundColor: '#7ECEC5',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
+  logoText: {
+    fontSize: 36,
+    fontWeight: 'bold' as const,
+    color: '#FFFFFF',
   },
   title: {
     fontSize: 36,
