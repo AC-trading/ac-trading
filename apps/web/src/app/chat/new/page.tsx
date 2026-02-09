@@ -36,10 +36,18 @@ function NewChatContent() {
       return;
     }
 
+    // Before: Number("abc") → NaN이 createChatRoom에 그대로 전달
+    // After: 숫자 검증 후 유효하지 않으면 홈으로 리다이렉트
+    const numericPostId = Number(postId);
+    if (Number.isNaN(numericPostId) || numericPostId <= 0) {
+      router.push("/");
+      return;
+    }
+
     const initChatRoom = async () => {
       try {
         // 채팅방 생성 (이미 존재하면 기존 채팅방 반환)
-        const room = await createChatRoom(Number(postId));
+        const room = await createChatRoom(numericPostId);
         // 생성된 채팅방으로 리다이렉트 (히스토리 교체로 뒤로가기 시 이 페이지 건너뜀)
         router.replace(`/chat/${room.id}`);
       } catch (err) {
