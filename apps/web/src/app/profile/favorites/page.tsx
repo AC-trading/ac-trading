@@ -6,7 +6,7 @@ import Image from "next/image";
 import { MobileLayout, Header } from "@/components/common";
 import { HeartIcon } from "@/components/icons";
 import { useAuth } from "@/context/AuthContext";
-import { getMyLikes, extractImageUrls, Post, togglePostLike } from "@/lib/postApi";
+import { getMyLikes, extractImageUrls, isSafeImageUrl, Post, togglePostLike } from "@/lib/postApi";
 
 // 관심 상품 아이템 컴포넌트
 function FavoriteItem({
@@ -20,7 +20,7 @@ function FavoriteItem({
   const formatPrice = (price: number | null, currencyType: string | null) => {
     if (price === null) return "가격 미정";
     if (currencyType === "MILE_TICKET") return `마일 티켓 ${price}장`;
-    return `${price.toLocaleString()} 벨`;
+    return `${price.toLocaleString()} 덩`;
   };
 
   // 거래 상태 배지
@@ -43,7 +43,7 @@ function FavoriteItem({
     }
   };
 
-  const thumbnailUrl = extractImageUrls(post.description)[0];
+  const thumbnailUrl = extractImageUrls(post.description).filter(isSafeImageUrl)[0];
 
   return (
     <div className="flex items-center gap-3 p-4 hover:bg-gray-50 transition-colors border-b border-gray-100">

@@ -693,6 +693,19 @@ export function extractImageUrls(description: string | null | undefined): string
 }
 
 /**
+ * 이미지 URL이 안전한 프로토콜(http/https)인지 검증
+ * javascript:, data: 등 위험한 프로토콜 차단
+ */
+export function isSafeImageUrl(url: string): boolean {
+  try {
+    const parsed = new URL(url);
+    return ["https:", "http:"].includes(parsed.protocol);
+  } catch {
+    return false;
+  }
+}
+
+/**
  * description에서 [images:...] 패턴을 제거한 텍스트 반환
  */
 export function stripImagePattern(description: string | null | undefined): string {
@@ -710,7 +723,7 @@ export function formatPrice(price: number | null, currencyType: string | null): 
 
   switch (currencyType) {
     case 'BELL':
-      return `${formattedPrice}벨`;
+      return `${formattedPrice}덩`;
     case 'MILE_TICKET':
       return `${formattedPrice}마일`;
     default:

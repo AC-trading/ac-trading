@@ -310,7 +310,7 @@ function AddTransactionModal({
                 className="flex-1 px-4 py-3 focus:outline-none text-gray-900"
               />
               <span className="px-4 text-primary font-medium">
-                {currencyType === "BELL" ? "벨" : "마일"}
+                {currencyType === "BELL" ? "덩" : "마일"}
               </span>
             </div>
           </div>
