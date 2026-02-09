@@ -70,6 +70,9 @@ class WebSocketClient {
 
     // 새 연결 세대 - 이전 연결의 콜백 무시용
     const generation = ++this.connectionGeneration;
+    // Before: onWebSocketError + onWebSocketClose 연속 발생 시 onDisconnect 중복 호출
+    // After: hasDisconnected 가드로 연결당 1회만 호출
+    let hasDisconnected = false;
 
     this.client = new Client({
       // 네이티브 WebSocket 사용 (SockJS 대신 - 프록시 호환성 우수)
@@ -104,7 +107,8 @@ class WebSocketClient {
 
       // 연결 해제
       onDisconnect: () => {
-        if (generation !== this.connectionGeneration) return;
+        if (generation !== this.connectionGeneration || hasDisconnected) return;
+        hasDisconnected = true;
         console.log('WebSocket 연결 해제');
         onDisconnect?.();
       },
@@ -117,14 +121,16 @@ class WebSocketClient {
 
       // WebSocket 에러
       onWebSocketError: (event) => {
-        if (generation !== this.connectionGeneration) return;
+        if (generation !== this.connectionGeneration || hasDisconnected) return;
+        hasDisconnected = true;
         console.error('WebSocket 에러:', event);
         onDisconnect?.();
       },
 
       // WebSocket 종료
       onWebSocketClose: (event) => {
-        if (generation !== this.connectionGeneration) return;
+        if (generation !== this.connectionGeneration || hasDisconnected) return;
+        hasDisconnected = true;
         console.log('WebSocket 종료:', event);
         onDisconnect?.();
       },
