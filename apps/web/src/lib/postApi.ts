@@ -158,15 +158,19 @@ export interface ReviewListResponse {
 export interface ChatRoom {
   id: number;
   postId: number;
-  postItemName: string | null;
-  postStatus: 'AVAILABLE' | 'RESERVED' | 'COMPLETED';
-  sellerId: number;
-  sellerNickname: string | null;
-  buyerId: number;
-  buyerNickname: string | null;
+  postItemName: string;
+  postImageUrl: string | null;
+  postPrice: number | null;
+  postCurrencyType: string | null;
+  postStatus: string | null;
+  otherUserId: number;
+  otherUserNickname: string;
+  otherUserIslandName: string | null;
   lastMessage: string | null;
   lastMessageAt: string | null;
   unreadCount: number;
+  status: string;
+  scheduledTradeAt: string | null;
   createdAt: string;
 }
 

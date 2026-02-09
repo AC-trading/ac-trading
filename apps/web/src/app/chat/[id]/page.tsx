@@ -698,11 +698,17 @@ export default function ChatRoomPage() {
                 <span className="text-xs text-white font-medium">카메라</span>
               </button>
 
-              {/* 약속 */}
+              {/* 약속 - AVAILABLE 상태에서만 모달 열기 */}
               <button
                 onClick={() => {
                   setIsBottomTabOpen(false);
-                  setShowAppointmentModal(true);
+                  if (chatRoom?.postStatus === "AVAILABLE") {
+                    setShowAppointmentModal(true);
+                  } else if (chatRoom?.postStatus === "RESERVED") {
+                    alert("이미 약속이 잡혀있습니다.");
+                  } else {
+                    alert("거래가 완료된 상품입니다.");
+                  }
                 }}
                 className="flex flex-col items-center gap-1 p-3 rounded-xl hover:bg-white/20 transition-colors"
               >

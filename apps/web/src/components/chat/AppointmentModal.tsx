@@ -74,6 +74,12 @@ export default function AppointmentModal({
   const handleConfirm = () => {
     // ISO 8601 형식 (LocalDateTime 호환)
     const scheduledTradeAt = `${selectedDate}T${selectedHour}:${selectedMinute}:00`;
+    // 선택한 일시가 현재보다 이후인지 검증
+    const selectedDateTime = new Date(scheduledTradeAt);
+    if (selectedDateTime <= new Date()) {
+      alert("현재 시각 이후의 시간을 선택해주세요.");
+      return;
+    }
     onConfirm(scheduledTradeAt);
   };
 
