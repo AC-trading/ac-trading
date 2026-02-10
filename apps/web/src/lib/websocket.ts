@@ -1,6 +1,9 @@
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+if (!process.env.NEXT_PUBLIC_API_URL) throw new Error('NEXT_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다.');
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+const isDev = process.env.NODE_ENV === 'development';
 
 // 메시지 타입 정의
 export interface ChatMessage {
@@ -52,18 +55,18 @@ class WebSocketClient {
   ): Promise<void> {
     // 이미 연결된 상태면 콜백만 호출
     if (this.client?.connected) {
-      console.log('WebSocket 이미 연결됨');
+      if (isDev) console.log('WebSocket 이미 연결됨');
       onConnect?.();
       return;
     }
 
     // 기존 클라이언트 정리
     if (this.client) {
-      console.log('기존 WebSocket 클라이언트 정리');
+      if (isDev) console.log('기존 WebSocket 클라이언트 정리');
       try {
         await this.client.deactivate();
       } catch (e) {
-        console.warn('WebSocket deactivate 실패:', e);
+        if (isDev) console.warn('WebSocket deactivate 실패:', e);
       }
       this.client = null;
     }
@@ -85,9 +88,7 @@ class WebSocketClient {
 
       // 디버그 로그
       debug: (str) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[STOMP]', str);
-        }
+        if (isDev) console.log('[STOMP]', str);
       },
 
       // STOMP.js 내장 재연결 (5초 간격)
@@ -104,7 +105,7 @@ class WebSocketClient {
         // Before: 재연결 시 hasDisconnected가 true인 채로 유지 → 이후 disconnect 콜백 무시됨
         // After: 재연결 성공 시 리셋하여 다음 disconnect 감지 가능
         hasDisconnected = false;
-        console.log('WebSocket 연결 성공');
+        if (isDev) console.log('WebSocket 연결 성공');
         onConnect?.();
       },
 
@@ -112,7 +113,7 @@ class WebSocketClient {
       onDisconnect: () => {
         if (generation !== this.connectionGeneration || hasDisconnected) return;
         hasDisconnected = true;
-        console.log('WebSocket 연결 해제');
+        if (isDev) console.log('WebSocket 연결 해제');
         onDisconnect?.();
       },
 
@@ -134,7 +135,7 @@ class WebSocketClient {
       onWebSocketClose: (event) => {
         if (generation !== this.connectionGeneration || hasDisconnected) return;
         hasDisconnected = true;
-        console.log('WebSocket 종료:', event);
+        if (isDev) console.log('WebSocket 종료:', event);
         onDisconnect?.();
       },
     });
@@ -154,7 +155,7 @@ class WebSocketClient {
 
       this.client.deactivate();
       this.client = null;
-      console.log('WebSocket 연결 해제 완료');
+      if (isDev) console.log('WebSocket 연결 해제 완료');
     }
   }
 
@@ -178,7 +179,7 @@ class WebSocketClient {
 
     // 이미 구독 중이면 무시
     if (this.subscriptions.has(destination)) {
-      console.log(`이미 구독 중: ${destination}`);
+      if (isDev) console.log(`이미 구독 중: ${destination}`);
       return;
     }
 
@@ -207,7 +208,7 @@ class WebSocketClient {
       this.subscriptions.set(readDestination, readSub);
     }
 
-    console.log(`채팅방 구독 완료: ${roomId}`);
+    if (isDev) console.log(`채팅방 구독 완료: ${roomId}`);
   }
 
   // 채팅방 구독 해제
@@ -227,7 +228,7 @@ class WebSocketClient {
       this.subscriptions.delete(readDestination);
     }
 
-    console.log(`채팅방 구독 해제: ${roomId}`);
+    if (isDev) console.log(`채팅방 구독 해제: ${roomId}`);
   }
 
   // 메시지 전송

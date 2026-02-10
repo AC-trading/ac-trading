@@ -14,8 +14,8 @@ const navItems = [
 export default function BottomNav() {
   const pathname = usePathname();
 
-  // 로그인/회원가입 페이지에서는 네비게이션 숨김
-  if (pathname === "/login" || pathname === "/signup") {
+  // 로그인 페이지에서는 네비게이션 숨김
+  if (pathname === "/login") {
     return null;
   }
 

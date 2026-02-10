@@ -4,7 +4,8 @@ import { useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+if (!process.env.NEXT_PUBLIC_API_URL) throw new Error('NEXT_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다.');
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 // 콜백 처리 컴포넌트
 function CallbackHandler() {
