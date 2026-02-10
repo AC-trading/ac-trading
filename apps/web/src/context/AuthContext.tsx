@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
-import { isWebView } from '@/lib/nativeBridge';
+import { isWebView, requestNativeLogout } from '@/lib/nativeBridge';
 
 // 사용자 정보 타입
 interface User {
@@ -164,13 +164,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setAccessToken(null);
     setUser(null);
 
-    // Before: 무조건 Cognito 로그아웃 리다이렉트 - WebView에서 Invalid Request 에러 발생
-    // After: WebView에서는 Cognito 로그아웃 스킵 (앱이 자체 세션 관리)
-    // WebView 환경에서는 Cognito 로그아웃 스킵
-    // 앱은 네이티브 SDK로 세션을 관리하므로 웹 Cognito 세션 정리 불필요
+    // Before: WebView에서 홈으로 리다이렉트만 수행 → 네이티브 토큰 미제거로 로그인 상태 유지
+    // After: 네이티브 앱에 로그아웃 요청 → 토큰 제거 후 로그인 화면으로 전환
     if (isWebView()) {
-      // WebView에서는 홈으로 이동만 수행
-      window.location.href = '/';
+      // 네이티브 로그아웃 요청 실패 시 홈으로 리다이렉트 - CodeRabbit 리뷰 반영
+      if (!requestNativeLogout()) {
+        window.location.href = '/';
+      }
       return;
     }
 
