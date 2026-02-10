@@ -6,7 +6,7 @@ import Image from "next/image";
 import { MobileLayout, Header } from "@/components/common";
 import { HeartIcon } from "@/components/icons";
 import { useAuth } from "@/context/AuthContext";
-import { getMyLikes, extractImageUrls, isSafeImageUrl, Post, togglePostLike } from "@/lib/postApi";
+import { getMyLikes, extractImageUrls, isSafeImageUrl, Post, togglePostLike, formatPrice } from "@/lib/postApi";
 
 // 관심 상품 아이템 컴포넌트
 function FavoriteItem({
@@ -16,12 +16,8 @@ function FavoriteItem({
   post: Post;
   onUnlike: (postId: number) => void;
 }) {
-  // 가격 포맷팅
-  const formatPrice = (price: number | null, currencyType: string | null) => {
-    if (price === null) return "가격 미정";
-    if (currencyType === "MILE_TICKET") return `마일 티켓 ${price}장`;
-    return `${price.toLocaleString()} 덩`;
-  };
+  // Before: 로컬 formatPrice 사용 → 공유 함수(postApi.ts)와 포맷 불일치
+  // After: 공유 formatPrice import하여 일관된 가격 표시
 
   // 거래 상태 배지
   const getStatusBadge = (status: string) => {

@@ -70,7 +70,10 @@ export interface PostCreateRequest {
 }
 
 // 게시글 수정 요청 타입
+// Before: postType 누락 → 백엔드 @NotBlank 검증 실패로 수정 불가
+// After: postType 필수 필드로 추가
 export interface PostUpdateRequest {
+  postType: 'SELL' | 'BUY';
   categoryId?: number;
   itemName?: string;
   currencyType?: 'BELL' | 'MILE_TICKET';

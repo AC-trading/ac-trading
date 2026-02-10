@@ -532,8 +532,8 @@ export default function ChatRoomPage() {
               </Link>
             </div>
 
-            {/* 거래 액션 버튼 (상태별) */}
-            {chatRoom.postStatus !== "COMPLETED" && (
+            {/* 거래 액션 버튼 (게시글 작성자만 표시) */}
+            {chatRoom.isPostOwner && chatRoom.postStatus !== "COMPLETED" && (
               <div className="flex items-center gap-2 px-4 pb-3">
                 {/* 판매중 → 약속 잡기 */}
                 {chatRoom.postStatus === "AVAILABLE" && (
@@ -552,7 +552,7 @@ export default function ChatRoomPage() {
                   </button>
                 )}
 
-                {/* 예약중 → 거래 완료 + 예약 취소 */}
+                {/* 예약중 → 거래 완료 + 약속 변경 + 예약 취소 */}
                 {chatRoom.postStatus === "RESERVED" && (
                   <>
                     <button
@@ -564,6 +564,13 @@ export default function ChatRoomPage() {
                         <polyline points="20 6 9 17 4 12" />
                       </svg>
                       거래 완료
+                    </button>
+                    <button
+                      onClick={() => setShowAppointmentModal(true)}
+                      disabled={isStatusChanging}
+                      className="flex items-center gap-1.5 px-4 py-2 border border-gray-300 rounded-full text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                      약속 변경
                     </button>
                     <button
                       onClick={handleUnreserve}
@@ -722,7 +729,8 @@ export default function ChatRoomPage() {
                 <span className="text-xs text-white font-medium">카메라</span>
               </button>
 
-              {/* 약속 - AVAILABLE/RESERVED 상태에서 모달 열기 (RESERVED면 시간 변경) */}
+              {/* 약속 - 게시글 작성자만 표시, AVAILABLE/RESERVED 상태에서 모달 열기 */}
+              {chatRoom?.isPostOwner && (
               <button
                 onClick={() => {
                   setIsBottomTabOpen(false);
@@ -753,6 +761,7 @@ export default function ChatRoomPage() {
                 </div>
                 <span className="text-xs text-white font-medium">약속</span>
               </button>
+              )}
             </div>
           </div>
         </div>

@@ -181,6 +181,7 @@ function NewPostContent() {
       if (isEditMode && editId) {
         // 수정 모드
         const request: PostUpdateRequest = {
+          postType,
           categoryId: categoryId ?? undefined,
           itemName: itemName.trim(),
           description: descriptionWithImages,
