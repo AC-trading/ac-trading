@@ -25,9 +25,7 @@
       }
     },
     "production": {
-      "android": {
-        "buildType": "apk"
-      },
+      "android": {},
       "env": {
         "EXPO_PUBLIC_WEB_URL": "https://ac-trading.vercel.app",
         "EXPO_PUBLIC_API_URL": "https://ac-trading-production.up.railway.app",
