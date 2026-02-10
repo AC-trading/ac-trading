@@ -1,6 +1,7 @@
 import { ChatMessage } from './websocket';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다.');
 
 // 채팅방 응답 타입
 export interface ChatRoom {

@@ -1,7 +1,8 @@
 // 게시글 및 카테고리 API 서비스
 // 백엔드 /api/posts, /api/categories 엔드포인트와 연동
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다.');
 
 // ========== 카테고리 타입 정의 ==========
 

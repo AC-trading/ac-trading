@@ -1,6 +1,7 @@
 import { Client, IMessage, StompSubscription } from '@stomp/stompjs';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
+if (!API_URL) throw new Error('NEXT_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다.');
 
 // 메시지 타입 정의
 export interface ChatMessage {
