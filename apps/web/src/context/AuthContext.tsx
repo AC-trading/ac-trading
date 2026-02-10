@@ -167,7 +167,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Before: WebView에서 홈으로 리다이렉트만 수행 → 네이티브 토큰 미제거로 로그인 상태 유지
     // After: 네이티브 앱에 로그아웃 요청 → 토큰 제거 후 로그인 화면으로 전환
     if (isWebView()) {
-      requestNativeLogout();
+      // 네이티브 로그아웃 요청 실패 시 홈으로 리다이렉트 - CodeRabbit 리뷰 반영
+      if (!requestNativeLogout()) {
+        window.location.href = '/';
+      }
       return;
     }
 
