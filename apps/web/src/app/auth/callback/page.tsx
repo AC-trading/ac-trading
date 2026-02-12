@@ -47,7 +47,7 @@ function CallbackHandler() {
             const userData = await res.json();
             // 프로필 미완성 시 프로필 설정 페이지로 리다이렉트
             if (!userData.isProfileComplete) {
-              router.push('/profile/edit');
+              router.push('/profile/setup');
               return;
             }
           }

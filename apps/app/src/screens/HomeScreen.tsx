@@ -13,9 +13,10 @@ interface NativeMessage {
 
 interface HomeScreenProps {
   onLoginRequest: () => void;
+  isProfileComplete: boolean;
 }
 
-export default function HomeScreen({ onLoginRequest }: HomeScreenProps) {
+export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeScreenProps) {
   const [token, setToken] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [canGoBack, setCanGoBack] = React.useState(false);
@@ -90,7 +91,7 @@ export default function HomeScreen({ onLoginRequest }: HomeScreenProps) {
     <View style={styles.container}>
       <WebView
         ref={webViewRef}
-        source={{ uri: WEB_URL }}
+        source={{ uri: isProfileComplete ? WEB_URL : `${WEB_URL}/profile/setup` }}
         style={styles.webview}
         injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContentLoaded}
         onNavigationStateChange={(navState: WebViewNavigation) => {
