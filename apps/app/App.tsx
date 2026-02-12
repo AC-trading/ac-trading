@@ -11,6 +11,8 @@ import { getCurrentUser, refreshToken } from './src/api/auth';
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  // 프로필 완성 여부 (기본값 true → 기존 유저에 영향 없음)
+  const [isProfileComplete, setIsProfileComplete] = useState(true);
 
   useEffect(() => {
     checkAuthStatus();
@@ -28,7 +30,8 @@ export default function App() {
 
       // 토큰 유효성 검증: 사용자 정보 조회 시도
       try {
-        await getCurrentUser(token);
+        const userData = await getCurrentUser(token);
+        setIsProfileComplete(userData.isProfileComplete);
         setIsAuthenticated(true);
       } catch (error) {
         // 토큰이 만료/무효한 경우 갱신 시도
@@ -36,6 +39,13 @@ export default function App() {
         try {
           const tokenResponse = await refreshToken();
           await saveAccessToken(tokenResponse.accessToken);
+          // 갱신된 토큰으로 프로필 완성 여부 재확인 - CodeRabbit 리뷰 반영
+          try {
+            const userData = await getCurrentUser(tokenResponse.accessToken);
+            setIsProfileComplete(userData.isProfileComplete);
+          } catch {
+            if (__DEV__) console.log('갱신 후 프로필 조회 실패, 기본값 사용');
+          }
           setIsAuthenticated(true);
         } catch (refreshError) {
           // 갱신도 실패하면 로그아웃 처리
@@ -53,8 +63,19 @@ export default function App() {
     }
   }
 
-  // 로그인 성공 핸들러
-  function handleLoginSuccess() {
+  // 로그인 성공 핸들러 - 프로필 완성 여부도 확인
+  async function handleLoginSuccess() {
+    try {
+      const token = await getAccessToken();
+      if (token) {
+        const userData = await getCurrentUser(token);
+        setIsProfileComplete(userData.isProfileComplete);
+      }
+    } catch {
+      // 조회 실패해도 로그인은 진행 (프로필 설정은 웹에서도 가능)
+      if (__DEV__) console.log('프로필 정보 조회 실패, 기본값 사용');
+      setIsProfileComplete(true);
+    }
     setIsAuthenticated(true);
   }
 
@@ -79,7 +100,7 @@ export default function App() {
     <SafeAreaProvider>
       <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
         {isAuthenticated ? (
-          <HomeScreen onLoginRequest={handleLoginRequest} />
+          <HomeScreen onLoginRequest={handleLoginRequest} isProfileComplete={isProfileComplete} />
         ) : (
           <LoginScreen onLoginSuccess={handleLoginSuccess} />
         )}
