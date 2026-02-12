@@ -1,7 +1,7 @@
 // 홈 화면 (WebView로 웹앱 표시)
 
 import React, { useRef } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text, BackHandler, Platform } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text, BackHandler, Platform, ToastAndroid } from 'react-native';
 import { WebView, WebViewMessageEvent, WebViewNavigation } from 'react-native-webview';
 import { getAccessToken, removeAccessToken } from '../auth';
 
@@ -19,8 +19,9 @@ interface HomeScreenProps {
 export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeScreenProps) {
   const [token, setToken] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [canGoBack, setCanGoBack] = React.useState(false);
+  const [currentUrl, setCurrentUrl] = React.useState('');
   const webViewRef = useRef<WebView>(null);
+  const lastBackPressRef = React.useRef(0);
 
   // 환경 변수를 컴포넌트 내부에서 가져옴 (Metro 연결 후 실행됨)
   const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL;
@@ -30,20 +31,45 @@ export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeSc
   }, []);
 
   // Android 하드웨어 뒤로가기 버튼/제스처 처리
+  // 서브 페이지 → 홈 이동, 홈에서 → 토스트 알림 후 2초 내 재누름 시 앱 종료
   React.useEffect(() => {
     if (Platform.OS !== 'android') return;
 
     const onBackPress = () => {
-      if (canGoBack && webViewRef.current) {
-        webViewRef.current.goBack();
-        return true; // 이벤트 소비 (앱 종료 방지)
+      const now = Date.now();
+
+      // 홈 화면 판단: URL이 없거나, WEB_URL과 같거나, 경로가 '/'인 경우
+      let isHome = true;
+      try {
+        if (currentUrl && WEB_URL) {
+          const path = new URL(currentUrl).pathname;
+          isHome = path === '/' || path === '';
+        }
+      } catch {
+        isHome = true;
       }
-      return false; // 기본 동작 (앱 종료)
+
+      if (!isHome && webViewRef.current) {
+        // 서브 페이지에서 → 홈으로 이동
+        webViewRef.current.injectJavaScript(`window.location.href='${WEB_URL}'; true;`);
+        return true;
+      }
+
+      // 홈에서 2초 내 재누름 → 앱 종료
+      if (now - lastBackPressRef.current < 2000) {
+        BackHandler.exitApp();
+        return true;
+      }
+
+      // 홈에서 첫 번째 누름 → 토스트 알림
+      lastBackPressRef.current = now;
+      ToastAndroid.show('한 번 더 누르면 종료됩니다', ToastAndroid.SHORT);
+      return true;
     };
 
     const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => subscription.remove();
-  }, [canGoBack]);
+  }, [currentUrl, WEB_URL]);
 
   async function loadToken() {
     try {
@@ -95,7 +121,7 @@ export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeSc
         style={styles.webview}
         injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContentLoaded}
         onNavigationStateChange={(navState: WebViewNavigation) => {
-          setCanGoBack(navState.canGoBack);
+          setCurrentUrl(navState.url);
         }}
         onMessage={(event: WebViewMessageEvent) => {
           // 웹에서 앱으로 메시지 전달 처리
