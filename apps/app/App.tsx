@@ -39,6 +39,13 @@ export default function App() {
         try {
           const tokenResponse = await refreshToken();
           await saveAccessToken(tokenResponse.accessToken);
+          // 갱신된 토큰으로 프로필 완성 여부 재확인 - CodeRabbit 리뷰 반영
+          try {
+            const userData = await getCurrentUser(tokenResponse.accessToken);
+            setIsProfileComplete(userData.isProfileComplete);
+          } catch {
+            if (__DEV__) console.log('갱신 후 프로필 조회 실패, 기본값 사용');
+          }
           setIsAuthenticated(true);
         } catch (refreshError) {
           // 갱신도 실패하면 로그아웃 처리
