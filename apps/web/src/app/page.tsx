@@ -1,101 +1,161 @@
+"use client";
+
+import Link from "next/link";
+import { useState, useEffect } from "react";
 import Image from "next/image";
+import { MobileLayout, Header } from "@/components/common";
+import { HeartIcon, PlusIcon } from "@/components/icons";
+import { useAuth } from "@/context/AuthContext";
+import {
+  getPosts,
+  formatPrice,
+  formatRelativeTime,
+  extractImageUrls,
+  Post,
+} from "@/lib/postApi";
 
-export default function Home() {
+// 거래글 아이템 컴포넌트
+function PostItem({ post }: { post: Post }) {
+  const thumbnailUrl = extractImageUrls(post.description)[0];
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    <Link
+      href={`/post/${post.id}`}
+      className="flex gap-4 p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors"
+    >
+      {/* 상품 썸네일 - 업로드된 이미지가 있으면 첫 번째 이미지, 없으면 기본 아이콘 */}
+      <div className="w-28 h-28 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
+        {thumbnailUrl ? (
+          <img
+            src={thumbnailUrl}
+            alt={post.itemName}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <Image
+            src={process.env.NEXT_PUBLIC_ICON_RACCOON || "/icons/raccoon_bill.svg"}
+            alt="상품 카테고리"
+            width={112}
+            height={112}
+            className="w-full h-full object-cover"
+          />
+        )}
+      </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+      {/* 상품 정보 */}
+      <div className="flex-1 flex flex-col justify-between py-1">
+        <div>
+          <h3 className="font-medium text-black line-clamp-2">{post.itemName}</h3>
+          <p className="text-xs text-black mt-1">
+            {post.userIslandName || "섬 이름 없음"} · {formatRelativeTime(post.bumpedAt || post.createdAt)}
+          </p>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+        <div className="flex items-center justify-between">
+          <p className="font-bold text-primary">{formatPrice(post.price, post.currencyType)}</p>
+          <div className="flex items-center gap-3 text-gray-400">
+            {post.likeCount > 0 && (
+              <span className="flex items-center gap-1">
+                <HeartIcon className="w-4 h-4" />
+                <span className="text-xs">{post.likeCount}</span>
+              </span>
+            )}
+          </div>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+// 홈 페이지 (거래글 목록) - Figma 디자인 기반
+export default function HomePage() {
+  const { isAuthenticated, isLoading: authLoading } = useAuth();
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // 게시글 목록 로드
+  useEffect(() => {
+    async function loadPosts() {
+      try {
+        setIsLoading(true);
+        setError(null);
+        const response = await getPosts({ page: 0, size: 20 });
+        setPosts(response.posts);
+      } catch (err) {
+        console.error("게시글 로드 실패:", err);
+        setError(err instanceof Error ? err.message : "게시글을 불러오는데 실패했습니다");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadPosts();
+  }, []);
+
+  return (
+    <MobileLayout>
+      <Header showLocation showSearch showBell showAuth={false} />
+
+      {/* 비로그인 사용자 안내 배너 */}
+      {!authLoading && !isAuthenticated && (
+        <Link
+          href="/login"
+          className="block mx-4 mt-3 p-4 bg-[#BAE8E7] rounded-xl"
         >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
+          <p className="text-sm font-medium text-black">
+            로그인을 통해 거래해주세요
+          </p>
+          <p className="text-xs text-black mt-1">
+            로그인하면 채팅, 가격 제안 등 모든 기능을 이용할 수 있어요
+          </p>
+        </Link>
+      )}
+
+      {/* 로딩 상태 */}
+      {isLoading && (
+        <div className="flex items-center justify-center py-20">
+          <div className="animate-spin rounded-full h-8 w-8 border-2 border-primary border-t-transparent" />
+        </div>
+      )}
+
+      {/* 에러 상태 */}
+      {error && !isLoading && (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-500">
+          <p className="text-sm">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 text-sm text-primary hover:underline"
+          >
+            다시 시도
+          </button>
+        </div>
+      )}
+
+      {/* 빈 상태 */}
+      {!isLoading && !error && posts.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-20 text-gray-400">
+          <span className="text-6xl mb-4">🏝️</span>
+          <p>아직 등록된 거래글이 없어요</p>
+          <p className="text-sm mt-1">첫 번째 거래글을 등록해보세요!</p>
+        </div>
+      )}
+
+      {/* 거래글 목록 */}
+      {!isLoading && !error && posts.length > 0 && (
+        <div className="divide-y divide-gray-100">
+          {posts.map((post) => (
+            <PostItem key={post.id} post={post} />
+          ))}
+        </div>
+      )}
+
+      {/* 글쓰기 FAB 버튼 */}
+      <Link
+        href="/post/new"
+        className="fixed bottom-24 right-4 w-14 h-14 bg-primary rounded-full flex items-center justify-center shadow-lg hover:bg-primary-dark transition-colors z-40"
+      >
+        <PlusIcon className="text-white" />
+      </Link>
+    </MobileLayout>
   );
 }

@@ -1,0 +1,290 @@
+package com.acnh.api.post.controller;
+
+import com.acnh.api.chat.dto.ChatRoomResponse;
+import com.acnh.api.chat.service.ChatService;
+import com.acnh.api.post.dto.*;
+import com.acnh.api.post.service.PostService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+/**
+ * 게시글 관련 API 컨트롤러
+ */
+@Slf4j
+@RestController
+@RequestMapping("/api/posts")
+@RequiredArgsConstructor
+public class PostController {
+
+    private final PostService postService;
+    private final ChatService chatService;
+
+    private static final int DEFAULT_PAGE_SIZE = 20;
+
+    /**
+     * 게시글 목록 조회 (피드)
+     * GET /api/posts
+     * - 필터: categoryId(다중), postType(다중), status, currencyType(다중), minPrice, maxPrice
+     * - 다중 필터: ?categoryId=1&categoryId=2 또는 ?categoryId=1,2
+     * - 가격 필터 사용 시 currencyType 필수 (벨 500과 마일 500은 다름)
+     * - 페이징: page, size
+     */
+    @GetMapping
+    public ResponseEntity<?> getFeed(
+            @AuthenticationPrincipal String visitorId,
+            @RequestParam(required = false) List<Long> categoryId,
+            @RequestParam(required = false) List<String> postType,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) List<String> currencyType,
+            @RequestParam(required = false) Integer minPrice,
+            @RequestParam(required = false) Integer maxPrice,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        log.info("피드 조회 요청 - categoryId: {}, postType: {}, status: {}, currencyType: {}, minPrice: {}, maxPrice: {}, page: {}, size: {}",
+                categoryId, postType, status, currencyType, minPrice, maxPrice, page, size);
+
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
+        PostListResponse response = postService.getFeed(categoryId, postType, status, currencyType, minPrice, maxPrice, visitorId, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 게시글 검색
+     * GET /api/posts/search
+     * - 필수: keyword
+     * - 필터: categoryId(다중), postType(다중), status, currencyType(다중), minPrice, maxPrice
+     * - 다중 필터: ?categoryId=1&categoryId=2 또는 ?categoryId=1,2
+     * - 가격 필터 사용 시 currencyType 필수 (벨 500과 마일 500은 다름)
+     * - 페이징: page, size
+     */
+    @GetMapping("/search")
+    public ResponseEntity<?> searchPosts(
+            @AuthenticationPrincipal String visitorId,
+            @RequestParam String keyword,
+            @RequestParam(required = false) List<Long> categoryId,
+            @RequestParam(required = false) List<String> postType,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) List<String> currencyType,
+            @RequestParam(required = false) Integer minPrice,
+            @RequestParam(required = false) Integer maxPrice,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        log.info("검색 요청 - keyword: {}, categoryId: {}, postType: {}, status: {}, currencyType: {}, minPrice: {}, maxPrice: {}, page: {}, size: {}",
+                keyword, categoryId, postType, status, currencyType, minPrice, maxPrice, page, size);
+
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
+        PostListResponse response = postService.searchPosts(keyword, categoryId, postType, status, currencyType, minPrice, maxPrice, visitorId, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 내 게시글 목록 조회
+     * GET /api/posts/me
+     */
+    @GetMapping("/me")
+    public ResponseEntity<?> getMyPosts(
+            @AuthenticationPrincipal String visitorId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        log.info("내 게시글 조회 요청 - visitorId: {}", visitorId);
+
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "UNAUTHORIZED",
+                    "message", "로그인이 필요합니다"
+            ));
+        }
+
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        Pageable pageable = PageRequest.of(page, Math.min(size, DEFAULT_PAGE_SIZE));
+        PostListResponse response = postService.getMyPosts(visitorId, pageable);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 게시글 상세 조회
+     * GET /api/posts/{postId}
+     */
+    @GetMapping("/{postId}")
+    public ResponseEntity<?> getPost(
+            @AuthenticationPrincipal String visitorId,
+            @PathVariable Long postId) {
+
+        log.info("게시글 상세 조회 요청 - postId: {}", postId);
+
+        // GlobalExceptionHandler가 NotFoundException 처리
+        PostResponse response = postService.getPost(postId, visitorId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 게시글 작성
+     * POST /api/posts
+     */
+    @PostMapping
+    public ResponseEntity<?> createPost(
+            @AuthenticationPrincipal String visitorId,
+            @Valid @RequestBody PostCreateRequest request) {
+
+        log.info("게시글 작성 요청 - visitorId: {}", visitorId);
+
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "UNAUTHORIZED",
+                    "message", "로그인이 필요합니다"
+            ));
+        }
+
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        PostResponse response = postService.createPost(request, visitorId);
+        return ResponseEntity.status(201).body(response);
+    }
+
+    /**
+     * 게시글 수정
+     * POST /api/posts/{postId}/update
+     */
+    @PostMapping("/{postId}/update")
+    public ResponseEntity<?> updatePost(
+            @AuthenticationPrincipal String visitorId,
+            @PathVariable Long postId,
+            @Valid @RequestBody PostUpdateRequest request) {
+
+        log.info("게시글 수정 요청 - postId: {}, visitorId: {}", postId, visitorId);
+
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "UNAUTHORIZED",
+                    "message", "로그인이 필요합니다"
+            ));
+        }
+
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        PostResponse response = postService.updatePost(postId, request, visitorId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 게시글 삭제 (soft delete)
+     * POST /api/posts/{postId}/delete
+     */
+    @PostMapping("/{postId}/delete")
+    public ResponseEntity<?> deletePost(
+            @AuthenticationPrincipal String visitorId,
+            @PathVariable Long postId) {
+
+        log.info("게시글 삭제 요청 - postId: {}, visitorId: {}", postId, visitorId);
+
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "UNAUTHORIZED",
+                    "message", "로그인이 필요합니다"
+            ));
+        }
+
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        postService.deletePost(postId, visitorId);
+        return ResponseEntity.ok(Map.of("message", "게시글이 삭제되었습니다"));
+    }
+
+    /**
+     * 게시글 상태 변경
+     * POST /api/posts/{postId}/status
+     */
+    @PostMapping("/{postId}/status")
+    public ResponseEntity<?> updatePostStatus(
+            @AuthenticationPrincipal String visitorId,
+            @PathVariable Long postId,
+            @Valid @RequestBody PostStatusUpdateRequest request) {
+
+        log.info("게시글 상태 변경 요청 - postId: {}, status: {}, visitorId: {}", postId, request.getStatus(), visitorId);
+
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "UNAUTHORIZED",
+                    "message", "로그인이 필요합니다"
+            ));
+        }
+
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        PostResponse response = postService.updatePostStatus(postId, request, visitorId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 게시글 끌어올리기
+     * POST /api/posts/{postId}/bump
+     * - 마지막 끌올/생성 후 72시간(3일) 이후에만 가능
+     */
+    @PostMapping("/{postId}/bump")
+    public ResponseEntity<?> bumpPost(
+            @AuthenticationPrincipal String visitorId,
+            @PathVariable Long postId) {
+
+        log.info("게시글 끌어올리기 요청 - postId: {}, visitorId: {}", postId, visitorId);
+
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "UNAUTHORIZED",
+                    "message", "로그인이 필요합니다"
+            ));
+        }
+
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        // 끌어올리기 제한 시 InvalidRequestException(400) 반환
+        PostResponse response = postService.bumpPost(postId, visitorId);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * 게시글별 채팅방 목록 조회 (작성자용)
+     * GET /api/posts/{postId}/chat-rooms
+     * - 게시글 작성자만 조회 가능
+     */
+    @GetMapping("/{postId}/chat-rooms")
+    public ResponseEntity<?> getChatRoomsByPostId(
+            @AuthenticationPrincipal String visitorId,
+            @PathVariable Long postId) {
+
+        log.info("게시글별 채팅방 목록 조회 요청 - postId: {}, visitorId: {}", postId, visitorId);
+
+        // Before: visitorId == null만 체크
+        // After: "anonymousUser"도 비인증 상태로 처리 (Spring Security 기본값)
+        if (visitorId == null || "anonymousUser".equals(visitorId)) {
+            return ResponseEntity.status(401).body(Map.of(
+                    "error", "UNAUTHORIZED",
+                    "message", "로그인이 필요합니다"
+            ));
+        }
+
+        // GlobalExceptionHandler가 NotFoundException/InvalidRequestException 처리
+        List<ChatRoomResponse> response = chatService.getChatRoomsByPostId(postId, visitorId);
+        return ResponseEntity.ok(response);
+    }
+}
