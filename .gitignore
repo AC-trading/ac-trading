@@ -3,6 +3,9 @@
 *.iml
 .vscode/
 
+# Claude local settings
+.claude/settings.local.json
+
 # Backend (Spring Boot)
 apps/api/build/
 apps/api/.gradle/
@@ -44,3 +47,7 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 nul
+*.stackdump
+
+# Temp files
+tmpclaude-*

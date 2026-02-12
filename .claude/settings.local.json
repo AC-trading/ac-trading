@@ -9,7 +9,31 @@
       "Bash(tr:*)",
       "Read(//c/**)",
       "Bash(git add:*)",
-      "Bash(git commit -m \"$\\(cat <<''EOF''\nchore: 프로젝트 초기 설정 파일 추가\n\n- .gitignore 구조 정리 \\(apps/api, apps/web, apps/mobile\\)\n- CLAUDE.md 프로젝트 가이드 추가\n- .claude/ 설정 폴더 추가\n\nCo-Authored-By: Claude Opus 4.5 <noreply@anthropic.com>\nEOF\n\\)\")"
+      "Bash(git gc:*)",
+      "Bash(git fetch:*)",
+      "Bash(git stash:*)",
+      "Bash(git merge:*)",
+      "Bash(git commit:*)",
+      "Bash(./gradlew compileJava:*)",
+      "Bash(git diff:*)",
+      "Bash(npm run build:*)",
+      "Bash(claude mcp list-tools:*)",
+      "Bash(claude mcp:*)",
+      "mcp__figma-desktop__get_design_context",
+      "Bash(gh pr list:*)",
+      "Bash(gh pr edit:*)",
+      "Bash(move:*)",
+      "Bash(git checkout:*)",
+      "Bash(git branch:*)",
+      "Bash(gh issue create:*)",
+      "Bash(railway login:*)",
+      "Bash(railway whoami:*)",
+      "Bash(railway status:*)",
+      "Bash(railway list:*)",
+      "Bash(railway logs:*)",
+      "Bash(railway domain:*)",
+      "Bash(gh pr create:*)",
+      "Bash(./gradlew test:*)"
     ]
   }
 }

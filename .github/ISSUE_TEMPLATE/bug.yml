@@ -1,0 +1,49 @@
+name: "🐛 Bug"
+description: "버그 리포트"
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: domain
+    attributes:
+      label: 도메인
+      options:
+        - auth
+        - post
+        - chat
+        - notification
+        - infra
+    validations:
+      required: true
+
+  - type: textarea
+    id: current
+    attributes:
+      label: 현재 동작
+      placeholder: 어떤 문제가 발생하는지
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: 기대 동작
+      placeholder: 원래 어떻게 동작해야 하는지
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 재현 방법
+      value: |
+        1. 
+        2. 
+        3. 
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: 에러 로그
+      render: shell
