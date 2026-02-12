@@ -20,7 +20,6 @@ export default function ProfileSetupPage() {
     dreamAddress: "",
   });
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const [isIslandNameValid, setIsIslandNameValid] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,11 +40,6 @@ export default function ProfileSetupPage() {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
-    // 섬 이름 유효성 검사 (접미사 제외 1자 이상)
-    if (name === "islandName") {
-      setIsIslandNameValid(value.length >= 1);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -60,6 +54,12 @@ export default function ProfileSetupPage() {
 
       if (!trimmedName) {
         setError("섬 이름을 입력해주세요.");
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!formData.name.trim()) {
+        setError("이름을 입력해주세요.");
         setIsSubmitting(false);
         return;
       }
@@ -252,7 +252,7 @@ export default function ProfileSetupPage() {
           {/* 시작하기 버튼 */}
           <button
             type="submit"
-            disabled={!isIslandNameValid || !formData.name || !agreedToTerms || isSubmitting}
+            disabled={!formData.islandName.trim() || !formData.name.trim() || !agreedToTerms || isSubmitting}
             className="w-full py-3 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
           >
             {isSubmitting ? "설정 중..." : "시작하기"}
