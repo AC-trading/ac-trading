@@ -1,13 +1,13 @@
 // 홈 화면 (WebView로 웹앱 표시)
 
 import React, { useRef } from 'react';
-import { StyleSheet, View, ActivityIndicator, Text, BackHandler, Platform } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Text, BackHandler, Platform, ToastAndroid } from 'react-native';
 import { WebView, WebViewMessageEvent, WebViewNavigation } from 'react-native-webview';
 import { getAccessToken, removeAccessToken } from '../auth';
 
 // WebView에서 전달받는 메시지 타입
 interface NativeMessage {
-  type: 'REQUEST_LOGIN' | 'REQUEST_LOGOUT';
+  type: 'REQUEST_LOGIN' | 'REQUEST_LOGOUT' | 'URL_CHANGED';
   payload?: Record<string, unknown>;
 }
 
@@ -19,8 +19,9 @@ interface HomeScreenProps {
 export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeScreenProps) {
   const [token, setToken] = React.useState<string | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [canGoBack, setCanGoBack] = React.useState(false);
+  const [currentUrl, setCurrentUrl] = React.useState('');
   const webViewRef = useRef<WebView>(null);
+  const lastBackPressRef = React.useRef(0);
 
   // 환경 변수를 컴포넌트 내부에서 가져옴 (Metro 연결 후 실행됨)
   const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL;
@@ -30,20 +31,45 @@ export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeSc
   }, []);
 
   // Android 하드웨어 뒤로가기 버튼/제스처 처리
+  // 서브 페이지 → 홈 이동, 홈에서 → 토스트 알림 후 2초 내 재누름 시 앱 종료
   React.useEffect(() => {
     if (Platform.OS !== 'android') return;
 
     const onBackPress = () => {
-      if (canGoBack && webViewRef.current) {
-        webViewRef.current.goBack();
-        return true; // 이벤트 소비 (앱 종료 방지)
+      const now = Date.now();
+
+      // 홈 화면 판단: URL이 없거나, WEB_URL과 같거나, 경로가 '/'인 경우
+      let isHome = true;
+      try {
+        if (currentUrl && WEB_URL) {
+          const path = new URL(currentUrl).pathname;
+          isHome = path === '/' || path === '';
+        }
+      } catch {
+        isHome = true;
       }
-      return false; // 기본 동작 (앱 종료)
+
+      if (!isHome && webViewRef.current) {
+        // 서브 페이지에서 → 홈으로 이동
+        webViewRef.current.injectJavaScript(`window.location.href=${JSON.stringify(WEB_URL)}; true;`);
+        return true;
+      }
+
+      // 홈에서 2초 내 재누름 → 앱 종료
+      if (now - lastBackPressRef.current < 2000) {
+        BackHandler.exitApp();
+        return true;
+      }
+
+      // 홈에서 첫 번째 누름 → 토스트 알림
+      lastBackPressRef.current = now;
+      ToastAndroid.show('한 번 더 누르면 종료됩니다', ToastAndroid.SHORT);
+      return true;
     };
 
     const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => subscription.remove();
-  }, [canGoBack]);
+  }, [currentUrl, WEB_URL]);
 
   async function loadToken() {
     try {
@@ -77,15 +103,51 @@ export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeSc
     );
   }
 
-  // WebView에 토큰 주입 스크립트 (페이지 로드 전에 실행)
+  // 핀치 줌 차단 + 토큰 주입 스크립트 (페이지 로드 전에 실행)
   // Before: injectedJavaScript - 페이지 로드 후 실행되어 웹앱이 먼저 로그인 체크함
   // After: injectedJavaScriptBeforeContentLoaded - 페이지 로드 전에 토큰 주입
+  const zoomBlockScript = `
+    var meta = document.createElement('meta');
+    meta.name = 'viewport';
+    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    document.head.appendChild(meta);
+  `;
+
+  // SPA 라우트 변경 감지 스크립트 (pushState/replaceState/popstate 패치)
+  // onNavigationStateChange는 SPA 내부 라우팅을 감지하지 못하므로 별도 패치 필요
+  const urlChangeScript = `
+    (function() {
+      var notify = function() {
+        window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
+          JSON.stringify({ type: 'URL_CHANGED', payload: { url: window.location.href } })
+        );
+      };
+      var origPush = history.pushState;
+      var origReplace = history.replaceState;
+      history.pushState = function() {
+        origPush.apply(this, arguments);
+        notify();
+      };
+      history.replaceState = function() {
+        origReplace.apply(this, arguments);
+        notify();
+      };
+      window.addEventListener('popstate', notify);
+    })();
+  `;
+
   const injectedJavaScriptBeforeContentLoaded = token
     ? `
       localStorage.setItem('accessToken', ${JSON.stringify(token)});
+      ${zoomBlockScript}
+      ${urlChangeScript}
       true;
     `
-    : '';
+    : `
+      ${zoomBlockScript}
+      ${urlChangeScript}
+      true;
+    `;
 
   return (
     <View style={styles.container}>
@@ -95,7 +157,7 @@ export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeSc
         style={styles.webview}
         injectedJavaScriptBeforeContentLoaded={injectedJavaScriptBeforeContentLoaded}
         onNavigationStateChange={(navState: WebViewNavigation) => {
-          setCanGoBack(navState.canGoBack);
+          setCurrentUrl(navState.url);
         }}
         onMessage={(event: WebViewMessageEvent) => {
           // 웹에서 앱으로 메시지 전달 처리
@@ -114,6 +176,12 @@ export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeSc
                 if (__DEV__) console.log('로그아웃 요청 수신');
                 removeAccessToken().then(() => onLoginRequest());
                 break;
+              case 'URL_CHANGED':
+                // SPA 라우트 변경 감지 (pushState/replaceState/popstate)
+                if (message.payload?.url) {
+                  setCurrentUrl(message.payload.url as string);
+                }
+                break;
               default:
                 if (__DEV__) console.log('알 수 없는 메시지 타입:', message.type);
             }
@@ -123,6 +191,7 @@ export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeSc
         }}
         javaScriptEnabled={true}
         domStorageEnabled={true}
+        scalesPageToFit={false}
         startInLoadingState={true}
         renderLoading={() => (
           <View style={styles.loadingContainer}>
