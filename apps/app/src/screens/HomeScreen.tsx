@@ -103,15 +103,26 @@ export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeSc
     );
   }
 
-  // WebView에 토큰 주입 스크립트 (페이지 로드 전에 실행)
+  // 핀치 줌 차단 + 토큰 주입 스크립트 (페이지 로드 전에 실행)
   // Before: injectedJavaScript - 페이지 로드 후 실행되어 웹앱이 먼저 로그인 체크함
   // After: injectedJavaScriptBeforeContentLoaded - 페이지 로드 전에 토큰 주입
+  const zoomBlockScript = `
+    var meta = document.createElement('meta');
+    meta.name = 'viewport';
+    meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+    document.head.appendChild(meta);
+  `;
+
   const injectedJavaScriptBeforeContentLoaded = token
     ? `
       localStorage.setItem('accessToken', ${JSON.stringify(token)});
+      ${zoomBlockScript}
       true;
     `
-    : '';
+    : `
+      ${zoomBlockScript}
+      true;
+    `;
 
   return (
     <View style={styles.container}>
@@ -149,6 +160,7 @@ export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeSc
         }}
         javaScriptEnabled={true}
         domStorageEnabled={true}
+        scalesPageToFit={false}
         startInLoadingState={true}
         renderLoading={() => (
           <View style={styles.loadingContainer}>
