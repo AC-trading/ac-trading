@@ -7,7 +7,7 @@ import { getAccessToken, removeAccessToken } from '../auth';
 
 // WebView에서 전달받는 메시지 타입
 interface NativeMessage {
-  type: 'REQUEST_LOGIN' | 'REQUEST_LOGOUT';
+  type: 'REQUEST_LOGIN' | 'REQUEST_LOGOUT' | 'URL_CHANGED';
   payload?: Record<string, unknown>;
 }
 
@@ -113,14 +113,39 @@ export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeSc
     document.head.appendChild(meta);
   `;
 
+  // SPA 라우트 변경 감지 스크립트 (pushState/replaceState/popstate 패치)
+  // onNavigationStateChange는 SPA 내부 라우팅을 감지하지 못하므로 별도 패치 필요
+  const urlChangeScript = `
+    (function() {
+      var notify = function() {
+        window.ReactNativeWebView && window.ReactNativeWebView.postMessage(
+          JSON.stringify({ type: 'URL_CHANGED', payload: { url: window.location.href } })
+        );
+      };
+      var origPush = history.pushState;
+      var origReplace = history.replaceState;
+      history.pushState = function() {
+        origPush.apply(this, arguments);
+        notify();
+      };
+      history.replaceState = function() {
+        origReplace.apply(this, arguments);
+        notify();
+      };
+      window.addEventListener('popstate', notify);
+    })();
+  `;
+
   const injectedJavaScriptBeforeContentLoaded = token
     ? `
       localStorage.setItem('accessToken', ${JSON.stringify(token)});
       ${zoomBlockScript}
+      ${urlChangeScript}
       true;
     `
     : `
       ${zoomBlockScript}
+      ${urlChangeScript}
       true;
     `;
 
@@ -150,6 +175,12 @@ export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeSc
                 // WebView에서 로그아웃 요청 - 토큰 제거 후 로그인 화면으로
                 if (__DEV__) console.log('로그아웃 요청 수신');
                 removeAccessToken().then(() => onLoginRequest());
+                break;
+              case 'URL_CHANGED':
+                // SPA 라우트 변경 감지 (pushState/replaceState/popstate)
+                if (message.payload?.url) {
+                  setCurrentUrl(message.payload.url as string);
+                }
                 break;
               default:
                 if (__DEV__) console.log('알 수 없는 메시지 타입:', message.type);
