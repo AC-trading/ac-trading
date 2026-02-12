@@ -51,7 +51,7 @@ export default function HomeScreen({ onLoginRequest, isProfileComplete }: HomeSc
 
       if (!isHome && webViewRef.current) {
         // 서브 페이지에서 → 홈으로 이동
-        webViewRef.current.injectJavaScript(`window.location.href='${WEB_URL}'; true;`);
+        webViewRef.current.injectJavaScript(`window.location.href=${JSON.stringify(WEB_URL)}; true;`);
         return true;
       }
 
