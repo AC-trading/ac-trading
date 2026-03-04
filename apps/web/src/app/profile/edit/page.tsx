@@ -10,6 +10,9 @@ import { useAuth } from "@/context/AuthContext";
 if (!process.env.NEXT_PUBLIC_API_URL) throw new Error('NEXT_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다.');
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+// 브랜드 민트 색상 (globals.css --primary와 별도로 계정 삭제 링크에 사용)
+const COLOR_MINT = "#7ECEC5";
+
 // 프로필 수정 페이지 - Figma 디자인 기반 (회원가입 페이지와 동일 스타일)
 export default function ProfileEditPage() {
   const router = useRouter();
@@ -283,7 +286,7 @@ export default function ProfileEditPage() {
               <Link
                 href="/account-delete"
                 className="text-sm"
-                style={{ color: "#7ECEC5" }}
+                style={{ color: COLOR_MINT }}
               >
                 계정 삭제
               </Link>

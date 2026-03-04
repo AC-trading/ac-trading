@@ -6,6 +6,9 @@ export const metadata: Metadata = {
   description: "거동숲 계정 및 데이터 삭제 요청 안내",
 };
 
+const SUPPORT_EMAIL =
+  process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@ac-trading.com";
+
 // Google Play Store 정책 준수용 계정 삭제 요청 페이지
 export default function AccountDeletePage() {
   return (
@@ -83,11 +86,11 @@ export default function AccountDeletePage() {
                 있습니다.
               </p>
               <a
-                href="mailto:support@ac-trading.com"
+                href={`mailto:${SUPPORT_EMAIL}`}
                 className="font-medium underline"
                 style={{ color: "#5BBFB3" }}
               >
-                support@ac-trading.com
+                {SUPPORT_EMAIL}
               </a>
               <p className="mt-2 text-sm text-gray-500">
                 이메일 제목: [계정 삭제 요청] 가입 이메일 주소 기재
@@ -168,11 +171,11 @@ export default function AccountDeletePage() {
             <p>
               계정 삭제 관련 추가 문의는{" "}
               <a
-                href="mailto:support@ac-trading.com"
+                href={`mailto:${SUPPORT_EMAIL}`}
                 className="underline"
                 style={{ color: "#5BBFB3" }}
               >
-                support@ac-trading.com
+                {SUPPORT_EMAIL}
               </a>
               으로 연락 주시기 바랍니다.
             </p>
