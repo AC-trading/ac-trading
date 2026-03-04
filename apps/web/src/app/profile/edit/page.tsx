@@ -163,10 +163,10 @@ export default function ProfileEditPage() {
                 value={formData.islandName}
                 onChange={handleChange}
                 placeholder="섬 이름"
-                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="flex-1 min-w-0 px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
               {/* 섬/도 선택 버튼 */}
-              <div className="flex">
+              <div className="flex shrink-0">
                 <button
                   type="button"
                   onClick={() => setFormData((prev) => ({ ...prev, islandSuffix: "섬" }))}
@@ -276,6 +276,7 @@ export default function ProfileEditPage() {
           >
             {isSubmitting ? "저장 중..." : user?.isProfileComplete ? "수정 완료" : "프로필 설정 완료"}
           </button>
+
         </form>
       </div>
     </div>
