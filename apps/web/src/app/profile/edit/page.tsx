@@ -277,6 +277,18 @@ export default function ProfileEditPage() {
             {isSubmitting ? "저장 중..." : user?.isProfileComplete ? "수정 완료" : "프로필 설정 완료"}
           </button>
 
+          {/* 계정 삭제 링크 - 프로필 완성된 기존 회원만 표시 */}
+          {user?.isProfileComplete && (
+            <div className="text-center mt-4">
+              <Link
+                href="/account-delete"
+                className="text-sm"
+                style={{ color: "#7ECEC5" }}
+              >
+                계정 삭제
+              </Link>
+            </div>
+          )}
         </form>
       </div>
     </div>
