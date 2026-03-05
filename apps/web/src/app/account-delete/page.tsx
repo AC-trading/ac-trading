@@ -57,8 +57,8 @@ export default function AccountDeletePage() {
                   "앱 또는 웹에서 로그인합니다.",
                   "하단 탭의 [프로필] 메뉴로 이동합니다.",
                   "[설정] 아이콘을 탭합니다.",
-                  "[회원 탈퇴] 버튼을 누르고 안내에 따라 진행합니다.",
-                  "탈퇴가 완료되면 계정과 관련 데이터가 즉시 삭제 처리됩니다.",
+                  "[계정 삭제] 버튼을 누르고 안내에 따라 진행합니다.",
+                  "삭제가 완료되면 법령 보관 대상을 제외한 계정 및 관련 데이터가 즉시 삭제 처리됩니다.",
                 ].map((step, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <span
@@ -106,7 +106,8 @@ export default function AccountDeletePage() {
               삭제되는 데이터
             </h2>
             <p className="mb-3">
-              탈퇴 요청 처리 시 다음 데이터가 <strong>즉시 삭제</strong>됩니다.
+              계정 삭제 요청 처리 시 다음 데이터가 <strong>즉시 삭제</strong>됩니다.
+              단, 법령에 따라 보관이 필요한 데이터는 아래 표를 확인해주세요.
             </p>
             <ul className="list-disc pl-5 space-y-1">
               <li>계정 정보 (이메일, 닉네임, 프로필 이미지, 섬 이름)</li>
