@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { MobileLayout } from "@/components/common";
 import { ChevronLeftIcon, ChevronRightIcon } from "@/components/icons";
 import { useAuth } from "@/context/AuthContext";
@@ -10,9 +11,17 @@ import { useAuth } from "@/context/AuthContext";
 export default function SettingsPage() {
   const router = useRouter();
   const { logout } = useAuth();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleLogout = async () => {
-    await logout();
+    setIsLoggingOut(true);
+    try {
+      await logout();
+    } catch (error) {
+      console.error("로그아웃 실패:", error);
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
 
   return (
@@ -22,6 +31,7 @@ export default function SettingsPage() {
         <div className="flex items-center h-14 px-4 gap-2">
           <button
             onClick={() => router.back()}
+            aria-label="이전 페이지로 이동"
             className="p-1 -ml-1 hover:bg-gray-100 rounded-full transition-colors"
           >
             <ChevronLeftIcon className="text-black" />
@@ -62,9 +72,10 @@ export default function SettingsPage() {
         {/* 로그아웃 */}
         <button
           onClick={handleLogout}
-          className="w-full flex items-center justify-between px-4 py-4 hover:bg-gray-50 transition-colors text-left"
+          disabled={isLoggingOut}
+          className="w-full flex items-center justify-between px-4 py-4 hover:bg-gray-50 transition-colors text-left disabled:opacity-50"
         >
-          <span className="text-black">로그아웃</span>
+          <span className="text-black">{isLoggingOut ? "로그아웃 중..." : "로그아웃"}</span>
         </button>
 
         {/* 탈퇴하기 */}
