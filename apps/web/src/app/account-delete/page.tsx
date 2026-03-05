@@ -1,16 +1,52 @@
-import { Metadata } from "next";
-import Link from "next/link";
+"use client";
 
-export const metadata: Metadata = {
-  title: "계정 삭제 요청 - 거동숲",
-  description: "거동숲 계정 및 데이터 삭제 요청 안내",
-};
+import Link from "next/link";
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+
+if (!process.env.NEXT_PUBLIC_API_URL) throw new Error('NEXT_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다.');
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 const SUPPORT_EMAIL =
   process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "seulhuioh0710@gmail.com";
 
-// Google Play Store 정책 준수용 계정 삭제 요청 페이지
+// Google Play Store 정책 준수용 계정 삭제 페이지
 export default function AccountDeletePage() {
+  const router = useRouter();
+  const { accessToken, logout } = useAuth();
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleDelete = async () => {
+    if (!accessToken) {
+      router.push("/login");
+      return;
+    }
+    setIsDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch(`${API_URL}/api/users/me/delete`, {
+        method: "POST",
+        credentials: "include",
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (res.ok) {
+        await logout();
+      } else {
+        const data = await res.json().catch(() => null);
+        setError(data?.message || "계정 삭제에 실패했습니다. 다시 시도해주세요.");
+        setShowConfirm(false);
+      }
+    } catch {
+      setError("네트워크 오류가 발생했습니다. 다시 시도해주세요.");
+      setShowConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen" style={{ backgroundColor: "#FFFFFF" }}>
       {/* 헤더 */}
@@ -19,10 +55,10 @@ export default function AccountDeletePage() {
         style={{ backgroundColor: "#FFFFFF" }}
       >
         <div className="max-w-3xl mx-auto flex items-center gap-3">
-          <Link href="/" className="text-gray-600 hover:text-gray-900">
+          <Link href="/settings" className="text-gray-600 hover:text-gray-900">
             ← 돌아가기
           </Link>
-          <h1 className="text-lg font-semibold">계정 삭제 요청</h1>
+          <h1 className="text-lg font-semibold">계정 삭제</h1>
         </div>
       </header>
 
@@ -41,10 +77,10 @@ export default function AccountDeletePage() {
           {/* 계정 삭제 방법 */}
           <section>
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
-              계정 삭제 요청 방법
+              계정 삭제 방법
             </h2>
 
-            {/* 방법 1: 앱 내 */}
+            {/* 방법 1: 앱/웹 내 */}
             <div className="mb-6">
               <div
                 className="inline-block text-xs font-semibold px-2 py-1 rounded mb-3"
@@ -56,9 +92,10 @@ export default function AccountDeletePage() {
                 {[
                   "앱 또는 웹에서 로그인합니다.",
                   "하단 탭의 [프로필] 메뉴로 이동합니다.",
-                  "[설정] 아이콘을 탭합니다.",
-                  "[계정 삭제] 버튼을 누르고 안내에 따라 진행합니다.",
-                  "삭제가 완료되면 법령 보관 대상을 제외한 계정 및 관련 데이터가 즉시 삭제 처리됩니다.",
+                  "우측 상단 설정 아이콘을 탭합니다.",
+                  "[탈퇴하기]를 누릅니다.",
+                  "이 페이지 하단의 [탈퇴하기] 버튼을 누르고 확인합니다.",
+                  "탈퇴가 완료되면 법령 보관 대상을 제외한 계정 및 관련 데이터가 즉시 삭제됩니다.",
                 ].map((step, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <span
@@ -106,7 +143,7 @@ export default function AccountDeletePage() {
               삭제되는 데이터
             </h2>
             <p className="mb-3">
-              계정 삭제 요청 처리 시 다음 데이터가 <strong>즉시 삭제</strong>됩니다.
+              계정 삭제 시 다음 데이터가 <strong>즉시 삭제</strong>됩니다.
               단, 법령에 따라 보관이 필요한 데이터는 아래 표를 확인해주세요.
             </p>
             <ul className="list-disc pl-5 space-y-1">
@@ -182,6 +219,23 @@ export default function AccountDeletePage() {
             </p>
           </section>
         </div>
+
+        {/* 에러 메시지 */}
+        {error && (
+          <div className="mt-6 p-3 rounded-lg bg-red-50 border border-red-200">
+            <p className="text-red-600 text-sm">{error}</p>
+          </div>
+        )}
+
+        {/* 탈퇴하기 버튼 */}
+        <div className="mt-10 mb-4">
+          <button
+            onClick={() => setShowConfirm(true)}
+            className="w-full py-3 rounded-lg border border-red-300 text-red-500 font-semibold hover:bg-red-50 transition-colors"
+          >
+            탈퇴하기
+          </button>
+        </div>
       </main>
 
       {/* 푸터 */}
@@ -195,9 +249,39 @@ export default function AccountDeletePage() {
             개인정보처리방침
           </Link>
           <span className="mx-2">|</span>
-          <span className="font-medium text-gray-700">계정 삭제 요청</span>
+          <span className="font-medium text-gray-700">계정 삭제</span>
         </div>
       </footer>
+
+      {/* 탈퇴 확인 모달 */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl mx-6 w-full max-w-sm overflow-hidden">
+            <div className="px-6 py-6 text-center">
+              <p className="text-base font-semibold text-gray-900">정말 탈퇴하시겠습니까?</p>
+              <p className="mt-2 text-sm text-gray-500">
+                계정 및 모든 데이터가 삭제되며 복구할 수 없습니다.
+              </p>
+            </div>
+            <div className="flex border-t border-gray-100">
+              <button
+                onClick={() => setShowConfirm(false)}
+                disabled={isDeleting}
+                className="flex-1 py-4 text-sm text-gray-500 hover:bg-gray-50 transition-colors border-r border-gray-100 disabled:opacity-50"
+              >
+                아니오
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={isDeleting}
+                className="flex-1 py-4 text-sm font-semibold text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+              >
+                {isDeleting ? "처리 중..." : "예, 탈퇴합니다"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
