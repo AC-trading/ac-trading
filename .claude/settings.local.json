@@ -33,7 +33,15 @@
       "Bash(railway logs:*)",
       "Bash(railway domain:*)",
       "Bash(gh pr create:*)",
-      "Bash(./gradlew test:*)"
+      "Bash(./gradlew test:*)",
+      "Bash(gh api:*)",
+      "Bash(gh issue list:*)",
+      "Bash(gh pr reopen:*)",
+      "Bash(gh pr view:*)",
+      "Bash(xargs cat)",
+      "Bash(gh issue view 130 --repo AC-trading/ac-trading --json title,body)",
+      "Bash(gh issue edit 130 --repo AC-trading/ac-trading --title \"fix: Profile nickname validation missing on frontend - save fails for 1-char or invalid input\")",
+      "Bash(gh issue view 127 --json title,body,state)"
     ]
   }
 }

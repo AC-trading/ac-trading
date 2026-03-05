@@ -213,8 +213,10 @@ export default function ProfileEditPage() {
               value={formData.name}
               onChange={handleChange}
               placeholder="이름을 입력하세요"
+              maxLength={50}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
+            <p className="text-xs mt-1 text-gray-400">2~50자로 입력해주세요.</p>
           </div>
 
           {/* 반구 - 신규 유저만 수정 가능 */}
@@ -274,7 +276,7 @@ export default function ProfileEditPage() {
           {/* 저장 버튼 */}
           <button
             type="submit"
-            disabled={!isIslandNameValid || !formData.name || isSubmitting}
+            disabled={!isIslandNameValid || formData.name.trim().length < 2 || isSubmitting}
             className="w-full py-3 rounded-lg bg-primary text-white font-semibold hover:bg-primary-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed mt-6"
           >
             {isSubmitting ? "저장 중..." : user?.isProfileComplete ? "수정 완료" : "프로필 설정 완료"}
