@@ -50,7 +50,7 @@ export default function ProfilePage() {
       <Header
         showLocation
         rightElement={
-          <Link href="/settings" className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+          <Link href="/settings" aria-label="설정" className="p-1 hover:bg-gray-100 rounded-full transition-colors">
             <SettingsIcon className="text-black" />
           </Link>
         }
