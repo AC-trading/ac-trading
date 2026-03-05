@@ -213,6 +213,7 @@ export default function ProfileEditPage() {
               value={formData.name}
               onChange={handleChange}
               placeholder="이름을 입력하세요"
+              maxLength={50}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
             />
             <p className="text-xs mt-1 text-gray-400">2~50자로 입력해주세요.</p>
