@@ -7,7 +7,7 @@ export const metadata: Metadata = {
 };
 
 const SUPPORT_EMAIL =
-  process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "support@ac-trading.com";
+  process.env.NEXT_PUBLIC_SUPPORT_EMAIL || "seulhuioh0710@gmail.com";
 
 // Google Play Store 정책 준수용 계정 삭제 요청 페이지
 export default function AccountDeletePage() {
