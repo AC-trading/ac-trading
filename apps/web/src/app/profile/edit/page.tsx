@@ -10,6 +10,9 @@ import { useAuth } from "@/context/AuthContext";
 if (!process.env.NEXT_PUBLIC_API_URL) throw new Error('NEXT_PUBLIC_API_URL 환경 변수가 설정되지 않았습니다.');
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+// 브랜드 민트 색상 (globals.css --primary와 별도로 계정 삭제 링크에 사용)
+const COLOR_MINT = "#7ECEC5";
+
 // 프로필 수정 페이지 - Figma 디자인 기반 (회원가입 페이지와 동일 스타일)
 export default function ProfileEditPage() {
   const router = useRouter();
@@ -163,10 +166,10 @@ export default function ProfileEditPage() {
                 value={formData.islandName}
                 onChange={handleChange}
                 placeholder="섬 이름"
-                className="flex-1 px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                className="flex-1 min-w-0 px-4 py-3 rounded-lg border border-gray-300 bg-white text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
               />
               {/* 섬/도 선택 버튼 */}
-              <div className="flex">
+              <div className="flex shrink-0">
                 <button
                   type="button"
                   onClick={() => setFormData((prev) => ({ ...prev, islandSuffix: "섬" }))}
@@ -276,6 +279,19 @@ export default function ProfileEditPage() {
           >
             {isSubmitting ? "저장 중..." : user?.isProfileComplete ? "수정 완료" : "프로필 설정 완료"}
           </button>
+
+          {/* 계정 삭제 링크 - 프로필 완성된 기존 회원만 표시 */}
+          {user?.isProfileComplete && (
+            <div className="text-center mt-4">
+              <Link
+                href="/account-delete"
+                className="text-sm"
+                style={{ color: COLOR_MINT }}
+              >
+                계정 삭제
+              </Link>
+            </div>
+          )}
         </form>
       </div>
     </div>
