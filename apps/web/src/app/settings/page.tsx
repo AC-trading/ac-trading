@@ -59,15 +59,6 @@ export default function SettingsPage() {
           <ChevronRightIcon className="text-gray-400" />
         </Link>
 
-        {/* 오픈소스 라이선스 */}
-        <Link
-          href="/settings/licenses"
-          className="flex items-center justify-between px-4 py-4 hover:bg-gray-50 transition-colors"
-        >
-          <span className="text-black">오픈소스 라이선스</span>
-          <ChevronRightIcon className="text-gray-400" />
-        </Link>
-
         {/* 로그아웃 */}
         <button
           onClick={handleLogout}
